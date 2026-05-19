@@ -4,6 +4,7 @@ struct BriefView: View {
     @Environment(LocationManager.self) private var location
     @Environment(ServerConfig.self) private var server
     @Environment(CallsignStore.self) private var callsigns
+    @Environment(NotificationManager.self) private var notifications
 
     @State private var vm = BriefViewModel()
 
@@ -101,5 +102,9 @@ struct BriefView: View {
             location: location.lastLocation,
             tz: TimeZone.current.identifier
         )
+        // Refresh local notification schedule from the freshest known location.
+        if case .loaded(let brief, _) = vm.state {
+            await notifications.reschedule(latitude: brief.lat, longitude: brief.lng)
+        }
     }
 }

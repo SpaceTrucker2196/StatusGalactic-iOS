@@ -65,9 +65,13 @@ Phases follow the CareTime convention: iOS ships first, Android mirrors. Backend
 
 ## Phase C: Notifications
 
-### M12: Local notifications for golden hour
-**Goal:** Schedule a local notification at sunset minus 30 min for the saved location.
-**Status:** ⏳
+### M12: Local notifications for golden hour and astronomical dusk
+**Goal:** Schedule local notifications at sunset minus 30 min and at astronomical dusk for the user's last known location. Refreshes after every brief load. Schedules up to 14 days ahead.
+**Deliverables:**
+- `Services/SolarMath.swift` — pure-Swift NOAA solar-position approximation for scheduling (validated within 3 min of backend skyfield)
+- `Services/NotificationManager.swift` — UN authorization, 14-day rolling schedule, cancel-all
+- Settings section with toggles and next-fire timestamps
+**Status:** ✅
 
 ### M13: Push notifications via backend
 **Goal:** Register device token with backend; backend POSTs Galactic briefs to APNs at user's chosen schedule.

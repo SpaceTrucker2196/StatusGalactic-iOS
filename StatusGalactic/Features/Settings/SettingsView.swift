@@ -4,12 +4,16 @@ import CoreLocation
 struct SettingsView: View {
     @Environment(ServerConfig.self) private var server
     @Environment(LocationManager.self) private var location
+    @Environment(NotificationManager.self) private var notifications
 
     var body: some View {
         @Bindable var server = server
+        @Bindable var notifications = notifications
 
         NavigationStack {
             Form {
+                notificationsSection
+
                 Section("Server") {
                     TextField("Backend URL", text: $server.serverURLString)
                         .keyboardType(.URL)
@@ -61,6 +65,65 @@ struct SettingsView: View {
                 }
             }
             .navigationTitle("Settings")
+        }
+    }
+
+    @ViewBuilder
+    private var notificationsSection: some View {
+        @Bindable var notifications = notifications
+
+        Section {
+            Toggle("Golden hour reminders", isOn: $notifications.goldenHourEnabled)
+                .onChange(of: notifications.goldenHourEnabled) {
+                    handleNotifChange()
+                }
+            Toggle("Astronomical dusk reminders", isOn: $notifications.astronomicalDuskEnabled)
+                .onChange(of: notifications.astronomicalDuskEnabled) {
+                    handleNotifChange()
+                }
+            if let next = notifications.nextGoldenHour, notifications.goldenHourEnabled {
+                LabeledContent("Next golden hour") {
+                    Text(next, style: .relative)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            if let next = notifications.nextAstroDusk, notifications.astronomicalDuskEnabled {
+                LabeledContent("Next astro dusk") {
+                    Text(next, style: .relative)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            if notifications.authorizationStatus == .denied {
+                Label(
+                    "Notifications denied. Enable in iOS Settings.",
+                    systemImage: "exclamationmark.triangle"
+                )
+                .foregroundStyle(.orange)
+                .font(.caption)
+            }
+        } header: {
+            Text("Notifications")
+        } footer: {
+            Text("Schedules up to 14 days of alerts at your last known location. Times computed locally; precise events come from the backend.")
+                .font(.caption)
+        }
+    }
+
+    private func handleNotifChange() {
+        Task {
+            if notifications.goldenHourEnabled || notifications.astronomicalDuskEnabled {
+                if notifications.authorizationStatus == .notDetermined {
+                    _ = await notifications.requestAuthorization()
+                }
+                if let loc = location.lastLocation {
+                    await notifications.reschedule(
+                        latitude: loc.coordinate.latitude,
+                        longitude: loc.coordinate.longitude
+                    )
+                }
+            } else {
+                notifications.cancelAll()
+            }
         }
     }
 

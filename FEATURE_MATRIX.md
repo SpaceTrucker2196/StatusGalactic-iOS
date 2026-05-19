@@ -54,7 +54,7 @@ Cross-platform parity tracking. Backend is the single source of truth; clients c
 | HTTP API (`/brief`, `/brief.md`) | ✅ | n/a | n/a | |
 | Subscriber-driven scheduler | ✅ | n/a | n/a | |
 | Discord webhook | ✅ | ❌ | ⏳ | Backend-side only |
-| Local notifications | ❌ | ⏳ | ⏳ | UNNotificationCenter / NotificationCompat |
+| Local notifications | ❌ | ✅ | ⏳ | UNUserNotificationCenter / NotificationCompat; 14-day schedule, golden hour + astro dusk |
 | Push notifications | ⏳ | ⏳ | ⏳ | APNs / FCM, requires backend hook |
 | Widget / glance | ❌ | ⏳ | ⏳ | WidgetKit / Glance |
 
