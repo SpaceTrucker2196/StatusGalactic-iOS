@@ -30,6 +30,8 @@ struct BriefDetailView: View {
             }
             if let sun = brief.sun {
                 Section("Sun") {
+                    SunStrip(sun: sun, now: fetchedAt)
+                        .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
                     SunSectionView(sun: sun)
                 }
             }

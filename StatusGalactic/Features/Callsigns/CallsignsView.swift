@@ -19,13 +19,18 @@ struct CallsignsView: View {
                 } else {
                     List {
                         ForEach(store.callsigns) { entry in
-                            CallsignRow(entry: entry)
+                            NavigationLink(value: entry) {
+                                CallsignRow(entry: entry)
+                            }
                         }
                         .onDelete { offsets in
                             store.remove(at: offsets)
                         }
                     }
                     .listStyle(.insetGrouped)
+                    .navigationDestination(for: Callsign.self) { entry in
+                        CallsignDetailView(callsign: entry)
+                    }
                 }
             }
             .navigationTitle("Callsigns")

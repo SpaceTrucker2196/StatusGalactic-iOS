@@ -45,11 +45,18 @@ struct BriefView: View {
         case .loaded(let brief, let fetchedAt):
             BriefDetailView(brief: brief, fetchedAt: fetchedAt)
         case .error(let message):
-            ContentUnavailableView(
-                "Could not load brief",
-                systemImage: "exclamationmark.triangle",
-                description: Text(message)
-            )
+            VStack(spacing: 16) {
+                ContentUnavailableView(
+                    "Could not load brief",
+                    systemImage: "exclamationmark.triangle",
+                    description: Text(message)
+                )
+                Button("Try Again") {
+                    Task { await refresh() }
+                }
+                .buttonStyle(.borderedProminent)
+                .padding(.bottom, 32)
+            }
         }
     }
 

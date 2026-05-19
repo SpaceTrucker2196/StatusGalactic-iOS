@@ -46,20 +46,20 @@ Phases follow the CareTime convention: iOS ships first, Android mirrors. Backend
 ## Phase B: Polish
 
 ### M8: Pull-to-refresh + last-fetched timestamp
-**Goal:** Standard `refreshable` modifier, show "Updated 2 min ago" in nav bar.
-**Status:** ⏳
+**Goal:** Standard `refreshable` modifier, show "Updated 2 min ago" in the brief header.
+**Status:** ✅
 
 ### M9: Error states with retry
-**Goal:** Inline error cards for partial source failures (mirror backend `errors` dict per section).
-**Status:** ⏳
+**Goal:** Try Again button on top-level error, source-level error footer in BriefDetailView.
+**Status:** ✅
 
-### M10: Sun chart
-**Goal:** Native SwiftUI chart showing today's sun altitude with overlays for civil/nautical/astronomical twilight bands.
-**Status:** ⏳
+### M10: Sun day strip
+**Goal:** Horizontal 24-hour strip with colored bands for astronomical / nautical / civil twilight and daylight, with a "now" indicator and sunrise/sunset glyphs. Visualization driven by event times from the backend, no client-side altitude math.
+**Status:** ✅
 
 ### M11: Callsign live position via aprs.fi proxy
-**Goal:** Show callsign's current coordinates and last-heard time on a Map.
-**Status:** ⏳
+**Goal:** New backend endpoint `GET /aprs/locate?call=X`. iOS CallsignDetailView with MapKit showing last-known position, comment, and a refresh button.
+**Status:** ✅
 
 ---
 
@@ -97,7 +97,7 @@ Phases follow the CareTime convention: iOS ships first, Android mirrors. Backend
 | iOS milestone | Backend requirement | Backend status |
 |---------------|---------------------|----------------|
 | M4 | `GET /brief` with lat/lng/call/zone/tz | ✅ (v0.4) |
-| M11 | Stable APRS lookup proxy | ✅ (v0.2) |
+| M11 | `GET /aprs/locate?call=X` proxy endpoint | ✅ (v0.5) |
 | M13 | Push delivery channel | ⏳ |
 
 ---

@@ -32,7 +32,8 @@ Cross-platform parity tracking. Backend is the single source of truth; clients c
 | Moon phase + illumination | ✅ | ✅ | ⏳ | |
 | 10-body planetary positions | ✅ | ✅ | ⏳ | |
 | Upcoming launches (LL2) | ✅ | ✅ | ⏳ | |
-| Sun altitude chart | ❌ | ⏳ | ⏳ | Client-only viz |
+| Sun day strip (twilight bands) | ❌ | ✅ | ⏳ | Client-only viz; uses backend event times |
+| APRS map (callsign last-known position) | ✅ (`/aprs/locate`) | ✅ | ⏳ | iOS uses MapKit |
 
 ## Inputs
 
