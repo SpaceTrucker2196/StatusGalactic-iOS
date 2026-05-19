@@ -20,6 +20,8 @@ targets:
     deploymentTarget: "17.0"
     sources:
       - path: StatusGalactic
+    dependencies:
+      - target: StatusGalacticWidget
     info:
       path: StatusGalactic/App/Info.plist
       properties:
@@ -46,6 +48,29 @@ targets:
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         GENERATE_INFOPLIST_FILE: NO
+
+  StatusGalacticWidget:
+    type: app-extension
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: StatusGalactic/Models/Brief.swift
+      - path: StatusGalactic/Services/BriefAPIClient.swift
+      - path: StatusGalacticWidget
+    info:
+      path: StatusGalacticWidget/Info.plist
+      properties:
+        CFBundleDisplayName: Status Galactic
+        CFBundleShortVersionString: "0.1.0"
+        CFBundleVersion: "1"
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.river.statusgalactic.widget
+        TARGETED_DEVICE_FAMILY: "1,2"
+        GENERATE_INFOPLIST_FILE: NO
+        SKIP_INSTALL: YES
 
   StatusGalacticTests:
     type: bundle.unit-test

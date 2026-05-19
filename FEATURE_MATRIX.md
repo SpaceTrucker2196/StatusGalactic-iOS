@@ -56,7 +56,7 @@ Cross-platform parity tracking. Backend is the single source of truth; clients c
 | Discord webhook | ✅ | ❌ | ⏳ | Backend-side only |
 | Local notifications | ❌ | ✅ | ⏳ | UNUserNotificationCenter / NotificationCompat; 14-day schedule, golden hour + astro dusk |
 | Push notifications | ⏳ | ⏳ | ⏳ | APNs / FCM, requires backend hook |
-| Widget / glance | ❌ | ⏳ | ⏳ | WidgetKit / Glance |
+| Widget / glance | ❌ | ✅ | ⏳ | WidgetKit (small + medium) / Glance |
 
 ## Conventions
 

@@ -83,8 +83,15 @@ Phases follow the CareTime convention: iOS ships first, Android mirrors. Backend
 ## Phase D: Cross-platform / extras
 
 ### M14: Widget (small + medium)
-**Goal:** Home-screen widget showing current brief headline (location, weather, sun status).
-**Status:** ⏳
+**Goal:** Home-screen widget showing current brief headline (location, weather, sun events, Kp).
+**Deliverables:**
+- New extension target `StatusGalacticWidget` (XcodeGen `app-extension`)
+- `BriefWidget` (StaticConfiguration), `BriefWidgetProvider` (30-min refresh policy), `BriefWidgetView` (small + medium)
+- Shared sources: `Models/Brief.swift` + `Services/BriefAPIClient.swift` compiled into both the app and the widget
+- Small: location, current temp, current condition, next sun event with relative time
+- Medium: + sunrise / sunset / next golden hour + moon phase + Kp index
+**Known limit:** widget uses hardcoded fallback URL and location (`WidgetConfig`) until App Groups are wired up; requires a DEVELOPMENT_TEAM to do that.
+**Status:** ✅
 
 ### M15: watchOS companion
 **Goal:** Quick-glance complication and watch face showing twilight phase + Kp + temp.
