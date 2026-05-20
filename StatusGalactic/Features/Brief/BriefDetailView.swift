@@ -64,6 +64,23 @@ struct BriefDetailView: View {
                     }
                 }
             }
+            if let apod = brief.apod {
+                Section("Astronomy Picture of the Day") {
+                    APODCard(apod: apod)
+                        .padding(.vertical, 4)
+                }
+            }
+            if let mars = brief.mars {
+                Section {
+                    MarsWeatherCard(mars: mars)
+                        .padding(.vertical, 4)
+                } header: {
+                    Text("Mars Weather")
+                } footer: {
+                    Text("Curiosity REMS via MAAS2 (community proxy).")
+                        .font(.firaCode(.caption2))
+                }
+            }
             if !brief.errors.isEmpty {
                 Section {
                     ForEach(brief.errors.sorted(by: { $0.key < $1.key }), id: \.key) { key, msg in

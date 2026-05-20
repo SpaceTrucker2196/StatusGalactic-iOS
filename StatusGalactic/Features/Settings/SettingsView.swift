@@ -23,6 +23,15 @@ struct SettingsView: View {
                         .foregroundStyle(.secondary)
                 }
 
+                Section("NASA") {
+                    SecureField("api.nasa.gov key (optional)", text: $config.nasaAPIKey)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                    Text("Used for APOD. DEMO_KEY works for a few requests per hour. Get a free key at api.nasa.gov.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
                 Section("Marine zone (default)") {
                     TextField("e.g. GMZ033", text: $config.defaultMarineZone)
                         .textInputAutocapitalization(.characters)

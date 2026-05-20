@@ -8,6 +8,7 @@ import Foundation
 @Observable
 final class ClientConfig {
     static let aprsKeyKey = "io.river.statusgalactic.aprsAPIKey"
+    static let nasaKeyKey = "io.river.statusgalactic.nasaAPIKey"
     static let marineZoneKey = "io.river.statusgalactic.defaultMarineZone"
     static let userAgentKey = "io.river.statusgalactic.userAgent"
 
@@ -16,6 +17,10 @@ final class ClientConfig {
 
     var aprsAPIKey: String {
         didSet { UserDefaults.standard.set(aprsAPIKey, forKey: Self.aprsKeyKey) }
+    }
+
+    var nasaAPIKey: String {
+        didSet { UserDefaults.standard.set(nasaAPIKey, forKey: Self.nasaKeyKey) }
     }
 
     var defaultMarineZone: String {
@@ -29,6 +34,7 @@ final class ClientConfig {
     init() {
         let defaults = UserDefaults.standard
         self.aprsAPIKey = defaults.string(forKey: Self.aprsKeyKey) ?? ""
+        self.nasaAPIKey = defaults.string(forKey: Self.nasaKeyKey) ?? ""
         self.defaultMarineZone = defaults.string(forKey: Self.marineZoneKey) ?? ""
         self.userAgent = defaults.string(forKey: Self.userAgentKey) ?? Self.defaultUserAgent
     }

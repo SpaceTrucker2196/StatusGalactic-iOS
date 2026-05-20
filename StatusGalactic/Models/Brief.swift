@@ -15,12 +15,48 @@ struct Brief: Codable {
     let moon: Moon?
     let planets: [Planet]
     let launches: [Launch]
+    let apod: APOD?
+    let mars: MarsWeather?
     let errors: [String: String]
 
     enum CodingKeys: String, CodingKey {
         case when, lat, lng, timezone
         case locationName = "location_name"
-        case earth, marine, space, sun, moon, planets, launches, errors
+        case earth, marine, space, sun, moon, planets, launches, apod, mars, errors
+    }
+
+    init(
+        when: Date,
+        lat: Double,
+        lng: Double,
+        timezone: String,
+        locationName: String?,
+        earth: EarthWeather?,
+        marine: MarineWeather?,
+        space: SpaceWeather?,
+        sun: SolarEvents?,
+        moon: Moon?,
+        planets: [Planet],
+        launches: [Launch],
+        apod: APOD? = nil,
+        mars: MarsWeather? = nil,
+        errors: [String: String]
+    ) {
+        self.when = when
+        self.lat = lat
+        self.lng = lng
+        self.timezone = timezone
+        self.locationName = locationName
+        self.earth = earth
+        self.marine = marine
+        self.space = space
+        self.sun = sun
+        self.moon = moon
+        self.planets = planets
+        self.launches = launches
+        self.apod = apod
+        self.mars = mars
+        self.errors = errors
     }
 }
 
@@ -148,4 +184,45 @@ struct Launch: Codable, Identifiable {
         case whenUtc = "when_utc"
         case pad, provider, status
     }
+}
+
+// MARK: - Cosmos (APOD + Mars weather)
+
+struct APOD: Codable, Hashable {
+    let date: String
+    let title: String
+    let explanation: String
+    let url: String
+    let hdurl: String?
+    let mediaType: String
+    let thumbnailUrl: String?
+    let copyright: String?
+
+    enum CodingKeys: String, CodingKey {
+        case date, title, explanation, url, hdurl, copyright
+        case mediaType = "media_type"
+        case thumbnailUrl = "thumbnail_url"
+    }
+
+    var displayImageURL: URL? {
+        if mediaType == "image" {
+            return URL(string: hdurl ?? url)
+        }
+        if let thumb = thumbnailUrl, let u = URL(string: thumb) {
+            return u
+        }
+        return nil
+    }
+}
+
+struct MarsWeather: Codable, Hashable {
+    let sol: Int
+    let season: String?
+    let terrestrialDate: String?
+    let minTempC: Double?
+    let maxTempC: Double?
+    let pressurePa: Double?
+    let atmoOpacity: String?
+    let sunrise: String?
+    let sunset: String?
 }

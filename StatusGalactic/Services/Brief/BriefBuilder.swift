@@ -27,10 +27,18 @@ struct BriefBuilder {
         let swpc = SWPCClient(session: session, userAgent: config.userAgent)
         let launches = LaunchesClient(session: session, userAgent: config.userAgent)
         let marine = MarineClient(session: session, userAgent: config.userAgent)
+        let apodClient = APODClient(
+            session: session,
+            userAgent: config.userAgent,
+            apiKey: config.nasaAPIKey
+        )
+        let marsClient = MarsWeatherClient(session: session, userAgent: config.userAgent)
 
         async let earthTask: EarthWeather? = try? nws.fetchEarthWeather(lat: lat, lng: lng)
         async let spaceTask: SpaceWeather? = try? swpc.fetchSpaceWeather()
         async let launchTask: [Launch] = (try? await launches.fetchUpcomingLaunches()) ?? []
+        async let apodTask: APOD? = try? apodClient.fetchToday()
+        async let marsTask: MarsWeather? = try? marsClient.fetchLatest()
 
         var marineResult: MarineWeather?
         var errors: [String: String] = [:]
@@ -50,6 +58,10 @@ struct BriefBuilder {
         if space == nil { errors["swpc"] = "Space weather unavailable" }
 
         let launchList = await launchTask
+        let apod = await apodTask
+        let mars = await marsTask
+        if apod == nil { errors["apod"] = "APOD unavailable (NASA API)" }
+        if mars == nil { errors["mars"] = "Mars weather unavailable (MAAS2)" }
 
         let sun = SunEvents.compute(
             when: when,
@@ -73,6 +85,8 @@ struct BriefBuilder {
             moon: moon,
             planets: planets,
             launches: launchList,
+            apod: apod,
+            mars: mars,
             errors: errors
         )
     }
