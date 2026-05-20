@@ -24,8 +24,12 @@ private struct ImageStrip: View {
     var tileHeight: CGFloat = 120
 
     var body: some View {
+        // LazyHStack only instantiates tiles as they scroll into view, so
+        // AsyncImage requests for offscreen tiles don't fire on first render.
+        // Without this, opening the brief used to kick off ~16 simultaneous
+        // HTTPS fetches across the three carousels combined.
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(alignment: .top, spacing: 12) {
+            LazyHStack(alignment: .top, spacing: 12) {
                 ForEach(images) { image in
                     SunImageTile(image: image, width: tileWidth, height: tileHeight)
                 }
