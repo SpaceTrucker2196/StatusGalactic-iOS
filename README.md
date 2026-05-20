@@ -1,5 +1,11 @@
 # Status Galactic for iOS
 
+<p align="center">
+  <img src="StatusGalactic/Resources/Assets.xcassets/AppIcon.appiconset/icon-1024.png" width="180" alt="Status Galactic icon" />
+</p>
+
+<p align="center"><em>The sky and the road, briefed.</em></p>
+
 Native iOS personal almanac. Earth weather, marine weather, space weather, sunrise/sunset and twilight, moon phase, planetary positions, and upcoming launches — for wherever you are right now.
 
 **As of v0.2 the app runs entirely on-device.** Every data source is fetched directly from the public origin (NWS, NOAA SWPC, NWS marine bulletins, aprs.fi, The Space Devs). All astronomy math (sun events, moon phase, planet positions) is computed locally. No backend service required.

@@ -29,3 +29,6 @@ Secrets.plist
 .vscode/
 .idea/
 *.swp
+
+# Generated marketing screenshots (re-rendered from simulator runs)
+marketing/screenshots/
