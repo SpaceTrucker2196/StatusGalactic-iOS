@@ -46,9 +46,34 @@ final class APRSMessageStore {
         return next
     }
 
+    /// Group messages by conversation partner. Each thread is the list of
+    /// messages between `myCallsign` and exactly one other callsign, ordered
+    /// newest-first. Threads are themselves ordered by their most recent
+    /// message.
+    func threads(myCallsign: String) -> [APRSThread] {
+        let me = myCallsign.uppercased()
+        let grouped = Dictionary(grouping: messages) { msg -> String in
+            msg.from.uppercased() == me ? msg.to.uppercased() : msg.from.uppercased()
+        }
+        return grouped.map { partner, msgs in
+            APRSThread(partner: partner, messages: msgs.sorted { $0.sentAt > $1.sentAt })
+        }
+        .sorted { ($0.lastMessageAt ?? .distantPast) > ($1.lastMessageAt ?? .distantPast) }
+    }
+
     private func persist() {
         if let data = try? JSONEncoder().encode(messages) {
             defaults.set(data, forKey: Self.defaultsKey)
         }
     }
+}
+
+/// A conversation between `myCallsign` and one partner.
+struct APRSThread: Identifiable, Hashable {
+    var id: String { partner }
+    let partner: String
+    let messages: [APRSMessage]
+
+    var lastMessage: APRSMessage? { messages.first }
+    var lastMessageAt: Date? { lastMessage?.sentAt }
 }

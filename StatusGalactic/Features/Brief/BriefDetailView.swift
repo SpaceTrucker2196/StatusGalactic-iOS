@@ -64,6 +64,17 @@ struct BriefDetailView: View {
                     }
                 }
             }
+            if let iss = brief.iss {
+                Section {
+                    ISSCard(iss: iss, observerLat: brief.lat, observerLng: brief.lng)
+                        .padding(.vertical, 4)
+                } header: {
+                    Text("International Space Station")
+                } footer: {
+                    Text("Live position from wheretheiss.at.")
+                        .font(.firaCode(.caption2))
+                }
+            }
             if let apod = brief.apod {
                 Section("Astronomy Picture of the Day") {
                     APODCard(apod: apod)

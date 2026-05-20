@@ -35,7 +35,10 @@ struct APRSView: View {
                 .task { await refresh() }
                 .refreshable { await refresh() }
                 .sheet(isPresented: $showCompose) {
-                    APRSComposeView()
+                    APRSComposeView(prefilledRecipient: nil)
+                }
+                .navigationDestination(for: APRSThread.self) { thread in
+                    APRSThreadView(thread: thread)
                 }
         }
     }
@@ -50,28 +53,10 @@ struct APRSView: View {
             }
             .foregroundStyle(GalacticPalette.neonCyan)
         } else {
+            let threads = store.threads(myCallsign: config.myCallsign)
             List {
                 Section {
-                    HStack(spacing: 10) {
-                        Image(systemName: "antenna.radiowaves.left.and.right")
-                            .font(.title)
-                            .foregroundStyle(GalacticPalette.neonMagenta)
-                            .neonGlow(GalacticPalette.neonMagenta, intensity: 6)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(config.myCallsign.uppercased())
-                                .font(.firaCode(.title3, weight: .bold))
-                                .foregroundStyle(GalacticPalette.neonCyan)
-                                .neonGlow(GalacticPalette.neonCyan, intensity: 6)
-                            Text("Passcode \(APRSMessaging.passcode(for: config.myCallsign))")
-                                .font(.firaCode(.caption2))
-                                .foregroundStyle(GalacticPalette.peach)
-                        }
-                        Spacer()
-                        if isRefreshing {
-                            ProgressView().tint(GalacticPalette.neonCyan)
-                        }
-                    }
-                    .padding(.vertical, 4)
+                    StationHeader(callsign: config.myCallsign, isRefreshing: isRefreshing)
                 } header: {
                     Text("Your station")
                 }
@@ -86,17 +71,19 @@ struct APRSView: View {
                     .listRowBackground(Color.clear)
                 }
 
-                if store.messages.isEmpty {
+                if threads.isEmpty {
                     Section {
-                        Text("No messages yet. Pull to refresh.")
+                        Text("No conversations yet. Pull to refresh.")
                             .font(.firaCode(.subheadline))
                             .foregroundStyle(GalacticPalette.peach.opacity(0.8))
                     }
                     .listRowBackground(Color.clear)
                 } else {
-                    Section("Messages") {
-                        ForEach(store.messages) { msg in
-                            APRSMessageRow(message: msg)
+                    Section("Conversations") {
+                        ForEach(threads) { thread in
+                            NavigationLink(value: thread) {
+                                APRSThreadRow(thread: thread, myCallsign: config.myCallsign)
+                            }
                         }
                     }
                     .listRowBackground(GalacticPalette.deepPurple.opacity(0.25))
@@ -129,33 +116,64 @@ struct APRSView: View {
     }
 }
 
-private struct APRSMessageRow: View {
-    let message: APRSMessage
+private struct StationHeader: View {
+    let callsign: String
+    let isRefreshing: Bool
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "antenna.radiowaves.left.and.right")
+                .font(.title)
+                .foregroundStyle(GalacticPalette.neonMagenta)
+                .neonGlow(GalacticPalette.neonMagenta, intensity: 6)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(callsign.uppercased())
+                    .font(.firaCode(.title3, weight: .bold))
+                    .foregroundStyle(GalacticPalette.neonCyan)
+                    .neonGlow(GalacticPalette.neonCyan, intensity: 6)
+                Text("Passcode \(APRSMessaging.passcode(for: callsign))")
+                    .font(.firaCode(.caption2))
+                    .foregroundStyle(GalacticPalette.peach)
+            }
+            Spacer()
+            if isRefreshing {
+                ProgressView().tint(GalacticPalette.neonCyan)
+            }
+        }
+        .padding(.vertical, 4)
+    }
+}
+
+private struct APRSThreadRow: View {
+    let thread: APRSThread
+    let myCallsign: String
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 6) {
-                Image(systemName: message.direction == .incoming
-                      ? "arrow.down.left.circle.fill"
-                      : "arrow.up.right.circle.fill")
-                    .foregroundStyle(message.direction == .incoming
-                                     ? GalacticPalette.neonCyan
-                                     : GalacticPalette.hotPink)
-                    .neonGlow(message.direction == .incoming
-                              ? GalacticPalette.neonCyan
-                              : GalacticPalette.hotPink, intensity: 4)
-                Text(message.direction == .incoming ? message.from : message.to)
+                Image(systemName: "person.crop.square.fill")
+                    .foregroundStyle(GalacticPalette.hotPink)
+                    .neonGlow(GalacticPalette.hotPink, intensity: 4)
+                Text(thread.partner)
                     .font(.firaCode(.headline, weight: .semibold))
                     .foregroundStyle(GalacticPalette.peach)
                 Spacer()
-                Text(message.sentAt, style: .relative)
-                    .font(.firaCode(.caption2))
-                    .foregroundStyle(.secondary)
+                if let last = thread.lastMessageAt {
+                    Text(last, style: .relative)
+                        .font(.firaCode(.caption2))
+                        .foregroundStyle(.secondary)
+                }
             }
-            Text(message.text)
-                .font(.firaCode(.body))
-                .foregroundStyle(.primary)
+            if let last = thread.lastMessage {
+                Text(last.text)
+                    .font(.firaCode(.caption))
+                    .foregroundStyle(.primary)
+                    .lineLimit(2)
+            }
+            Text("\(thread.messages.count) message\(thread.messages.count == 1 ? "" : "s")")
+                .font(.firaCode(.caption2))
+                .foregroundStyle(GalacticPalette.neonCyan.opacity(0.7))
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 2)
     }
 }

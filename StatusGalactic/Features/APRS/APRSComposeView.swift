@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct APRSComposeView: View {
+    let prefilledRecipient: String?
+
     @Environment(ClientConfig.self) private var config
     @Environment(APRSMessageStore.self) private var store
     @Environment(\.dismiss) private var dismiss
@@ -9,6 +11,11 @@ struct APRSComposeView: View {
     @State private var text: String = ""
     @State private var isSending = false
     @State private var error: String?
+
+    init(prefilledRecipient: String? = nil) {
+        self.prefilledRecipient = prefilledRecipient
+        self._recipient = State(initialValue: prefilledRecipient ?? "")
+    }
 
     private let charLimit = 67
 

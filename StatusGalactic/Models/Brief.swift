@@ -17,12 +17,13 @@ struct Brief: Codable {
     let launches: [Launch]
     let apod: APOD?
     let mars: MarsWeather?
+    let iss: ISSPosition?
     let errors: [String: String]
 
     enum CodingKeys: String, CodingKey {
         case when, lat, lng, timezone
         case locationName = "location_name"
-        case earth, marine, space, sun, moon, planets, launches, apod, mars, errors
+        case earth, marine, space, sun, moon, planets, launches, apod, mars, iss, errors
     }
 
     init(
@@ -40,6 +41,7 @@ struct Brief: Codable {
         launches: [Launch],
         apod: APOD? = nil,
         mars: MarsWeather? = nil,
+        iss: ISSPosition? = nil,
         errors: [String: String]
     ) {
         self.when = when
@@ -56,6 +58,7 @@ struct Brief: Codable {
         self.launches = launches
         self.apod = apod
         self.mars = mars
+        self.iss = iss
         self.errors = errors
     }
 }
@@ -225,4 +228,14 @@ struct MarsWeather: Codable, Hashable {
     let atmoOpacity: String?
     let sunrise: String?
     let sunset: String?
+}
+
+struct ISSPosition: Codable, Hashable {
+    let latitude: Double
+    let longitude: Double
+    let altitudeKm: Double
+    let velocityKmh: Double
+    let visibility: String?
+    let footprintKm: Double?
+    let observedAt: Date
 }
