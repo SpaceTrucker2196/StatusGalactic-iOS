@@ -4,13 +4,13 @@ import Foundation
 /// refresh succeeds; the widget and watch complication read from it at
 /// timeline time.
 ///
-/// Requires the `group.io.river.statusgalactic` App Group entitlement on
+/// Requires the `group.com.spacetrucker.statusgalactic` App Group entitlement on
 /// every target. If the entitlement is missing at runtime (e.g. you haven't
 /// set DEVELOPMENT_TEAM yet), `UserDefaults(suiteName:)` returns nil and
 /// we fall back to `.standard`. The widget falls back further to the
 /// hardcoded `WidgetConfig` values in that case.
 enum SharedDefaults {
-    static let suiteName = "group.io.river.statusgalactic"
+    static let suiteName = "group.com.spacetrucker.statusgalactic"
 
     static let store: UserDefaults = {
         UserDefaults(suiteName: suiteName) ?? .standard
