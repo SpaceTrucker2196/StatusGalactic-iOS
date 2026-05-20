@@ -61,6 +61,7 @@ targets:
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         GENERATE_INFOPLIST_FILE: NO
+        CODE_SIGN_ENTITLEMENTS: StatusGalactic/StatusGalactic.entitlements
 
   StatusGalacticWidget:
     type: app-extension
@@ -86,6 +87,7 @@ targets:
         TARGETED_DEVICE_FAMILY: "1,2"
         GENERATE_INFOPLIST_FILE: NO
         SKIP_INSTALL: YES
+        CODE_SIGN_ENTITLEMENTS: StatusGalacticWidget/StatusGalacticWidget.entitlements
 
   StatusGalacticWatch:
     type: application
@@ -118,6 +120,7 @@ targets:
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         GENERATE_INFOPLIST_FILE: NO
+        CODE_SIGN_ENTITLEMENTS: StatusGalacticWatch/StatusGalacticWatch.entitlements
     dependencies:
       - target: StatusGalacticWatchComplications
 
@@ -145,6 +148,7 @@ targets:
         TARGETED_DEVICE_FAMILY: "4"
         GENERATE_INFOPLIST_FILE: NO
         SKIP_INSTALL: YES
+        CODE_SIGN_ENTITLEMENTS: StatusGalacticWatchComplications/StatusGalacticWatchComplications.entitlements
 
   StatusGalacticTests:
     type: bundle.unit-test

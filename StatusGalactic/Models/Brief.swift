@@ -20,13 +20,14 @@ struct Brief: Codable {
     let iss: ISSPosition?
     let repeaters: [Repeater]
     let tides: Tides?
+    let river: RiverGauge?
     let errors: [String: String]
 
     enum CodingKeys: String, CodingKey {
         case when, lat, lng, timezone
         case locationName = "location_name"
         case earth, marine, space, sun, moon, planets, launches, apod, mars, iss
-        case repeaters, tides, errors
+        case repeaters, tides, river, errors
     }
 
     init(
@@ -47,6 +48,7 @@ struct Brief: Codable {
         iss: ISSPosition? = nil,
         repeaters: [Repeater] = [],
         tides: Tides? = nil,
+        river: RiverGauge? = nil,
         errors: [String: String]
     ) {
         self.when = when
@@ -66,6 +68,7 @@ struct Brief: Codable {
         self.iss = iss
         self.repeaters = repeaters
         self.tides = tides
+        self.river = river
         self.errors = errors
     }
 }
@@ -305,4 +308,39 @@ struct Tides: Codable, Hashable {
     let stationName: String
     let distanceKm: Double
     let events: [TideEvent]
+}
+
+/// NOAA NWPS river gauge with current stage and flood thresholds.
+struct RiverGauge: Codable, Hashable {
+    let lid: String              // NWS Location ID, e.g. "LCRW3"
+    let name: String
+    let lat: Double
+    let lng: Double
+    let distanceKm: Double
+    let currentStageFt: Double?
+    let observedAt: Date?
+    let actionStageFt: Double?
+    let minorFloodStageFt: Double?
+    let moderateFloodStageFt: Double?
+    let majorFloodStageFt: Double?
+    let forecastPeakFt: Double?
+    let forecastPeakAt: Date?
+
+    var floodStatus: FloodStatus {
+        guard let stage = currentStageFt else { return .noData }
+        if let major = majorFloodStageFt,    stage >= major { return .major }
+        if let mod   = moderateFloodStageFt, stage >= mod   { return .moderate }
+        if let minor = minorFloodStageFt,    stage >= minor { return .minor }
+        if let act   = actionStageFt,        stage >= act   { return .action }
+        return .belowAction
+    }
+}
+
+enum FloodStatus: String, Codable, Hashable {
+    case noData
+    case belowAction
+    case action
+    case minor
+    case moderate
+    case major
 }

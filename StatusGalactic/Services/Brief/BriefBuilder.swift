@@ -36,14 +36,20 @@ struct BriefBuilder {
         let issClient = ISSClient(session: session, userAgent: config.userAgent)
         let repeaterClient = RepeaterBookClient(session: session, userAgent: config.userAgent)
         let tidesClient = TidesClient(session: session, userAgent: config.userAgent)
+        let riverClient = RiverGaugeClient(session: session, userAgent: config.userAgent)
 
-        async let earthTask: EarthWeather? = try? nws.fetchEarthWeather(lat: lat, lng: lng)
+        // 48-hour window: NWS periods are 12 hours each, so 4 covers today,
+        // tonight, tomorrow, and tomorrow night. We render the first one as
+        // the headline summary and keep the rest available in the model for
+        // future expansion.
+        async let earthTask: EarthWeather? = try? nws.fetchEarthWeather(lat: lat, lng: lng, periods: 4)
         async let spaceTask: SpaceWeather? = try? swpc.fetchSpaceWeather()
         async let launchTask: [Launch] = (try? await launches.fetchUpcomingLaunches()) ?? []
         async let apodTask: APOD? = try? apodClient.fetchToday()
         async let marsTask: MarsWeather? = try? marsClient.fetchLatest()
         async let issTask: ISSPosition? = try? issClient.fetchPosition()
         async let tidesTask: Tides? = try? tidesClient.fetchNearestTides(lat: lat, lng: lng)
+        async let riverTask: RiverGauge? = try? riverClient.fetchNearestGauge(lat: lat, lng: lng)
         let n2yoKey = config.n2yoAPIKey
         async let passesTask: [ISSPass] = n2yoKey.isEmpty
             ? []
@@ -83,6 +89,7 @@ struct BriefBuilder {
         var iss = await issTask
         let passes = await passesTask
         let tides = await tidesTask
+        let river = await riverTask
         if iss != nil {
             iss?.passes = passes
         }
@@ -117,6 +124,7 @@ struct BriefBuilder {
             iss: iss,
             repeaters: repeaters,
             tides: tides,
+            river: river,
             errors: errors
         )
     }

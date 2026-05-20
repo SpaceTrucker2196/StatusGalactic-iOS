@@ -13,7 +13,7 @@ struct BriefView: View {
     var body: some View {
         NavigationStack {
             content
-                .navigationTitle("Galactic Weather")
+                .navigationTitle("Galactic SITREP")
                 .sensoryFeedback(.success, trigger: loadCount)
                 .sensoryFeedback(.error, trigger: errorCount)
                 .toolbar {
@@ -145,6 +145,10 @@ struct BriefView: View {
         // Refresh local notification schedule from the freshest known location.
         if case .loaded(let brief, _) = vm.state {
             await notifications.reschedule(latitude: brief.lat, longitude: brief.lng)
+            // Share the resolved location with the widget + watch complications
+            // via the App Group suite (when entitled). Silently a no-op when
+            // the App Group isn't active.
+            SharedDefaults.writeLocation(lat: brief.lat, lng: brief.lng)
             loadCount &+= 1
         }
         if case .error = vm.state {

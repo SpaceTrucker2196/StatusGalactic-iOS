@@ -36,11 +36,20 @@ struct WatchComplicationProvider: TimelineProvider {
 
     private func loadEntry(now: Date) async -> WatchComplicationEntry {
         let config = ClientConfig()
-        config.userAgent = WatchComplicationConfig.userAgent
+        if let sharedUA = SharedDefaults.store.string(forKey: SharedDefaults.Keys.userAgent),
+           !sharedUA.isEmpty {
+            config.userAgent = sharedUA
+        } else {
+            config.userAgent = WatchComplicationConfig.userAgent
+        }
+        let coords = SharedDefaults.readLocation()
+            ?? (lat: WatchComplicationConfig.defaultLatitude,
+                lng: WatchComplicationConfig.defaultLongitude)
+
         let builder = BriefBuilder(config: config)
         let brief = await builder.build(
-            lat: WatchComplicationConfig.defaultLatitude,
-            lng: WatchComplicationConfig.defaultLongitude,
+            lat: coords.lat,
+            lng: coords.lng,
             marineZone: nil,
             timezone: TimeZone.current.identifier
         )

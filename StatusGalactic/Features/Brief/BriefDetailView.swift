@@ -10,11 +10,15 @@ struct BriefDetailView: View {
                 LocationHeader(brief: brief, fetchedAt: fetchedAt)
             }
             .listRowBackground(Color.clear)
-            if let earth = brief.earth, !earth.periods.isEmpty {
+            if let earth = brief.earth, let summary = earth.periods.first {
                 Section("Earth Weather") {
-                    ForEach(earth.periods) { period in
-                        WeatherPeriodRow(period: period)
-                    }
+                    WeatherSummaryView(period: summary)
+                }
+            }
+            if let river = brief.river {
+                Section("River Stage") {
+                    RiverGaugeCard(gauge: river)
+                        .padding(.vertical, 4)
                 }
             }
             if let marine = brief.marine, !marine.periods.isEmpty {

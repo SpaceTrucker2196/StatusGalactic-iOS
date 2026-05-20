@@ -36,11 +36,23 @@ struct BriefWidgetProvider: TimelineProvider {
 
     private func loadEntry(now: Date) async -> BriefWidgetEntry {
         let config = ClientConfig()
-        config.userAgent = WidgetConfig.userAgent
+        // Pull a real User-Agent from the shared store if the App Group is
+        // entitled and the main app has saved one; otherwise stay on the
+        // widget's hardcoded default.
+        if let sharedUA = SharedDefaults.store.string(forKey: SharedDefaults.Keys.userAgent),
+           !sharedUA.isEmpty {
+            config.userAgent = sharedUA
+        } else {
+            config.userAgent = WidgetConfig.userAgent
+        }
+        // Last known location from the most recent main-app brief, if any.
+        let coords = SharedDefaults.readLocation()
+            ?? (lat: WidgetConfig.defaultLatitude, lng: WidgetConfig.defaultLongitude)
+
         let builder = BriefBuilder(config: config)
         let brief = await builder.build(
-            lat: WidgetConfig.defaultLatitude,
-            lng: WidgetConfig.defaultLongitude,
+            lat: coords.lat,
+            lng: coords.lng,
             marineZone: nil,
             timezone: TimeZone.current.identifier
         )

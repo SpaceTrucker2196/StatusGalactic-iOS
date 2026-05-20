@@ -38,7 +38,10 @@ final class ClientConfig {
     }
 
     var userAgent: String {
-        didSet { UserDefaults.standard.set(userAgent, forKey: Self.userAgentKey) }
+        didSet {
+            UserDefaults.standard.set(userAgent, forKey: Self.userAgentKey)
+            SharedDefaults.store.set(userAgent, forKey: SharedDefaults.Keys.userAgent)
+        }
     }
 
     init() {
@@ -49,5 +52,11 @@ final class ClientConfig {
         self.myCallsign = defaults.string(forKey: Self.myCallsignKey) ?? ""
         self.defaultMarineZone = defaults.string(forKey: Self.marineZoneKey) ?? ""
         self.userAgent = defaults.string(forKey: Self.userAgentKey) ?? Self.defaultUserAgent
+
+        // Mirror to the shared app-group suite so the widget and watch
+        // complications can read the latest User-Agent without their own
+        // copy of ClientConfig logic.
+        SharedDefaults.store.set(userAgent, forKey: SharedDefaults.Keys.userAgent)
+        SharedDefaults.store.set(defaultMarineZone, forKey: SharedDefaults.Keys.marineZone)
     }
 }
