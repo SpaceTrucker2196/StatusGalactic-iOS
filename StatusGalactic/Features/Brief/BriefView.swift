@@ -7,11 +7,15 @@ struct BriefView: View {
     @Environment(NotificationManager.self) private var notifications
 
     @State private var vm = BriefViewModel()
+    @State private var loadCount: Int = 0
+    @State private var errorCount: Int = 0
 
     var body: some View {
         NavigationStack {
             content
                 .navigationTitle("Galactic Weather")
+                .sensoryFeedback(.success, trigger: loadCount)
+                .sensoryFeedback(.error, trigger: errorCount)
                 .toolbar {
                     ToolbarItem(placement: .topBarLeading) {
                         sourcePicker
@@ -36,13 +40,17 @@ struct BriefView: View {
     private var content: some View {
         switch vm.state {
         case .idle:
-            ContentUnavailableView(
-                "No brief yet",
-                systemImage: "globe.americas",
-                description: Text("Tap refresh to load.")
-            )
+            if needsLocationPermission {
+                locationPermissionEmptyState
+            } else {
+                ContentUnavailableView(
+                    "No brief yet",
+                    systemImage: "globe.americas",
+                    description: Text("Tap refresh to load.")
+                )
+            }
         case .loading:
-            ProgressView("Loading brief...")
+            ProgressView("Loading brief…")
         case .loaded(let brief, let fetchedAt):
             BriefDetailView(brief: brief, fetchedAt: fetchedAt)
         case .error(let message):
@@ -59,6 +67,39 @@ struct BriefView: View {
                 .padding(.bottom, 32)
             }
         }
+    }
+
+    private var needsLocationPermission: Bool {
+        location.lastLocation == nil
+            && (location.authorizationStatus == .notDetermined
+                || location.authorizationStatus == .denied
+                || location.authorizationStatus == .restricted)
+    }
+
+    private var locationPermissionEmptyState: some View {
+        VStack(spacing: 18) {
+            ContentUnavailableView {
+                Label("Location needed", systemImage: "location.slash")
+            } description: {
+                Text("Status Galactic uses your location to build a brief for where you are. You can also add a callsign instead.")
+            }
+            HStack {
+                if location.authorizationStatus == .notDetermined {
+                    Button("Allow Location") {
+                        location.requestPermissionIfNeeded()
+                    }
+                    .buttonStyle(.borderedProminent)
+                } else {
+                    Button("Open iOS Settings") {
+                        if let url = URL(string: UIApplication.openSettingsURLString) {
+                            UIApplication.shared.open(url)
+                        }
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
+            }
+        }
+        .padding(.bottom, 32)
     }
 
     private var sourcePicker: some View {
@@ -104,6 +145,10 @@ struct BriefView: View {
         // Refresh local notification schedule from the freshest known location.
         if case .loaded(let brief, _) = vm.state {
             await notifications.reschedule(latitude: brief.lat, longitude: brief.lng)
+            loadCount &+= 1
+        }
+        if case .error = vm.state {
+            errorCount &+= 1
         }
     }
 }

@@ -22,6 +22,39 @@ struct SunStrip: View {
             RoundedRectangle(cornerRadius: 6)
                 .stroke(.quaternary, lineWidth: 0.5)
         )
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(accessibilityDescription)
+    }
+
+    private var accessibilityDescription: String {
+        var parts: [String] = ["Sun day strip."]
+        let tz = TimeZone(identifier: sun.timezone) ?? .current
+        let f = DateFormatter()
+        f.timeZone = tz
+        f.timeStyle = .short
+        if let sr = sun.sunriseUtc { parts.append("Sunrise \(f.string(from: sr)).") }
+        if let ss = sun.sunsetUtc { parts.append("Sunset \(f.string(from: ss)).") }
+        parts.append("Currently \(currentPhaseLabel).")
+        return parts.joined(separator: " ")
+    }
+
+    private var currentPhaseLabel: String {
+        if let sr = sun.sunriseUtc, let ss = sun.sunsetUtc, now >= sr && now < ss {
+            return "daylight"
+        }
+        if let civilDawn = sun.civilDawnUtc, let sr = sun.sunriseUtc, now >= civilDawn && now < sr {
+            return "civil twilight before sunrise"
+        }
+        if let ss = sun.sunsetUtc, let civilDusk = sun.civilDuskUtc, now >= ss && now < civilDusk {
+            return "civil twilight after sunset"
+        }
+        if let nauticalDawn = sun.nauticalDawnUtc, let civilDawn = sun.civilDawnUtc, now >= nauticalDawn && now < civilDawn {
+            return "nautical twilight before dawn"
+        }
+        if let civilDusk = sun.civilDuskUtc, let nauticalDusk = sun.nauticalDuskUtc, now >= civilDusk && now < nauticalDusk {
+            return "nautical twilight after dusk"
+        }
+        return "darkness"
     }
 
     // MARK: - Background bands

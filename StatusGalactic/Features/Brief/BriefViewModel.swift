@@ -22,13 +22,17 @@ final class BriefViewModel {
 
         if let call = selectedCallsign, !call.isEmpty {
             // Resolve callsign to coordinates via aprs.fi.
+            if config.aprsAPIKey.isEmpty {
+                state = .error("Set your aprs.fi API key in Settings to look up callsigns.")
+                return
+            }
             let aprs = APRSClient(userAgent: config.userAgent, apiKey: config.aprsAPIKey)
             do {
                 let fix = try await aprs.locate(call)
                 lat = fix.lat
                 lng = fix.lng
             } catch {
-                state = .error("APRS lookup failed: \(error.localizedDescription)")
+                state = .error("APRS lookup for \(call) failed: \(error.localizedDescription)")
                 return
             }
         } else if let loc = location {
