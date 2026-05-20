@@ -104,8 +104,12 @@ Phases follow the CareTime convention: iOS ships first, Android mirrors. **As of
 **Status:** ✅ (source); ⏳ (verified-on-device, blocked on local watchOS SDK install)
 
 ### M16: Apple Maps integration
-**Goal:** Tap a location in callsigns to open in Maps for navigation.
-**Status:** ⏳
+**Goal:** Open callsign last-known position or brief location in Apple Maps for navigation or pin display.
+**Deliverables:**
+- `Services/MapsLauncher.swift` — `MKMapItem.openInMaps` wrapper with two modes (directions / show pin)
+- `CallsignDetailView` gains "Get directions in Maps" and "Show in Maps" rows when a fix is loaded
+- `BriefDetailView` location header gains a small map button to open the brief's coordinate in Maps
+**Status:** ✅
 
 ---
 

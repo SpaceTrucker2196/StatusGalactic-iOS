@@ -57,6 +57,24 @@ struct CallsignDetailView: View {
                 } label: {
                     Label("Refresh position", systemImage: "arrow.clockwise")
                 }
+                if let fix {
+                    Button {
+                        MapsLauncher.openDirections(
+                            to: .init(latitude: fix.lat, longitude: fix.lng),
+                            name: callsign.call
+                        )
+                    } label: {
+                        Label("Get directions in Maps", systemImage: "map.fill")
+                    }
+                    Button {
+                        MapsLauncher.show(
+                            at: .init(latitude: fix.lat, longitude: fix.lng),
+                            name: callsign.call
+                        )
+                    } label: {
+                        Label("Show in Maps", systemImage: "mappin.and.ellipse")
+                    }
+                }
             }
 
             Section {

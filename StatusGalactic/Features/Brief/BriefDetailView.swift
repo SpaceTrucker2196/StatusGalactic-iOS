@@ -82,8 +82,23 @@ private struct LocationHeader: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(brief.locationName ?? "\(String(format: "%.4f", brief.lat)), \(String(format: "%.4f", brief.lng))")
-                .font(.title3.weight(.semibold))
+            HStack(alignment: .firstTextBaseline) {
+                Text(brief.locationName ?? "\(String(format: "%.4f", brief.lat)), \(String(format: "%.4f", brief.lng))")
+                    .font(.title3.weight(.semibold))
+                Spacer()
+                Button {
+                    MapsLauncher.show(
+                        at: .init(latitude: brief.lat, longitude: brief.lng),
+                        name: brief.locationName ?? "Brief location"
+                    )
+                } label: {
+                    Image(systemName: "map.fill")
+                        .font(.caption)
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.mini)
+                .accessibilityLabel("Open in Maps")
+            }
             Text("\(String(format: "%.4f", brief.lat)), \(String(format: "%.4f", brief.lng))")
                 .font(.caption)
                 .foregroundStyle(.secondary)
