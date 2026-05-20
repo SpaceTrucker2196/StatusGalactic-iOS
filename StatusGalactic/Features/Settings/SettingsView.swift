@@ -55,11 +55,13 @@ struct SettingsView: View {
                 }
 
                 Section("Marine zone (default)") {
-                    TextField("e.g. GMZ033", text: $config.defaultMarineZone)
-                        .textInputAutocapitalization(.characters)
-                        .autocorrectionDisabled()
-                    Text("Find your zone at weather.gov/marine. Leave blank if inland.")
-                        .font(.caption)
+                    NavigationLink {
+                        MarineZonePickerView(selection: $config.defaultMarineZone)
+                    } label: {
+                        marineZoneRow
+                    }
+                    Text("Sets the marine forecast for coastal & boating use. Leave as None if inland.")
+                        .font(.firaCode(.caption2))
                         .foregroundStyle(.secondary)
                 }
 
@@ -103,6 +105,40 @@ struct SettingsView: View {
                 }
             }
             .navigationTitle("Settings")
+        }
+    }
+
+    @ViewBuilder
+    private var marineZoneRow: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "water.waves")
+                .foregroundStyle(GalacticPalette.electricBlue)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Marine zone")
+                    .font(.firaCode(.subheadline))
+                marineZoneValue
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var marineZoneValue: some View {
+        if config.defaultMarineZone.isEmpty {
+            Text("None")
+                .font(.firaCode(.caption2))
+                .foregroundStyle(.secondary)
+        } else {
+            HStack(spacing: 6) {
+                Text(config.defaultMarineZone)
+                    .font(.firaCode(.caption, weight: .semibold))
+                    .foregroundStyle(GalacticPalette.neonCyan)
+                if let name = MarineZoneCatalog.name(forCode: config.defaultMarineZone) {
+                    Text(name)
+                        .font(.firaCode(.caption2))
+                        .foregroundStyle(GalacticPalette.peach.opacity(0.85))
+                        .lineLimit(1)
+                }
+            }
         }
     }
 
