@@ -27,6 +27,15 @@
 	</dict>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Status Galactic uses your location to build a Galactic Weather Report for where you are right now.</string>
+	<key>UIAppFonts</key>
+	<array>
+		<string>FiraCode-Regular.ttf</string>
+		<string>FiraCode-Medium.ttf</string>
+		<string>FiraCode-SemiBold.ttf</string>
+		<string>FiraCode-Bold.ttf</string>
+		<string>FiraCode-Light.ttf</string>
+		<string>FiraCode-Retina.ttf</string>
+	</array>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

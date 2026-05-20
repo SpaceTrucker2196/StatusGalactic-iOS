@@ -41,6 +41,13 @@ targets:
           - UIInterfaceOrientationPortrait
           - UIInterfaceOrientationLandscapeLeft
           - UIInterfaceOrientationLandscapeRight
+        UIAppFonts:
+          - FiraCode-Regular.ttf
+          - FiraCode-Medium.ttf
+          - FiraCode-SemiBold.ttf
+          - FiraCode-Bold.ttf
+          - FiraCode-Light.ttf
+          - FiraCode-Retina.ttf
     settings:
       base:
         TARGETED_DEVICE_FAMILY: "1,2"

@@ -98,9 +98,11 @@ struct SunStrip: View {
     private func nowIndicator(in size: CGSize) -> some View {
         let x = xPosition(of: now, width: size.width)
         return Rectangle()
-            .fill(.primary)
-            .frame(width: 1.5, height: size.height)
-            .offset(x: x - 0.75)
+            .fill(GalacticPalette.neonCyan)
+            .frame(width: 2, height: size.height)
+            .offset(x: x - 1)
+            .shadow(color: GalacticPalette.neonCyan.opacity(0.9), radius: 4)
+            .shadow(color: GalacticPalette.neonCyan.opacity(0.5), radius: 10)
     }
 
     // MARK: - Segment math
@@ -116,14 +118,14 @@ struct SunStrip: View {
         struct Boundary { let date: Date; let nextColor: Color }
 
         let phaseOrder: [(Date?, Color)] = [
-            (sun.astronomicalDawnUtc, .twilightAstronomical),
-            (sun.nauticalDawnUtc,     .twilightNautical),
-            (sun.civilDawnUtc,        .twilightCivil),
-            (sun.sunriseUtc,          .daylight),
-            (sun.sunsetUtc,           .twilightCivil),
-            (sun.civilDuskUtc,        .twilightNautical),
-            (sun.nauticalDuskUtc,     .twilightAstronomical),
-            (sun.astronomicalDuskUtc, .astronomicalDark),
+            (sun.astronomicalDawnUtc, GalacticPalette.astronomicalTwilight),
+            (sun.nauticalDawnUtc,     GalacticPalette.nauticalTwilight),
+            (sun.civilDawnUtc,        GalacticPalette.civilTwilight),
+            (sun.sunriseUtc,          GalacticPalette.daylight),
+            (sun.sunsetUtc,           GalacticPalette.civilTwilight),
+            (sun.civilDuskUtc,        GalacticPalette.nauticalTwilight),
+            (sun.nauticalDuskUtc,     GalacticPalette.astronomicalTwilight),
+            (sun.astronomicalDuskUtc, GalacticPalette.astronomicalDark),
         ]
 
         let dayStart = startOfLocalDay()
@@ -132,7 +134,7 @@ struct SunStrip: View {
 
         // Starting color is whatever phase contains "dayStart" — assume astronomical dark
         // unless we determine otherwise from event ordering.
-        var current = Color.astronomicalDark
+        var current = GalacticPalette.astronomicalDark
         var lastTime: Date = dayStart
         var segments: [Segment] = []
 
@@ -166,14 +168,6 @@ struct SunStrip: View {
         cal.timeZone = TimeZone(identifier: sun.timezone) ?? .current
         return cal.startOfDay(for: now)
     }
-}
-
-private extension Color {
-    static let astronomicalDark      = Color(red: 0.04, green: 0.04, blue: 0.10)
-    static let twilightAstronomical  = Color(red: 0.10, green: 0.10, blue: 0.30)
-    static let twilightNautical      = Color(red: 0.20, green: 0.30, blue: 0.55)
-    static let twilightCivil         = Color(red: 0.50, green: 0.65, blue: 0.85)
-    static let daylight              = Color(red: 1.00, green: 0.88, blue: 0.55)
 }
 
 #Preview {

@@ -1,0 +1,129 @@
+import SwiftUI
+
+/// Status Galactic vaporwave palette.
+///
+/// The design language: a neon artifact from a future world. Deep cosmic
+/// blacks and purples form the base. Magenta, hot pink, cyan, and electric
+/// blue carry the data. Status, temperature, and Kp all use the same set
+/// of named tokens so a redesign is one file and the Android port mirrors
+/// it verbatim.
+enum GalacticPalette {
+
+    // MARK: - Core neon
+
+    static let neonMagenta  = Color(red: 1.00, green: 0.16, blue: 0.78)
+    static let hotPink      = Color(red: 1.00, green: 0.40, blue: 0.80)
+    static let neonCyan     = Color(red: 0.00, green: 0.94, blue: 1.00)
+    static let electricBlue = Color(red: 0.30, green: 0.36, blue: 1.00)
+    static let neonPurple   = Color(red: 0.62, green: 0.31, blue: 0.87)
+    static let sunsetOrange = Color(red: 1.00, green: 0.42, blue: 0.21)
+    static let peach        = Color(red: 1.00, green: 0.73, blue: 0.59)
+    static let mint         = Color(red: 0.60, green: 0.97, blue: 0.78)
+
+    // MARK: - Cosmic ground
+
+    static let cosmicBlack  = Color(red: 0.04, green: 0.00, blue: 0.08)
+    static let deepPurple   = Color(red: 0.16, green: 0.04, blue: 0.30)
+    static let twilightPurple = Color(red: 0.24, green: 0.08, blue: 0.44)
+    static let dustyRose    = Color(red: 0.46, green: 0.18, blue: 0.55)
+
+    // MARK: - Status / activity scale
+
+    static let calm   = neonCyan
+    static let mild   = mint
+    static let active = peach
+    static let storm  = hotPink
+    static let severe = neonMagenta
+
+    // MARK: - Twilight bands (SunStrip)
+
+    static let astronomicalDark     = cosmicBlack
+    static let astronomicalTwilight = deepPurple
+    static let nauticalTwilight     = twilightPurple
+    static let civilTwilight        = dustyRose
+    static let daylight             = peach
+
+    // MARK: - Celestial bodies
+
+    static let sun  = sunsetOrange
+    static let moon = Color(red: 0.92, green: 0.85, blue: 1.00)
+    static let mars = Color(red: 1.00, green: 0.36, blue: 0.30)
+    static let jupiter = Color(red: 1.00, green: 0.80, blue: 0.55)
+    static let saturn  = Color(red: 0.95, green: 0.72, blue: 0.45)
+
+    // MARK: - Background gradients
+
+    static let cosmicSky = LinearGradient(
+        colors: [cosmicBlack, deepPurple, twilightPurple],
+        startPoint: .top,
+        endPoint: .bottom
+    )
+
+    static let neonHorizon = LinearGradient(
+        colors: [neonMagenta, sunsetOrange, peach],
+        startPoint: .leading,
+        endPoint: .trailing
+    )
+
+    // MARK: - Mappers
+
+    /// Kp activity color (0..9).
+    static func kp(_ value: Double) -> Color {
+        switch value {
+        case ..<3:  return calm
+        case ..<4:  return mild
+        case ..<5:  return active
+        case ..<6:  return storm
+        default:    return severe
+        }
+    }
+
+    /// Temperature color (°F). Cold cyan → hot magenta.
+    static func temperature(_ f: Int) -> Color {
+        switch f {
+        case ..<10:  return electricBlue
+        case ..<32:  return neonCyan
+        case ..<50:  return mint
+        case ..<70:  return peach
+        case ..<85:  return sunsetOrange
+        case ..<100: return hotPink
+        default:     return neonMagenta
+        }
+    }
+
+    /// Solar flux (10.7 cm). Higher = better HF.
+    static func solarFlux(_ value: Double) -> Color {
+        switch value {
+        case 150...:    return mild
+        case 100..<150: return active
+        case 80..<100:  return storm
+        default:        return severe
+        }
+    }
+
+    /// Moon illumination as a glow color (warmer at full, cooler at new).
+    static func moonIllumination(_ pct: Double) -> Color {
+        let clamped = max(0, min(1, pct / 100))
+        return moon.opacity(0.4 + 0.6 * clamped)
+    }
+}
+
+// MARK: - Neon glow modifier
+
+struct NeonGlow: ViewModifier {
+    let color: Color
+    let intensity: CGFloat
+
+    func body(content: Content) -> some View {
+        content
+            .shadow(color: color.opacity(0.85), radius: intensity * 0.6)
+            .shadow(color: color.opacity(0.45), radius: intensity * 1.8)
+    }
+}
+
+extension View {
+    /// Apply a soft neon glow in the given color.
+    func neonGlow(_ color: Color = GalacticPalette.neonCyan, intensity: CGFloat = 6) -> some View {
+        modifier(NeonGlow(color: color, intensity: intensity))
+    }
+}

@@ -9,6 +9,7 @@ struct BriefDetailView: View {
             Section {
                 LocationHeader(brief: brief, fetchedAt: fetchedAt)
             }
+            .listRowBackground(Color.clear)
             if let earth = brief.earth, !earth.periods.isEmpty {
                 Section("Earth Weather") {
                     ForEach(earth.periods) { period in
@@ -82,6 +83,8 @@ struct BriefDetailView: View {
             }
         }
         .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .background(GalacticPalette.cosmicSky.ignoresSafeArea())
     }
 }
 
@@ -93,7 +96,9 @@ private struct LocationHeader: View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(alignment: .firstTextBaseline) {
                 Text(brief.locationName ?? "\(String(format: "%.4f", brief.lat)), \(String(format: "%.4f", brief.lng))")
-                    .font(.title3.weight(.semibold))
+                    .font(.firaCode(.title3, weight: .bold))
+                    .foregroundStyle(GalacticPalette.neonCyan)
+                    .neonGlow(GalacticPalette.neonCyan, intensity: 8)
                 Spacer()
                 Button {
                     MapsLauncher.show(
@@ -109,16 +114,17 @@ private struct LocationHeader: View {
                 .accessibilityLabel("Open in Maps")
             }
             Text("\(String(format: "%.4f", brief.lat)), \(String(format: "%.4f", brief.lng))")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                .font(.firaCode(.caption))
+                .foregroundStyle(GalacticPalette.peach.opacity(0.7))
             HStack {
                 if brief.timezone != "UTC" {
                     Label(brief.timezone, systemImage: "clock")
-                        .font(.caption2)
+                        .font(.firaCode(.caption2))
+                        .foregroundStyle(GalacticPalette.hotPink.opacity(0.85))
                 }
                 Spacer()
                 Text("Updated \(fetchedAt, style: .relative) ago")
-                    .font(.caption2)
+                    .font(.firaCode(.caption2))
                     .foregroundStyle(.secondary)
             }
         }
@@ -132,22 +138,33 @@ private struct WeatherPeriodRow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            HStack {
+            HStack(spacing: 8) {
+                Image(systemName: GalacticSymbols.weatherSymbol(
+                    for: period.shortForecast,
+                    isDaytime: period.isDaytime
+                ))
+                .font(.title3)
+                .foregroundStyle(period.isDaytime
+                                 ? GalacticPalette.sun
+                                 : GalacticPalette.electricBlue)
+                .symbolRenderingMode(.hierarchical)
+
                 Text(period.name)
-                    .font(.subheadline.weight(.semibold))
+                    .font(.firaCode(.subheadline, weight: .semibold))
                 Spacer()
                 if let temp = period.temperature {
                     Text("\(temp)°\(period.temperatureUnit)")
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(period.isDaytime ? .orange : .blue)
+                        .font(.firaCode(.subheadline, weight: .semibold))
+                        .foregroundStyle(GalacticPalette.temperature(temp))
+                        .neonGlow(GalacticPalette.temperature(temp), intensity: 4)
                 }
             }
             Text(period.shortForecast)
-                .font(.subheadline)
+                .font(.firaCode(.subheadline))
                 .foregroundStyle(.primary)
             if let wind = period.wind, !isMarine {
                 Label(wind, systemImage: "wind")
-                    .font(.caption)
+                    .font(.firaCode(.caption))
                     .foregroundStyle(.secondary)
             }
         }
@@ -160,28 +177,52 @@ private struct SpaceWeatherView: View {
 
     var body: some View {
         if let flux = space.solarFlux {
-            LabeledContent("Solar flux (10.7 cm)") {
-                Text("\(Int(flux))").monospacedDigit()
+            LabeledContent {
+                Text("\(Int(flux))")
+                    .font(.firaCode(.body, weight: .semibold))
+                    .foregroundStyle(GalacticPalette.solarFlux(flux))
+                    .neonGlow(GalacticPalette.solarFlux(flux))
+            } label: {
+                Label("Solar flux", systemImage: GalacticSymbols.solarFlux)
+                    .font(.firaCode(.subheadline))
             }
         }
         if let kp = space.kpIndex {
-            LabeledContent("Kp index") {
+            LabeledContent {
                 HStack(spacing: 4) {
-                    Text(String(format: "%.1f", kp)).monospacedDigit()
+                    Text(String(format: "%.1f", kp))
+                        .font(.firaCode(.body, weight: .semibold))
+                        .foregroundStyle(GalacticPalette.kp(kp))
+                        .neonGlow(GalacticPalette.kp(kp))
                     if let status = space.kpStatus {
-                        Text("(\(status))").foregroundStyle(.secondary)
+                        Text("(\(status))")
+                            .font(.firaCode(.caption))
+                            .foregroundStyle(.secondary)
                     }
                 }
+            } label: {
+                Label("Kp index", systemImage: GalacticSymbols.kpIndex)
+                    .font(.firaCode(.subheadline))
             }
         }
         if let hf = space.hfSummary {
             LabeledContent("HF") {
-                Text(hf).multilineTextAlignment(.trailing).foregroundStyle(.secondary)
+                Text(hf)
+                    .font(.firaCode(.caption))
+                    .multilineTextAlignment(.trailing)
+                    .foregroundStyle(.secondary)
             }
         }
-        LabeledContent("Aurora") {
+        LabeledContent {
             Text(space.auroraLikely ? "Likely at mid-latitudes" : "Unlikely")
-                .foregroundStyle(space.auroraLikely ? .green : .secondary)
+                .font(.firaCode(.subheadline))
+                .foregroundStyle(space.auroraLikely
+                                 ? GalacticPalette.mint
+                                 : Color.secondary)
+                .neonGlow(GalacticPalette.mint, intensity: space.auroraLikely ? 5 : 0)
+        } label: {
+            Label("Aurora", systemImage: GalacticSymbols.aurora)
+                .font(.firaCode(.subheadline))
         }
     }
 }
@@ -191,39 +232,43 @@ private struct SunSectionView: View {
 
     var body: some View {
         if let sunrise = sun.sunriseUtc {
-            LabeledContent("Sunrise") { Text(local(sunrise)) }
+            sunRow("Sunrise", icon: GalacticSymbols.sunrise, time: sunrise, color: GalacticPalette.sun)
         }
         if let sunset = sun.sunsetUtc {
-            LabeledContent("Sunset") { Text(local(sunset)) }
+            sunRow("Sunset", icon: GalacticSymbols.sunset, time: sunset, color: GalacticPalette.sunsetOrange)
         }
         if let start = sun.goldenMorningStartUtc, let end = sun.goldenMorningEndUtc {
-            LabeledContent("Golden hour (morning)") {
-                Text("\(local(start)) – \(local(end))")
-            }
+            sunRange("Golden hour (morning)", icon: GalacticSymbols.goldenHour, start: start, end: end, color: GalacticPalette.peach)
         }
         if let start = sun.goldenEveningStartUtc, let end = sun.goldenEveningEndUtc {
-            LabeledContent("Golden hour (evening)") {
-                Text("\(local(start)) – \(local(end))")
-            }
+            sunRange("Golden hour (evening)", icon: GalacticSymbols.goldenHour, start: start, end: end, color: GalacticPalette.hotPink)
         }
-        TwilightTriple(
-            label: "Civil",
-            dawn: sun.civilDawnUtc,
-            dusk: sun.civilDuskUtc,
-            tz: sun.timezone
-        )
-        TwilightTriple(
-            label: "Nautical",
-            dawn: sun.nauticalDawnUtc,
-            dusk: sun.nauticalDuskUtc,
-            tz: sun.timezone
-        )
-        TwilightTriple(
-            label: "Astronomical",
-            dawn: sun.astronomicalDawnUtc,
-            dusk: sun.astronomicalDuskUtc,
-            tz: sun.timezone
-        )
+        TwilightTriple(label: "Civil", dawn: sun.civilDawnUtc, dusk: sun.civilDuskUtc, tz: sun.timezone, color: GalacticPalette.dustyRose)
+        TwilightTriple(label: "Nautical", dawn: sun.nauticalDawnUtc, dusk: sun.nauticalDuskUtc, tz: sun.timezone, color: GalacticPalette.electricBlue)
+        TwilightTriple(label: "Astronomical", dawn: sun.astronomicalDawnUtc, dusk: sun.astronomicalDuskUtc, tz: sun.timezone, color: GalacticPalette.neonPurple)
+    }
+
+    private func sunRow(_ label: String, icon: String, time: Date, color: Color) -> some View {
+        LabeledContent {
+            Text(local(time))
+                .font(.firaCode(.subheadline, weight: .semibold))
+                .foregroundStyle(color)
+                .neonGlow(color, intensity: 4)
+        } label: {
+            Label(label, systemImage: icon)
+                .font(.firaCode(.subheadline))
+        }
+    }
+
+    private func sunRange(_ label: String, icon: String, start: Date, end: Date, color: Color) -> some View {
+        LabeledContent {
+            Text("\(local(start)) – \(local(end))")
+                .font(.firaCode(.caption))
+                .foregroundStyle(color)
+        } label: {
+            Label(label, systemImage: icon)
+                .font(.firaCode(.subheadline))
+        }
     }
 
     private func local(_ date: Date) -> String {
@@ -239,11 +284,17 @@ private struct TwilightTriple: View {
     let dawn: Date?
     let dusk: Date?
     let tz: String
+    let color: Color
 
     var body: some View {
         if dawn != nil || dusk != nil {
-            LabeledContent("\(label) twilight") {
+            LabeledContent {
                 Text("\(fmt(dawn)) / \(fmt(dusk))")
+                    .font(.firaCode(.caption, weight: .medium))
+                    .foregroundStyle(color)
+            } label: {
+                Label("\(label) twilight", systemImage: GalacticSymbols.civilTwilight)
+                    .font(.firaCode(.subheadline))
             }
         }
     }
@@ -261,12 +312,30 @@ private struct MoonSectionView: View {
     let moon: Moon
 
     var body: some View {
-        LabeledContent("Phase") { Text(moon.phaseName) }
-        LabeledContent("Illumination") {
-            Text("\(Int(moon.illuminationPct.rounded()))%")
+        LabeledContent {
+            HStack(spacing: 6) {
+                Image(systemName: GalacticSymbols.moonPhaseSymbol(for: moon.phaseName))
+                    .foregroundStyle(GalacticPalette.moonIllumination(moon.illuminationPct))
+                    .neonGlow(GalacticPalette.moonIllumination(moon.illuminationPct), intensity: 5)
+                Text(moon.phaseName)
+                    .font(.firaCode(.subheadline, weight: .semibold))
+            }
+        } label: {
+            Text("Phase").font(.firaCode(.subheadline))
         }
-        LabeledContent("Phase angle") {
+        LabeledContent {
+            Text("\(Int(moon.illuminationPct.rounded()))%")
+                .font(.firaCode(.subheadline, weight: .semibold))
+                .foregroundStyle(GalacticPalette.moon)
+        } label: {
+            Text("Illumination").font(.firaCode(.subheadline))
+        }
+        LabeledContent {
             Text(String(format: "%.1f°", moon.phaseAngleDeg))
+                .font(.firaCode(.caption))
+                .foregroundStyle(.secondary)
+        } label: {
+            Text("Phase angle").font(.firaCode(.subheadline))
         }
     }
 }
@@ -275,12 +344,17 @@ private struct PlanetRow: View {
     let planet: Planet
 
     var body: some View {
-        HStack {
-            Text(planet.body).font(.subheadline.weight(.semibold))
+        HStack(spacing: 8) {
+            Image(systemName: GalacticSymbols.bodySymbol(for: planet.body))
+                .font(.caption)
+                .foregroundStyle(GalacticSymbols.bodyColor(for: planet.body))
+                .neonGlow(GalacticSymbols.bodyColor(for: planet.body), intensity: 3)
+            Text(planet.body)
+                .font(.firaCode(.subheadline, weight: .semibold))
             Spacer()
             Text(String(format: "%.2f° %@", planet.degree, planet.sign))
-                .font(.subheadline.monospacedDigit())
-                .foregroundStyle(.secondary)
+                .font(.firaCode(.subheadline))
+                .foregroundStyle(GalacticSymbols.bodyColor(for: planet.body).opacity(0.85))
         }
     }
 }
@@ -290,25 +364,38 @@ private struct LaunchRow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(launch.name)
-                .font(.subheadline.weight(.semibold))
-                .lineLimit(2)
+            HStack(spacing: 6) {
+                Image(systemName: "paperplane.circle.fill")
+                    .foregroundStyle(GalacticPalette.neonCyan)
+                    .neonGlow(GalacticPalette.neonCyan, intensity: 3)
+                Text(launch.name)
+                    .font(.firaCode(.subheadline, weight: .semibold))
+                    .lineLimit(2)
+            }
             HStack {
                 Text(launch.whenUtc, style: .date)
                 Text(launch.whenUtc, style: .time)
                 if let status = launch.status {
                     Spacer()
                     Text(status)
-                        .font(.caption2)
+                        .font(.firaCode(.caption2))
                         .padding(.horizontal, 6)
                         .padding(.vertical, 2)
-                        .background(Capsule().fill(Color.secondary.opacity(0.15)))
+                        .background(
+                            Capsule().fill(GalacticPalette.neonPurple.opacity(0.25))
+                        )
+                        .overlay(
+                            Capsule().stroke(GalacticPalette.neonPurple, lineWidth: 0.5)
+                        )
+                        .foregroundStyle(GalacticPalette.neonCyan)
                 }
             }
-            .font(.caption)
+            .font(.firaCode(.caption))
             .foregroundStyle(.secondary)
             if let provider = launch.provider {
-                Text(provider).font(.caption2).foregroundStyle(.secondary)
+                Text(provider)
+                    .font(.firaCode(.caption2))
+                    .foregroundStyle(.secondary)
             }
         }
     }
