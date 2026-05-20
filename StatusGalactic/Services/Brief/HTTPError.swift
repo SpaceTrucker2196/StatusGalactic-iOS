@@ -22,8 +22,16 @@ enum HTTPError: Error, LocalizedError {
 
 extension URLSession {
     /// Convenience: GET a URL, validate 2xx, return raw data with typed errors.
-    func getData(from url: URL, userAgent: String) async throws -> Data {
-        var request = URLRequest(url: url)
+    ///
+    /// The default 15-second timeout caps how long a single fetch can pin a
+    /// connection slot. DNS failures and other slow upstreams used to wait on
+    /// the system default (~60s), which let small problems feel like UI hangs.
+    func getData(
+        from url: URL,
+        userAgent: String,
+        timeout: TimeInterval = 15
+    ) async throws -> Data {
+        var request = URLRequest(url: url, timeoutInterval: timeout)
         request.setValue(userAgent, forHTTPHeaderField: "User-Agent")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
 

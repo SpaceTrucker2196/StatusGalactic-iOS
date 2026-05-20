@@ -127,20 +127,28 @@ struct APRSMessaging {
         "ARL001", "ARL002", "ARL003",
     ]
 
-    /// Fetch APRS bulletins from a set of common destinations. Each is a
-    /// separate aprs.fi call; failures are swallowed and the function returns
-    /// whatever did come back.
+    /// Fetch APRS bulletins from a set of common destinations in parallel.
+    /// Each is a separate aprs.fi call; failures are swallowed and the
+    /// function returns whatever did come back.
     func receiveBulletins(
         destinations: [String] = Self.commonBulletinDestinations,
         apiKey: String
     ) async throws -> [APRSMessage] {
-        var collected: [APRSMessage] = []
-        for dst in destinations {
-            if let msgs = try? await receive(forCallsign: dst, apiKey: apiKey) {
+        let session = self.session
+        let userAgent = self.userAgent
+        return await withTaskGroup(of: [APRSMessage].self) { group in
+            for dst in destinations {
+                group.addTask {
+                    let one = APRSMessaging(session: session, userAgent: userAgent)
+                    return (try? await one.receive(forCallsign: dst, apiKey: apiKey)) ?? []
+                }
+            }
+            var collected: [APRSMessage] = []
+            for await msgs in group {
                 collected.append(contentsOf: msgs)
             }
+            return collected
         }
-        return collected
     }
 
     /// Fetch messages addressed to `callsign` via the aprs.fi read API.

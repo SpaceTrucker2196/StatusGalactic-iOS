@@ -18,7 +18,9 @@ struct MarsWeatherClient {
     static let url = URL(string: "https://maas2.apollorion.com/")!
 
     func fetchLatest() async throws -> MarsWeather {
-        let data = try await session.getData(from: Self.url, userAgent: userAgent)
+        // Aggressively short timeout: this endpoint has gone offline more than
+        // once, and we'd rather show no Mars card than hang the brief.
+        let data = try await session.getData(from: Self.url, userAgent: userAgent, timeout: 5)
         do {
             return try JSONDecoder().decode(MAAS2Response.self, from: data).toMarsWeather()
         } catch {
