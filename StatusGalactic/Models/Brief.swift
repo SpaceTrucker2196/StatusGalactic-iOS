@@ -19,12 +19,14 @@ struct Brief: Codable {
     let mars: MarsWeather?
     let iss: ISSPosition?
     let repeaters: [Repeater]
+    let tides: Tides?
     let errors: [String: String]
 
     enum CodingKeys: String, CodingKey {
         case when, lat, lng, timezone
         case locationName = "location_name"
-        case earth, marine, space, sun, moon, planets, launches, apod, mars, iss, repeaters, errors
+        case earth, marine, space, sun, moon, planets, launches, apod, mars, iss
+        case repeaters, tides, errors
     }
 
     init(
@@ -44,6 +46,7 @@ struct Brief: Codable {
         mars: MarsWeather? = nil,
         iss: ISSPosition? = nil,
         repeaters: [Repeater] = [],
+        tides: Tides? = nil,
         errors: [String: String]
     ) {
         self.when = when
@@ -62,6 +65,7 @@ struct Brief: Codable {
         self.mars = mars
         self.iss = iss
         self.repeaters = repeaters
+        self.tides = tides
         self.errors = errors
     }
 }
@@ -282,4 +286,23 @@ struct Repeater: Codable, Identifiable, Hashable {
     let landmark: String?
     let useType: String?           // "OPEN", "CLOSED", "PRIVATE"
     let operationalStatus: String? // "On-air", "Off-air"
+}
+
+struct TideEvent: Codable, Identifiable, Hashable {
+    var id: Date { time }
+    let time: Date           // UTC
+    let heightFt: Double
+    let kind: Kind
+
+    enum Kind: String, Codable, Hashable {
+        case high = "H"
+        case low  = "L"
+    }
+}
+
+struct Tides: Codable, Hashable {
+    let stationId: String
+    let stationName: String
+    let distanceKm: Double
+    let events: [TideEvent]
 }

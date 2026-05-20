@@ -24,6 +24,12 @@ struct BriefDetailView: View {
                     }
                 }
             }
+            if let tides = brief.tides {
+                Section("Tides") {
+                    TidesCard(tides: tides, timezoneName: brief.timezone)
+                        .padding(.vertical, 4)
+                }
+            }
             if let space = brief.space {
                 Section("Space Weather") {
                     SpaceWeatherView(space: space)

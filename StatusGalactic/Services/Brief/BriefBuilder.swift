@@ -35,6 +35,7 @@ struct BriefBuilder {
         let marsClient = MarsWeatherClient(session: session, userAgent: config.userAgent)
         let issClient = ISSClient(session: session, userAgent: config.userAgent)
         let repeaterClient = RepeaterBookClient(session: session, userAgent: config.userAgent)
+        let tidesClient = TidesClient(session: session, userAgent: config.userAgent)
 
         async let earthTask: EarthWeather? = try? nws.fetchEarthWeather(lat: lat, lng: lng)
         async let spaceTask: SpaceWeather? = try? swpc.fetchSpaceWeather()
@@ -42,6 +43,7 @@ struct BriefBuilder {
         async let apodTask: APOD? = try? apodClient.fetchToday()
         async let marsTask: MarsWeather? = try? marsClient.fetchLatest()
         async let issTask: ISSPosition? = try? issClient.fetchPosition()
+        async let tidesTask: Tides? = try? tidesClient.fetchNearestTides(lat: lat, lng: lng)
         let n2yoKey = config.n2yoAPIKey
         async let passesTask: [ISSPass] = n2yoKey.isEmpty
             ? []
@@ -80,6 +82,7 @@ struct BriefBuilder {
         let mars = await marsTask
         var iss = await issTask
         let passes = await passesTask
+        let tides = await tidesTask
         if iss != nil {
             iss?.passes = passes
         }
@@ -113,6 +116,7 @@ struct BriefBuilder {
             mars: mars,
             iss: iss,
             repeaters: repeaters,
+            tides: tides,
             errors: errors
         )
     }
