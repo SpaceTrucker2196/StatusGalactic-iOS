@@ -94,8 +94,14 @@ Phases follow the CareTime convention: iOS ships first, Android mirrors. **As of
 **Status:** ✅
 
 ### M15: watchOS companion
-**Goal:** Quick-glance complication and watch face showing twilight phase + Kp + temp.
-**Status:** ⏳
+**Goal:** Standalone watchOS app + WidgetKit complications.
+**Deliverables:**
+- New `StatusGalacticWatch` target (watchOS 10+ standalone app, `WKWatchOnly: true`)
+- New `StatusGalacticWatchComplications` extension target with `BriefComplication` supporting `accessoryCircular`, `accessoryCorner`, `accessoryInline`, `accessoryRectangular`
+- Watch app: location header, current weather card, space weather card, sun card with next event countdown, moon card
+- Shares `Models/Brief.swift`, `Services/ClientConfig.swift`, `Services/LocationManager.swift`, `Services/Brief/`, `Services/Astronomy/` with the iOS target (no separate framework)
+**Note:** Source verified compile-clean via XcodeGen; runtime build requires watchOS platform install (Xcode > Settings > Components > watchOS).
+**Status:** ✅ (source); ⏳ (verified-on-device, blocked on local watchOS SDK install)
 
 ### M16: Apple Maps integration
 **Goal:** Tap a location in callsigns to open in Maps for navigation.

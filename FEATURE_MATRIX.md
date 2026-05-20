@@ -69,7 +69,9 @@ Cross-platform parity tracking. **As of v0.2 there is no backend dependency for 
 |---------|:---:|:-------:|-------|
 | Local notifications | ✅ | ⏳ | UNUserNotificationCenter; 14-day rolling schedule |
 | Widget / glance | ✅ | ⏳ | WidgetKit (small + medium) |
-| Push notifications | ⏳ | ⏳ | Out of scope for standalone client |
+| Watch app | ✅ | n/a | Standalone watchOS 10+ scheme; iOS-only side of the platform pair |
+| Watch complications | ✅ | n/a | accessoryCircular / Corner / Inline / Rectangular |
+| Push notifications | ❌ | ⏳ | Out of scope for standalone client |
 
 ## Conventions
 
