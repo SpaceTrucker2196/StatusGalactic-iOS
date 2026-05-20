@@ -145,3 +145,42 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: io.river.statusgalactic.tests
         GENERATE_INFOPLIST_FILE: YES
+
+# Explicit shared schemes. Order here = order in Xcode's scheme dropdown.
+# StatusGalactic (iOS app) is first so it's the default when the project
+# is opened fresh.
+schemes:
+  StatusGalactic:
+    build:
+      targets:
+        StatusGalactic: all
+        StatusGalacticWidget: all
+        StatusGalacticTests: [test]
+    test:
+      targets:
+        - StatusGalacticTests
+      gatherCoverageData: false
+    run:
+      config: Debug
+      executable: StatusGalactic
+    archive:
+      config: Release
+    profile:
+      config: Release
+    analyze:
+      config: Debug
+
+  StatusGalacticWatch:
+    build:
+      targets:
+        StatusGalacticWatch: all
+        StatusGalacticWatchComplications: all
+    run:
+      config: Debug
+      executable: StatusGalacticWatch
+    archive:
+      config: Release
+    profile:
+      config: Release
+    analyze:
+      config: Debug
