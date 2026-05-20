@@ -43,7 +43,12 @@ struct NWSClient {
             )
         }
 
-        return EarthWeather(locationName: locationName, periods: Array(mapped))
+        return EarthWeather(
+            locationName: locationName,
+            city: city,
+            state: state,
+            periods: Array(mapped)
+        )
     }
 
     private static let decoder: JSONDecoder = {

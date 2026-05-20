@@ -34,6 +34,7 @@ struct BriefBuilder {
         )
         let marsClient = MarsWeatherClient(session: session, userAgent: config.userAgent)
         let issClient = ISSClient(session: session, userAgent: config.userAgent)
+        let repeaterClient = RepeaterBookClient(session: session, userAgent: config.userAgent)
 
         async let earthTask: EarthWeather? = try? nws.fetchEarthWeather(lat: lat, lng: lng)
         async let spaceTask: SpaceWeather? = try? swpc.fetchSpaceWeather()
@@ -61,6 +62,15 @@ struct BriefBuilder {
 
         let earth = await earthTask
         if earth == nil { errors["nws"] = "Earth weather unavailable" }
+
+        // Repeaters need the city + state we just got from NWS.
+        var repeaters: [Repeater] = []
+        if let city = earth?.city, let state = earth?.state, !city.isEmpty, !state.isEmpty {
+            repeaters = (try? await repeaterClient.fetchRepeaters(
+                city: city,
+                stateAbbreviation: state
+            )) ?? []
+        }
 
         let space = await spaceTask
         if space == nil { errors["swpc"] = "Space weather unavailable" }
@@ -102,6 +112,7 @@ struct BriefBuilder {
             apod: apod,
             mars: mars,
             iss: iss,
+            repeaters: repeaters,
             errors: errors
         )
     }

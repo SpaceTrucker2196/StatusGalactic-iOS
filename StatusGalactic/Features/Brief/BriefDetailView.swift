@@ -110,6 +110,18 @@ struct BriefDetailView: View {
                         .font(.firaCode(.caption2))
                 }
             }
+            if !brief.repeaters.isEmpty {
+                Section {
+                    ForEach(brief.repeaters) { repeater in
+                        RepeaterRow(repeater: repeater)
+                    }
+                } header: {
+                    Text("Nearby Repeaters")
+                } footer: {
+                    Text("RepeaterBook — ham repeaters near \(brief.earth?.locationName ?? "your location").")
+                        .font(.firaCode(.caption2))
+                }
+            }
             if !brief.errors.isEmpty {
                 Section {
                     ForEach(brief.errors.sorted(by: { $0.key < $1.key }), id: \.key) { key, msg in

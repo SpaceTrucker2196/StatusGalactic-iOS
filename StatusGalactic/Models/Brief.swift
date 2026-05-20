@@ -18,12 +18,13 @@ struct Brief: Codable {
     let apod: APOD?
     let mars: MarsWeather?
     let iss: ISSPosition?
+    let repeaters: [Repeater]
     let errors: [String: String]
 
     enum CodingKeys: String, CodingKey {
         case when, lat, lng, timezone
         case locationName = "location_name"
-        case earth, marine, space, sun, moon, planets, launches, apod, mars, iss, errors
+        case earth, marine, space, sun, moon, planets, launches, apod, mars, iss, repeaters, errors
     }
 
     init(
@@ -42,6 +43,7 @@ struct Brief: Codable {
         apod: APOD? = nil,
         mars: MarsWeather? = nil,
         iss: ISSPosition? = nil,
+        repeaters: [Repeater] = [],
         errors: [String: String]
     ) {
         self.when = when
@@ -59,6 +61,7 @@ struct Brief: Codable {
         self.apod = apod
         self.mars = mars
         self.iss = iss
+        self.repeaters = repeaters
         self.errors = errors
     }
 }
@@ -86,11 +89,25 @@ struct WeatherPeriod: Codable, Identifiable {
 
 struct EarthWeather: Codable {
     let locationName: String?
+    let city: String?
+    let state: String?
     let periods: [WeatherPeriod]
 
     enum CodingKeys: String, CodingKey {
         case locationName = "location_name"
-        case periods
+        case city, state, periods
+    }
+
+    init(
+        locationName: String?,
+        city: String? = nil,
+        state: String? = nil,
+        periods: [WeatherPeriod]
+    ) {
+        self.locationName = locationName
+        self.city = city
+        self.state = state
+        self.periods = periods
     }
 }
 
@@ -251,4 +268,18 @@ struct ISSPass: Codable, Identifiable, Hashable {
     let maxElevation: Double
     let durationSeconds: Int
     let magnitude: Double?
+}
+
+struct Repeater: Codable, Identifiable, Hashable {
+    var id: String { "\(callsign)-\(frequencyMHz)" }
+    let callsign: String
+    let frequencyMHz: Double
+    let inputFreqMHz: Double?
+    let offsetMHz: Double?
+    let plTone: String?
+    let modes: [String]            // "FM", "DMR", "D-Star", "Fusion", "P25", "NXDN"
+    let nearestCity: String?
+    let landmark: String?
+    let useType: String?           // "OPEN", "CLOSED", "PRIVATE"
+    let operationalStatus: String? // "On-air", "Off-air"
 }
