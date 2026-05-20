@@ -35,6 +35,12 @@ targets:
           for where you are right now.
         NSAppTransportSecurity:
           NSAllowsLocalNetworking: true
+          NSExceptionDomains:
+            srvr.aprs-is.net:
+              NSExceptionAllowsInsecureHTTPLoads: true
+              NSIncludesSubdomains: false
+            tgftp.nws.noaa.gov:
+              NSExceptionAllowsInsecureHTTPLoads: false
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: false
         UISupportedInterfaceOrientations:

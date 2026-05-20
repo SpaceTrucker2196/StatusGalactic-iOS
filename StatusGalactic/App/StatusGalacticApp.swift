@@ -6,6 +6,7 @@ struct StatusGalacticApp: App {
     @State private var callsigns = CallsignStore()
     @State private var config = ClientConfig()
     @State private var notifications = NotificationManager()
+    @State private var aprsMessages = APRSMessageStore()
 
     var body: some Scene {
         WindowGroup {
@@ -14,6 +15,7 @@ struct StatusGalacticApp: App {
                 .environment(callsigns)
                 .environment(config)
                 .environment(notifications)
+                .environment(aprsMessages)
                 .task {
                     await notifications.refreshAuthorization()
                 }

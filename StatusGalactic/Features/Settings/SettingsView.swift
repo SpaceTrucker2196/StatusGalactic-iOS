@@ -15,11 +15,24 @@ struct SettingsView: View {
                 notificationsSection
 
                 Section("APRS") {
+                    TextField("Your callsign (e.g. W9FJC)", text: $config.myCallsign)
+                        .textInputAutocapitalization(.characters)
+                        .autocorrectionDisabled()
+                        .font(.firaCode(.body, weight: .semibold))
+                        .foregroundStyle(GalacticPalette.neonCyan)
+                    if !config.myCallsign.isEmpty {
+                        LabeledContent("APRS-IS passcode") {
+                            Text("\(APRSMessaging.passcode(for: config.myCallsign))")
+                                .font(.firaCode(.body))
+                                .foregroundStyle(GalacticPalette.hotPink)
+                                .monospacedDigit()
+                        }
+                    }
                     SecureField("aprs.fi API key", text: $config.aprsAPIKey)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
-                    Text("Required to look up callsigns. Register a key at aprs.fi.")
-                        .font(.caption)
+                    Text("Callsign is required for APRS send/receive. The aprs.fi key is required for lookups and receiving messages.")
+                        .font(.firaCode(.caption2))
                         .foregroundStyle(.secondary)
                 }
 

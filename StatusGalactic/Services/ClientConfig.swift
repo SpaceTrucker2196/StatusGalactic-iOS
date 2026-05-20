@@ -9,6 +9,7 @@ import Foundation
 final class ClientConfig {
     static let aprsKeyKey = "io.river.statusgalactic.aprsAPIKey"
     static let nasaKeyKey = "io.river.statusgalactic.nasaAPIKey"
+    static let myCallsignKey = "io.river.statusgalactic.myCallsign"
     static let marineZoneKey = "io.river.statusgalactic.defaultMarineZone"
     static let userAgentKey = "io.river.statusgalactic.userAgent"
 
@@ -23,6 +24,10 @@ final class ClientConfig {
         didSet { UserDefaults.standard.set(nasaAPIKey, forKey: Self.nasaKeyKey) }
     }
 
+    var myCallsign: String {
+        didSet { UserDefaults.standard.set(myCallsign, forKey: Self.myCallsignKey) }
+    }
+
     var defaultMarineZone: String {
         didSet { UserDefaults.standard.set(defaultMarineZone, forKey: Self.marineZoneKey) }
     }
@@ -35,6 +40,7 @@ final class ClientConfig {
         let defaults = UserDefaults.standard
         self.aprsAPIKey = defaults.string(forKey: Self.aprsKeyKey) ?? ""
         self.nasaAPIKey = defaults.string(forKey: Self.nasaKeyKey) ?? ""
+        self.myCallsign = defaults.string(forKey: Self.myCallsignKey) ?? ""
         self.defaultMarineZone = defaults.string(forKey: Self.marineZoneKey) ?? ""
         self.userAgent = defaults.string(forKey: Self.userAgentKey) ?? Self.defaultUserAgent
     }
