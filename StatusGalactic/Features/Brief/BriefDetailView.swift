@@ -38,6 +38,24 @@ struct BriefDetailView: View {
             } footer: {
                 Text("Latest frames from NASA SDO, NOAA SWPC GOES SUVI, and SOHO LASCO. Tap any image to zoom.")
             }
+            Section {
+                AuroraImageryView()
+                    .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
+                    .listRowBackground(Color.clear)
+            } header: {
+                Text("Aurora Forecast")
+            } footer: {
+                Text("NOAA SWPC OVATION 30-min forecast, both hemispheres.")
+            }
+            Section {
+                DeepSkyImageryView()
+                    .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
+                    .listRowBackground(Color.clear)
+            } header: {
+                Text("Deep Sky")
+            } footer: {
+                Text("Curated stills from Hubble + JWST press releases. New APOD picks may appear under Astronomy Picture of the Day below.")
+            }
             if let sun = brief.sun {
                 Section("Sun") {
                     SunStrip(sun: sun, now: fetchedAt)

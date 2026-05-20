@@ -14,6 +14,17 @@ struct APRSMessage: Codable, Identifiable, Hashable {
         case incoming
         case outgoing
     }
+
+    /// True when the message was addressed to an APRS bulletin / broadcast
+    /// destination (`BLN*`, `ARL*`, `NWS-*`, `ALL`) rather than a single
+    /// callsign.
+    var isBulletin: Bool {
+        let upper = to.uppercased()
+        return upper.hasPrefix("BLN")
+            || upper.hasPrefix("ARL")
+            || upper.hasPrefix("NWS-")
+            || upper == "ALL"
+    }
 }
 
 /// APRS-IS messaging:
@@ -107,6 +118,30 @@ struct APRSMessaging {
     }
 
     // MARK: - Receive
+
+    /// Common APRS bulletin destinations. BLN1-3 are catch-all bulletins,
+    /// ARL001-005 are ARRL bulletins (numbers change weekly), NWS-XXX is
+    /// the National Weather Service prefix.
+    static let commonBulletinDestinations = [
+        "BLN1", "BLN2", "BLN3",
+        "ARL001", "ARL002", "ARL003",
+    ]
+
+    /// Fetch APRS bulletins from a set of common destinations. Each is a
+    /// separate aprs.fi call; failures are swallowed and the function returns
+    /// whatever did come back.
+    func receiveBulletins(
+        destinations: [String] = Self.commonBulletinDestinations,
+        apiKey: String
+    ) async throws -> [APRSMessage] {
+        var collected: [APRSMessage] = []
+        for dst in destinations {
+            if let msgs = try? await receive(forCallsign: dst, apiKey: apiKey) {
+                collected.append(contentsOf: msgs)
+            }
+        }
+        return collected
+    }
 
     /// Fetch messages addressed to `callsign` via the aprs.fi read API.
     func receive(forCallsign callsign: String, apiKey: String) async throws -> [APRSMessage] {

@@ -71,14 +71,24 @@ struct APRSView: View {
                     .listRowBackground(Color.clear)
                 }
 
-                if threads.isEmpty {
+                let bulletins = store.bulletins
+                if !bulletins.isEmpty {
+                    Section("Bulletins") {
+                        ForEach(bulletins.prefix(10)) { msg in
+                            BulletinRow(message: msg)
+                        }
+                    }
+                    .listRowBackground(GalacticPalette.deepPurple.opacity(0.25))
+                }
+
+                if threads.isEmpty && bulletins.isEmpty {
                     Section {
-                        Text("No conversations yet. Pull to refresh.")
+                        Text("No conversations or bulletins yet. Pull to refresh.")
                             .font(.firaCode(.subheadline))
                             .foregroundStyle(GalacticPalette.peach.opacity(0.8))
                     }
                     .listRowBackground(Color.clear)
-                } else {
+                } else if !threads.isEmpty {
                     Section("Conversations") {
                         ForEach(threads) { thread in
                             NavigationLink(value: thread) {
@@ -102,17 +112,51 @@ struct APRSView: View {
         defer { isRefreshing = false }
         let client = APRSMessaging(userAgent: config.userAgent)
         do {
-            let incoming = try await client.receive(
+            async let incomingTask = client.receive(
                 forCallsign: config.myCallsign,
                 apiKey: config.aprsAPIKey
             )
+            async let bulletinsTask: [APRSMessage] = (try? await client.receiveBulletins(
+                apiKey: config.aprsAPIKey
+            )) ?? []
+            let incoming = try await incomingTask
+            let bulletins = await bulletinsTask
             store.upsert(many: incoming)
+            store.upsert(many: bulletins)
             error = nil
         } catch let http as HTTPError {
             error = http.errorDescription
         } catch {
             self.error = error.localizedDescription
         }
+    }
+}
+
+private struct BulletinRow: View {
+    let message: APRSMessage
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 6) {
+                Image(systemName: "megaphone.fill")
+                    .foregroundStyle(GalacticPalette.electricBlue)
+                    .neonGlow(GalacticPalette.electricBlue, intensity: 4)
+                Text(message.to)
+                    .font(.firaCode(.headline, weight: .semibold))
+                    .foregroundStyle(GalacticPalette.neonCyan)
+                Text("from \(message.from)")
+                    .font(.firaCode(.caption2))
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Text(message.sentAt, style: .relative)
+                    .font(.firaCode(.caption2))
+                    .foregroundStyle(.secondary)
+            }
+            Text(message.text)
+                .font(.firaCode(.caption))
+                .foregroundStyle(.primary)
+        }
+        .padding(.vertical, 2)
     }
 }
 

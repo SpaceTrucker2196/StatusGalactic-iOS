@@ -11,7 +11,22 @@ struct ISSCard: View {
             header
             mapPreview
             statsGrid
+            if !iss.passes.isEmpty {
+                Divider().overlay(GalacticPalette.neonCyan.opacity(0.4))
+                passesSection
+            }
             footer
+        }
+    }
+
+    private var passesSection: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Next visible passes")
+                .font(.firaCode(.caption, weight: .semibold))
+                .foregroundStyle(GalacticPalette.peach)
+            ForEach(iss.passes.prefix(3)) { pass in
+                PassRow(pass: pass)
+            }
         }
     }
 
@@ -99,5 +114,64 @@ struct ISSCard: View {
         Text("As of \(iss.observedAt, style: .relative) ago • wheretheiss.at")
             .font(.firaCode(.caption2))
             .foregroundStyle(.secondary)
+    }
+}
+
+private struct PassRow: View {
+    let pass: ISSPass
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: 6) {
+                Image(systemName: "arrow.up.right.circle.fill")
+                    .foregroundStyle(GalacticPalette.neonCyan)
+                    .neonGlow(GalacticPalette.neonCyan, intensity: 3)
+                Text(pass.startUTC, style: .date)
+                    .font(.firaCode(.caption, weight: .semibold))
+                Text(pass.startUTC, style: .time)
+                    .font(.firaCode(.caption))
+                Spacer()
+                if let mag = pass.magnitude {
+                    Text(String(format: "mag %.1f", mag))
+                        .font(.firaCode(.caption2))
+                        .foregroundStyle(brightnessColor(for: mag))
+                        .neonGlow(brightnessColor(for: mag), intensity: 3)
+                }
+            }
+            HStack(spacing: 6) {
+                if let s = pass.startAzCompass {
+                    Text(s)
+                        .font(.firaCode(.caption2, weight: .semibold))
+                        .foregroundStyle(GalacticPalette.hotPink)
+                }
+                Image(systemName: "arrow.right")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                Text("max \(Int(pass.maxElevation.rounded()))° elev")
+                    .font(.firaCode(.caption2))
+                    .foregroundStyle(GalacticPalette.peach)
+                Image(systemName: "arrow.right")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                if let e = pass.endAzCompass {
+                    Text(e)
+                        .font(.firaCode(.caption2, weight: .semibold))
+                        .foregroundStyle(GalacticPalette.hotPink)
+                }
+                Spacer()
+                Text("\(pass.durationSeconds / 60)m \(pass.durationSeconds % 60)s")
+                    .font(.firaCode(.caption2))
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private func brightnessColor(for mag: Double) -> Color {
+        switch mag {
+        case ..<(-3): return GalacticPalette.neonMagenta   // very bright
+        case ..<(-2): return GalacticPalette.hotPink
+        case ..<(-1): return GalacticPalette.active
+        default:      return GalacticPalette.peach
+        }
     }
 }

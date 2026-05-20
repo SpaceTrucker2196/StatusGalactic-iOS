@@ -86,3 +86,52 @@ enum SunImageCatalog {
         ),
     ]
 }
+
+/// NOAA SWPC OVATION aurora forecast. Two hemispheres, updated every
+/// ~30 minutes. Oval-projection PNGs over an Earth basemap.
+enum AuroraCatalog {
+    static let northern = SunImageSource(
+        url: URL(string: "https://services.swpc.noaa.gov/images/aurora-forecast-northern-hemisphere.jpg")!,
+        label: "North",
+        caption: "30-min aurora forecast, northern hemisphere oval projection.",
+        provider: "NOAA SWPC OVATION"
+    )
+    static let southern = SunImageSource(
+        url: URL(string: "https://services.swpc.noaa.gov/images/aurora-forecast-southern-hemisphere.jpg")!,
+        label: "South",
+        caption: "30-min aurora forecast, southern hemisphere oval projection.",
+        provider: "NOAA SWPC OVATION"
+    )
+    static let both: [SunImageSource] = [northern, southern]
+}
+
+/// Curated deep-sky images from STScI press releases (Hubble + JWST).
+/// Stable hot-link URLs published with the public-image releases.
+enum DeepSkyCatalog {
+    static let all: [SunImageSource] = [
+        .init(
+            url: URL(string: "https://stsci-opo.org/STScI-01EVT3VWZS3X74YN1KMBPS4PCM.png")!,
+            label: "Carina Nebula",
+            caption: "JWST NIRCam first-light cliffs of NGC 3324. 7,600 light-years away.",
+            provider: "NASA / ESA / CSA STScI"
+        ),
+        .init(
+            url: URL(string: "https://stsci-opo.org/STScI-01G7DDCYJ8HFBNTQVSXP3PT8VC.png")!,
+            label: "Stephan's Quintet",
+            caption: "JWST view of five galaxies, four in gravitational interaction.",
+            provider: "NASA / ESA / CSA STScI"
+        ),
+        .init(
+            url: URL(string: "https://stsci-opo.org/STScI-01G8H1NK4W8CJYHF2DDFD1W0DQ.png")!,
+            label: "Southern Ring Nebula",
+            caption: "JWST composite of NGC 3132, a dying star's shell.",
+            provider: "NASA / ESA / CSA STScI"
+        ),
+        .init(
+            url: URL(string: "https://stsci-opo.org/STScI-01EVSTBAFXAYAKGT7C13W7QSBS.png")!,
+            label: "Pillars of Creation",
+            caption: "Hubble's iconic Eagle Nebula stellar nursery (M16).",
+            provider: "NASA / ESA STScI"
+        ),
+    ]
+}

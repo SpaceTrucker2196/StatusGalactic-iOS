@@ -238,4 +238,17 @@ struct ISSPosition: Codable, Hashable {
     let visibility: String?
     let footprintKm: Double?
     let observedAt: Date
+    var passes: [ISSPass] = []
+}
+
+struct ISSPass: Codable, Identifiable, Hashable {
+    var id: Date { startUTC }
+    let startUTC: Date
+    let endUTC: Date
+    let maxUTC: Date
+    let startAzCompass: String?
+    let endAzCompass: String?
+    let maxElevation: Double
+    let durationSeconds: Int
+    let magnitude: Double?
 }

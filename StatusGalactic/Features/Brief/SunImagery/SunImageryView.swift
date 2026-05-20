@@ -2,10 +2,32 @@ import SwiftUI
 
 struct SunImageryView: View {
     var body: some View {
+        ImageStrip(images: SunImageCatalog.all)
+    }
+}
+
+struct AuroraImageryView: View {
+    var body: some View {
+        ImageStrip(images: AuroraCatalog.both, tileWidth: 180, tileHeight: 180)
+    }
+}
+
+struct DeepSkyImageryView: View {
+    var body: some View {
+        ImageStrip(images: DeepSkyCatalog.all, tileWidth: 160, tileHeight: 160)
+    }
+}
+
+private struct ImageStrip: View {
+    let images: [SunImageSource]
+    var tileWidth: CGFloat = 120
+    var tileHeight: CGFloat = 120
+
+    var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(alignment: .top, spacing: 12) {
-                ForEach(SunImageCatalog.all) { image in
-                    SunImageTile(image: image)
+                ForEach(images) { image in
+                    SunImageTile(image: image, width: tileWidth, height: tileHeight)
                 }
             }
             .padding(.horizontal, 16)
@@ -17,6 +39,8 @@ struct SunImageryView: View {
 
 private struct SunImageTile: View {
     let image: SunImageSource
+    let width: CGFloat
+    let height: CGFloat
     @State private var showDetail = false
 
     var body: some View {
@@ -35,34 +59,34 @@ private struct SunImageTile: View {
                             Color.black
                             Image(systemName: "sun.max.trianglebadge.exclamationmark")
                                 .font(.title2)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(GalacticPalette.neonMagenta.opacity(0.7))
                         }
                     case .empty:
                         ZStack {
                             Color.black
-                            ProgressView().tint(.white)
+                            ProgressView().tint(GalacticPalette.neonCyan)
                         }
                     @unknown default:
                         Color.black
                     }
                 }
-                .frame(width: 120, height: 120)
+                .frame(width: width, height: height)
                 .clipShape(RoundedRectangle(cornerRadius: 10))
                 .overlay(
                     RoundedRectangle(cornerRadius: 10)
-                        .stroke(.quaternary, lineWidth: 0.5)
+                        .stroke(GalacticPalette.neonPurple.opacity(0.5), lineWidth: 0.8)
                 )
 
                 Text(image.label)
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.primary)
+                    .font(.firaCode(.caption, weight: .semibold))
+                    .foregroundStyle(GalacticPalette.peach)
                     .lineLimit(1)
                 Text(image.provider)
-                    .font(.caption2)
+                    .font(.firaCode(.caption2))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
-            .frame(width: 120, alignment: .leading)
+            .frame(width: width, alignment: .leading)
         }
         .buttonStyle(.plain)
         .accessibilityLabel("\(image.label). \(image.caption). From \(image.provider).")

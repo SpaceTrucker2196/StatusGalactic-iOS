@@ -45,6 +45,15 @@ struct SettingsView: View {
                         .foregroundStyle(.secondary)
                 }
 
+                Section("N2YO") {
+                    SecureField("n2yo.com API key (optional)", text: $config.n2yoAPIKey)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                    Text("Adds upcoming visible ISS passes for your location. Free key at n2yo.com.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
                 Section("Marine zone (default)") {
                     TextField("e.g. GMZ033", text: $config.defaultMarineZone)
                         .textInputAutocapitalization(.characters)

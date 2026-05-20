@@ -41,6 +41,12 @@ struct BriefBuilder {
         async let apodTask: APOD? = try? apodClient.fetchToday()
         async let marsTask: MarsWeather? = try? marsClient.fetchLatest()
         async let issTask: ISSPosition? = try? issClient.fetchPosition()
+        let n2yoKey = config.n2yoAPIKey
+        async let passesTask: [ISSPass] = n2yoKey.isEmpty
+            ? []
+            : ((try? await issClient.fetchVisualPasses(
+                lat: lat, lng: lng, apiKey: n2yoKey
+              )) ?? [])
 
         var marineResult: MarineWeather?
         var errors: [String: String] = [:]
@@ -62,7 +68,11 @@ struct BriefBuilder {
         let launchList = await launchTask
         let apod = await apodTask
         let mars = await marsTask
-        let iss = await issTask
+        var iss = await issTask
+        let passes = await passesTask
+        if iss != nil {
+            iss?.passes = passes
+        }
         if apod == nil { errors["apod"] = "APOD unavailable (NASA API)" }
         if mars == nil { errors["mars"] = "Mars weather unavailable (MAAS2)" }
         if iss == nil { errors["iss"] = "ISS position unavailable" }
