@@ -5,6 +5,23 @@ struct APRSFix: Codable, Hashable {
     let lat: Double
     let lng: Double
     let comment: String?
+
+    // Optional rich fields populated from the aprs.fi `loc` response.
+    var stationClass: String?     // "a" APRS, "i" AIS, "w" web
+    var stationType: String?      // "l" station, "i" item, "o" object, "w" wx, "a" AIS
+    var showname: String?
+    var symbol: String?           // e.g. "/-" house, "/y" yagi, "/Y" yacht
+    var srccall: String?
+    var dstcall: String?
+    var path: String?
+    var phg: String?
+    var courseDeg: Double?
+    var speedKmh: Double?
+    var altitudeM: Double?
+    var lastTime: Date?
+    var firstTime: Date?
+    var statusMessage: String?
+    var statusLastTime: Date?
 }
 
 /// Direct aprs.fi read-API client.
@@ -58,7 +75,9 @@ struct APRSClient {
         }
         let name = (first["name"] as? String) ?? call.uppercased()
         let comment = first["comment"] as? String
-        return APRSFix(call: name, lat: lat, lng: lng, comment: comment)
+        var fix = APRSFix(call: name, lat: lat, lng: lng, comment: comment)
+        Self.attachRichFields(&fix, from: first)
+        return fix
     }
 
     /// Batch locate up to 20 callsigns per request. aprs.fi accepts comma-
@@ -102,9 +121,50 @@ struct APRSClient {
                     let name = entry["name"] as? String
                 else { continue }
                 let comment = entry["comment"] as? String
-                all.append(APRSFix(call: name.uppercased(), lat: lat, lng: lng, comment: comment))
+                var fix = APRSFix(call: name.uppercased(), lat: lat, lng: lng, comment: comment)
+                Self.attachRichFields(&fix, from: entry)
+                all.append(fix)
             }
         }
         return all
+    }
+
+    /// Pull every supported optional field off an aprs.fi loc entry into the
+    /// fix. Missing fields stay nil.
+    private static func attachRichFields(_ fix: inout APRSFix, from entry: [String: Any]) {
+        fix.stationClass = entry["class"] as? String
+        fix.stationType  = entry["type"] as? String
+        fix.showname     = entry["showname"] as? String
+        fix.symbol       = entry["symbol"] as? String
+        fix.srccall      = entry["srccall"] as? String
+        fix.dstcall      = entry["dstcall"] as? String
+        fix.path         = entry["path"] as? String
+        fix.phg          = entry["phg"] as? String
+
+        fix.courseDeg    = doubleField(entry["course"])
+        fix.speedKmh     = doubleField(entry["speed"])
+        fix.altitudeM    = doubleField(entry["altitude"])
+
+        fix.lastTime       = unixField(entry["lasttime"])
+        fix.firstTime      = unixField(entry["time"])
+        fix.statusLastTime = unixField(entry["status_lasttime"])
+        fix.statusMessage  = (entry["status"] as? String).flatMap { $0.isEmpty ? nil : $0 }
+    }
+
+    private static func doubleField(_ any: Any?) -> Double? {
+        if let d = any as? Double { return d }
+        if let i = any as? Int { return Double(i) }
+        if let s = any as? String, !s.isEmpty { return Double(s) }
+        return nil
+    }
+
+    /// aprs.fi sends Unix epoch seconds as either an Int or a stringified Int.
+    private static func unixField(_ any: Any?) -> Date? {
+        let secs: TimeInterval?
+        if let i = any as? Int { secs = TimeInterval(i) }
+        else if let d = any as? Double { secs = d }
+        else if let s = any as? String, let i = Int(s) { secs = TimeInterval(i) }
+        else { secs = nil }
+        return secs.map { Date(timeIntervalSince1970: $0) }
     }
 }

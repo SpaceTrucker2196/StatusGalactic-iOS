@@ -56,7 +56,7 @@ final class APRSDXStatsTests: XCTestCase {
         store.upsertForTest(message(text: "month", from: "DEF", at: cal.date(byAdding: .day, value: -5, to: reference)!,       km: 1500))
         store.upsertForTest(message(text: "year",  from: "GHI", at: cal.date(byAdding: .month, value: -3, to: reference)!,     km: 3000))
 
-        let stats = store.dxStats(reference: reference, calendar: cal)
+        let stats = store.dxStats(myCallsign: "W9FJC", reference: reference, calendar: cal)
         XCTAssertEqual(stats.today?.callsign, "ABC")
         XCTAssertEqual(stats.month?.callsign, "DEF")
         XCTAssertEqual(stats.year?.callsign,  "GHI")
@@ -69,7 +69,7 @@ final class APRSDXStatsTests: XCTestCase {
         store.upsertForTest(message(text: "near", from: "NEAR", at: now.addingTimeInterval(-1800), km: 100))
         store.upsertForTest(message(text: "far",  from: "FAR",  at: now.addingTimeInterval(-1000), km: 2500))
 
-        let stats = store.dxStats(reference: now)
+        let stats = store.dxStats(myCallsign: "W9FJC", reference: now)
         let today = try XCTUnwrap(stats.today)
         XCTAssertEqual(today.callsign, "FAR")
         XCTAssertEqual(today.distanceKm, 2500, accuracy: 0.001)
@@ -78,7 +78,27 @@ final class APRSDXStatsTests: XCTestCase {
     func testBulletinsIgnored() {
         let store = APRSMessageStore(defaults: defaults)
         store.upsertForTest(message(text: "huge bulletin", from: "ANY", to: "BLN1", at: Date(), km: 9999))
-        XCTAssertNil(store.dxStats().today)
+        XCTAssertNil(store.dxStats(myCallsign: "W9FJC").today)
+    }
+
+    func testOutgoingMessageCountsForDX() throws {
+        let store = APRSMessageStore(defaults: defaults)
+        let now = Date()
+
+        // Outgoing W9FJC -> KJ7CMR at 2500 km. Should count as DX.
+        store.upsertForTest(message(
+            text: "test",
+            from: "W9FJC",
+            to: "KJ7CMR",
+            at: now.addingTimeInterval(-1800),
+            km: 2500,
+            direction: .outgoing
+        ))
+
+        let stats = store.dxStats(myCallsign: "W9FJC", reference: now)
+        let today = try XCTUnwrap(stats.today)
+        XCTAssertEqual(today.callsign, "KJ7CMR")
+        XCTAssertEqual(today.distanceKm, 2500, accuracy: 0.001)
     }
 
     private func message(
@@ -86,7 +106,8 @@ final class APRSDXStatsTests: XCTestCase {
         from: String,
         to: String = "W9FJC",
         at: Date,
-        km: Double
+        km: Double,
+        direction: APRSMessage.Direction = .incoming
     ) -> APRSMessage {
         APRSMessage(
             messageID: "test-\(from)-\(at.timeIntervalSince1970)",
@@ -94,10 +115,10 @@ final class APRSDXStatsTests: XCTestCase {
             to: to,
             text: text,
             sentAt: at,
-            direction: .incoming,
+            direction: direction,
             acknowledged: false,
-            senderLat: 0,
-            senderLng: 0,
+            partyLat: 0,
+            partyLng: 0,
             distanceKm: km
         )
     }

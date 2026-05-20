@@ -51,6 +51,66 @@ struct CallsignDetailView: View {
                                 .foregroundStyle(.secondary)
                         }
                     }
+                    if let course = fix.courseDeg {
+                        LabeledContent("Course") {
+                            Text(String(format: "%.0f° %@", course, Self.compass(for: course)))
+                                .font(.callout.monospacedDigit())
+                        }
+                    }
+                    if let speed = fix.speedKmh, speed > 0 {
+                        let knots = speed * 0.5399568
+                        let mph = speed * 0.6213712
+                        LabeledContent("Speed") {
+                            Text(String(format: "%.0f km/h • %.0f mph • %.0f kt", speed, mph, knots))
+                                .font(.callout.monospacedDigit())
+                        }
+                    }
+                    if let alt = fix.altitudeM {
+                        let ft = alt * 3.28084
+                        LabeledContent("Altitude") {
+                            Text(String(format: "%.0f m (%.0f ft)", alt, ft))
+                                .font(.callout.monospacedDigit())
+                        }
+                    }
+                    if let symbol = fix.symbol, !symbol.isEmpty {
+                        LabeledContent("Symbol") {
+                            Text(symbol).font(.callout.monospaced())
+                        }
+                    }
+                    if let kind = fix.stationType, !kind.isEmpty {
+                        LabeledContent("Station type") {
+                            Text(Self.label(forType: kind))
+                                .font(.callout)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    if let status = fix.statusMessage {
+                        LabeledContent("Status") {
+                            Text(status)
+                                .font(.callout)
+                                .multilineTextAlignment(.trailing)
+                        }
+                    }
+                    if let path = fix.path, !path.isEmpty {
+                        LabeledContent("Path") {
+                            Text(path)
+                                .font(.callout.monospaced())
+                                .multilineTextAlignment(.trailing)
+                                .foregroundStyle(.secondary)
+                                .lineLimit(2)
+                        }
+                    }
+                    if let phg = fix.phg, !phg.isEmpty {
+                        LabeledContent("PHG") {
+                            Text(phg).font(.callout.monospaced())
+                        }
+                    }
+                    if let lastTime = fix.lastTime {
+                        LabeledContent("Last heard") {
+                            Text(lastTime, style: .relative)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
                 }
                 Button {
                     Task { await refresh() }
@@ -135,6 +195,26 @@ struct CallsignDetailView: View {
             error = http.errorDescription
         } catch {
             self.error = error.localizedDescription
+        }
+    }
+
+    fileprivate static func compass(for course: Double) -> String {
+        let normalized = course.truncatingRemainder(dividingBy: 360)
+        let bearing = normalized < 0 ? normalized + 360 : normalized
+        let dirs = ["N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE",
+                    "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"]
+        let idx = Int((bearing / 22.5).rounded()) % 16
+        return dirs[idx]
+    }
+
+    fileprivate static func label(forType type: String) -> String {
+        switch type.lowercased() {
+        case "l": return "APRS station"
+        case "i": return "APRS item"
+        case "o": return "APRS object"
+        case "w": return "Weather station"
+        case "a": return "AIS vessel"
+        default:  return type
         }
     }
 }

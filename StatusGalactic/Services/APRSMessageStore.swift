@@ -73,12 +73,16 @@ final class APRSMessageStore {
     func enrichDistances(
         observerLat lat: Double,
         observerLng lng: Double,
+        myCallsign: String,
         client: APRSClient
     ) async {
+        let me = myCallsign.uppercased()
+        // Need a lookup for any message (incoming OR outgoing) whose "other
+        // party" position isn't cached yet. Skip bulletins.
         let needsLookup = Set(
             messages
-                .filter { $0.direction == .incoming && $0.senderLat == nil && !$0.isBulletin }
-                .map(\.from)
+                .filter { !$0.isBulletin && $0.partyLat == nil }
+                .map { Self.otherParty(in: $0, me: me) }
         )
 
         if !needsLookup.isEmpty {
@@ -87,11 +91,13 @@ final class APRSMessageStore {
                 uniqueKeysWithValues: fixes.map { ($0.call.uppercased(), $0) }
             )
             for idx in messages.indices {
-                guard messages[idx].direction == .incoming, !messages[idx].isBulletin else { continue }
-                if messages[idx].senderLat == nil,
-                   let fix = byCall[messages[idx].from.uppercased()] {
-                    messages[idx].senderLat = fix.lat
-                    messages[idx].senderLng = fix.lng
+                guard !messages[idx].isBulletin else { continue }
+                if messages[idx].partyLat == nil {
+                    let other = Self.otherParty(in: messages[idx], me: me)
+                    if let fix = byCall[other] {
+                        messages[idx].partyLat = fix.lat
+                        messages[idx].partyLng = fix.lng
+                    }
                 }
             }
         }
@@ -99,22 +105,36 @@ final class APRSMessageStore {
         // Always recompute distances against the current observer location.
         for idx in messages.indices {
             guard
-                messages[idx].direction == .incoming,
-                let sLat = messages[idx].senderLat,
-                let sLng = messages[idx].senderLng
+                !messages[idx].isBulletin,
+                let pLat = messages[idx].partyLat,
+                let pLng = messages[idx].partyLng
             else { continue }
             messages[idx].distanceKm = haversineKm(
-                lat1: lat, lng1: lng, lat2: sLat, lng2: sLng
+                lat1: lat, lng1: lng, lat2: pLat, lng2: pLng
             )
         }
 
         persist()
     }
 
-    /// DX records: longest received distance today, this month, this year.
-    /// Computed from cached `distanceKm` on incoming messages; pass through
-    /// `enrichDistances(...)` first to populate them.
-    func dxStats(reference: Date = Date(), calendar: Calendar = .current) -> APRSDXStats {
+    /// The non-self callsign in a message. For outgoing this is `to`, for
+    /// incoming it's `from`. (Outgoing messages whose sender isn't `me`
+    /// shouldn't exist in practice, but we still handle it sanely.)
+    private static func otherParty(in msg: APRSMessage, me: String) -> String {
+        if msg.from.uppercased() == me {
+            return msg.to.uppercased()
+        }
+        return msg.from.uppercased()
+    }
+
+    /// DX records: longest distance to the other party (in or out) today,
+    /// this month, this year. Computed from cached `distanceKm`; pass
+    /// through `enrichDistances(...)` first to populate them.
+    func dxStats(
+        myCallsign: String,
+        reference: Date = Date(),
+        calendar: Calendar = .current
+    ) -> APRSDXStats {
         let cal = calendar
         let todayStart = cal.startOfDay(for: reference)
 
@@ -131,10 +151,12 @@ final class APRSMessageStore {
         var maxMonth: APRSDXEntry?
         var maxYear: APRSDXEntry?
 
-        for msg in messages where msg.direction == .incoming && !msg.isBulletin {
+        let me = myCallsign.uppercased()
+        for msg in messages where !msg.isBulletin {
             guard let km = msg.distanceKm, msg.sentAt <= reference else { continue }
+            let other = Self.otherParty(in: msg, me: me)
             let entry = APRSDXEntry(
-                callsign: msg.from.uppercased(),
+                callsign: other,
                 distanceKm: km,
                 receivedAt: msg.sentAt
             )

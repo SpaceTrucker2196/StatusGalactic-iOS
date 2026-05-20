@@ -137,17 +137,19 @@ struct APRSView: View {
             self.error = error.localizedDescription
         }
 
-        // After messages settle, enrich incoming senders with positions and
-        // distances, then recompute the DX stats panel.
+        // After messages settle, enrich every conversation's "other party"
+        // with position + distance, then recompute the DX stats panel.
+        // Bidirectional: outgoing messages now contribute to DX too.
         if let here = location.lastLocation {
             let aprs = APRSClient(userAgent: config.userAgent, apiKey: config.aprsAPIKey)
             await store.enrichDistances(
                 observerLat: here.coordinate.latitude,
                 observerLng: here.coordinate.longitude,
+                myCallsign: config.myCallsign,
                 client: aprs
             )
         }
-        dxStats = store.dxStats()
+        dxStats = store.dxStats(myCallsign: config.myCallsign)
     }
 }
 

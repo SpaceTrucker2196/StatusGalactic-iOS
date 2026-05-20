@@ -10,10 +10,11 @@ struct APRSMessage: Codable, Identifiable, Hashable {
     let direction: Direction
     let acknowledged: Bool
 
-    /// Sender's last-known coordinates, populated lazily via aprs.fi locate
-    /// calls so the DX stats panel can compute distances without re-fetching.
-    var senderLat: Double? = nil
-    var senderLng: Double? = nil
+    /// "The other party" position cache. For incoming messages this is the
+    /// sender; for outgoing it's the recipient. Populated lazily via aprs.fi
+    /// locate calls so DX stats can include both directions.
+    var partyLat: Double? = nil
+    var partyLng: Double? = nil
     var distanceKm: Double? = nil
 
     enum Direction: String, Codable, Hashable {
