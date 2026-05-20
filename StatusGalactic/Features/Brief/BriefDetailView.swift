@@ -28,6 +28,15 @@ struct BriefDetailView: View {
                     SpaceWeatherView(space: space)
                 }
             }
+            Section {
+                SunImageryView()
+                    .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
+                    .listRowBackground(Color.clear)
+            } header: {
+                Text("Sun Imagery")
+            } footer: {
+                Text("Latest frames from NASA SDO, NOAA SWPC GOES SUVI, and SOHO LASCO. Tap any image to zoom.")
+            }
             if let sun = brief.sun {
                 Section("Sun") {
                     SunStrip(sun: sun, now: fetchedAt)
