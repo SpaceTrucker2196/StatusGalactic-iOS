@@ -65,6 +65,89 @@ final class APRSMessageStore {
         messages.filter { $0.isBulletin }.sorted { $0.sentAt > $1.sentAt }
     }
 
+    // MARK: - DX distance enrichment
+
+    /// Look up sender positions via aprs.fi for any incoming messages that
+    /// don't yet have cached coordinates, then compute great-circle distance
+    /// from the observer at (lat, lng). Persists the result back to disk.
+    func enrichDistances(
+        observerLat lat: Double,
+        observerLng lng: Double,
+        client: APRSClient
+    ) async {
+        let needsLookup = Set(
+            messages
+                .filter { $0.direction == .incoming && $0.senderLat == nil && !$0.isBulletin }
+                .map(\.from)
+        )
+
+        if !needsLookup.isEmpty {
+            let fixes = (try? await client.locate(callsigns: Array(needsLookup))) ?? []
+            let byCall = Dictionary(
+                uniqueKeysWithValues: fixes.map { ($0.call.uppercased(), $0) }
+            )
+            for idx in messages.indices {
+                guard messages[idx].direction == .incoming, !messages[idx].isBulletin else { continue }
+                if messages[idx].senderLat == nil,
+                   let fix = byCall[messages[idx].from.uppercased()] {
+                    messages[idx].senderLat = fix.lat
+                    messages[idx].senderLng = fix.lng
+                }
+            }
+        }
+
+        // Always recompute distances against the current observer location.
+        for idx in messages.indices {
+            guard
+                messages[idx].direction == .incoming,
+                let sLat = messages[idx].senderLat,
+                let sLng = messages[idx].senderLng
+            else { continue }
+            messages[idx].distanceKm = haversineKm(
+                lat1: lat, lng1: lng, lat2: sLat, lng2: sLng
+            )
+        }
+
+        persist()
+    }
+
+    /// DX records: longest received distance today, this month, this year.
+    /// Computed from cached `distanceKm` on incoming messages; pass through
+    /// `enrichDistances(...)` first to populate them.
+    func dxStats(reference: Date = Date(), calendar: Calendar = .current) -> APRSDXStats {
+        let cal = calendar
+        let todayStart = cal.startOfDay(for: reference)
+
+        var monthComponents = cal.dateComponents([.year, .month], from: reference)
+        monthComponents.day = 1
+        let monthStart = cal.date(from: monthComponents) ?? todayStart
+
+        var yearComponents = cal.dateComponents([.year], from: reference)
+        yearComponents.month = 1
+        yearComponents.day = 1
+        let yearStart = cal.date(from: yearComponents) ?? todayStart
+
+        var maxToday: APRSDXEntry?
+        var maxMonth: APRSDXEntry?
+        var maxYear: APRSDXEntry?
+
+        for msg in messages where msg.direction == .incoming && !msg.isBulletin {
+            guard let km = msg.distanceKm, msg.sentAt <= reference else { continue }
+            let entry = APRSDXEntry(
+                callsign: msg.from.uppercased(),
+                distanceKm: km,
+                receivedAt: msg.sentAt
+            )
+            if msg.sentAt >= yearStart,
+               (maxYear?.distanceKm ?? -.infinity) < km { maxYear = entry }
+            if msg.sentAt >= monthStart,
+               (maxMonth?.distanceKm ?? -.infinity) < km { maxMonth = entry }
+            if msg.sentAt >= todayStart,
+               (maxToday?.distanceKm ?? -.infinity) < km { maxToday = entry }
+        }
+        return APRSDXStats(today: maxToday, month: maxMonth, year: maxYear)
+    }
+
     private func persist() {
         if let data = try? JSONEncoder().encode(messages) {
             defaults.set(data, forKey: Self.defaultsKey)

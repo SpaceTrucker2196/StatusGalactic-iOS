@@ -3,10 +3,12 @@ import SwiftUI
 struct APRSView: View {
     @Environment(ClientConfig.self) private var config
     @Environment(APRSMessageStore.self) private var store
+    @Environment(LocationManager.self) private var location
 
     @State private var showCompose = false
     @State private var isRefreshing = false
     @State private var error: String?
+    @State private var dxStats = APRSDXStats(today: nil, month: nil, year: nil)
 
     var body: some View {
         NavigationStack {
@@ -71,6 +73,11 @@ struct APRSView: View {
                     .listRowBackground(Color.clear)
                 }
 
+                Section("DX Stats") {
+                    APRSDXStatsView(stats: dxStats)
+                }
+                .listRowBackground(GalacticPalette.deepPurple.opacity(0.35))
+
                 let bulletins = store.bulletins
                 if !bulletins.isEmpty {
                     Section("Bulletins") {
@@ -129,6 +136,18 @@ struct APRSView: View {
         } catch {
             self.error = error.localizedDescription
         }
+
+        // After messages settle, enrich incoming senders with positions and
+        // distances, then recompute the DX stats panel.
+        if let here = location.lastLocation {
+            let aprs = APRSClient(userAgent: config.userAgent, apiKey: config.aprsAPIKey)
+            await store.enrichDistances(
+                observerLat: here.coordinate.latitude,
+                observerLng: here.coordinate.longitude,
+                client: aprs
+            )
+        }
+        dxStats = store.dxStats()
     }
 }
 
