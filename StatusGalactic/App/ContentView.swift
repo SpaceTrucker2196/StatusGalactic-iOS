@@ -21,5 +21,6 @@ struct ContentView: View {
     ContentView()
         .environment(LocationManager())
         .environment(CallsignStore())
-        .environment(ServerConfig())
+        .environment(ClientConfig())
+        .environment(NotificationManager())
 }

@@ -1,6 +1,6 @@
 # Status Galactic iOS Roadmap
 
-Phases follow the CareTime convention: iOS ships first, Android mirrors. Backend (weathergalactic) is the source of truth; this app is a thin client. Milestones are numbered Mxx so the future Android repo can key its milestones (Axx) to align.
+Phases follow the CareTime convention: iOS ships first, Android mirrors. **As of v0.2 the app is fully standalone** (no backend dependency); iOS itself is the canonical implementation. Milestones are numbered Mxx so the future Android repo can key its milestones (Axx) to align.
 
 ---
 
@@ -76,7 +76,7 @@ Phases follow the CareTime convention: iOS ships first, Android mirrors. Backend
 ### M13: Push notifications via backend
 **Goal:** Register device token with backend; backend POSTs Galactic briefs to APNs at user's chosen schedule.
 **Dependencies:** Backend push channel (weathergalactic roadmap).
-**Status:** ⏳
+**Status:** ❌ Out of scope (v0.2 made the app standalone; client no longer talks to a backend).
 
 ---
 

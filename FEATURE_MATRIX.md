@@ -1,74 +1,87 @@
 # Status Galactic Feature Matrix
 
-Cross-platform parity tracking. Backend is the single source of truth; clients consume the same `GET /brief` JSON. Update this file whenever a feature ships, drifts, or moves on the roadmap.
+Cross-platform parity tracking. **As of v0.2 there is no backend dependency for the iOS app.** Each client owns its own source clients and astronomy. The legacy `weathergalactic` repo remains for server-side delivery (Discord scheduler) but is not on the data path for the iOS app.
 
 **Legend:**
 - ✅ Implemented and shipped
-- 🚧 In progress (open PR or active branch)
-- ⏳ Planned (in roadmap, not started)
+- 🚧 In progress
+- ⏳ Planned, not started
 - ❌ Not applicable on this platform
 - ⚠️ Drift (intentional divergence; see notes)
 
 ## Repos
 
-| Platform | Repo | Source of truth? |
-|----------|------|-------------------|
-| Backend | [weathergalactic](https://github.com/SpaceTrucker2196/weathergalactic) | ✅ (schema + computations) |
-| iOS | [StatusGalactic-iOS](https://github.com/SpaceTrucker2196/StatusGalactic-iOS) | ✅ (client UX, ships first) |
-| Android | StatusGalactic-Android | future; mirrors iOS |
+| Platform | Repo | Role |
+|----------|------|------|
+| iOS | [StatusGalactic-iOS](https://github.com/SpaceTrucker2196/StatusGalactic-iOS) | Standalone (source of truth) |
+| Android | StatusGalactic-Android | Future; mirrors iOS |
+| Legacy backend | [weathergalactic](https://github.com/SpaceTrucker2196/weathergalactic) | Server-side delivery only (Discord, schedules). Not on client data path. |
 
-## Brief sections (rendered from `GET /brief`)
+## Brief sources
 
-| Feature | Backend | iOS | Android | Notes |
-|---------|:-------:|:---:|:-------:|-------|
-| Earth weather (NWS) | ✅ | ✅ | ⏳ | |
-| Marine weather (tgftp bulletins) | ✅ | ✅ | ⏳ | |
-| Space weather: Kp + 10.7 cm flux | ✅ | ✅ | ⏳ | |
-| HF propagation summary | ✅ | ✅ | ⏳ | |
-| Aurora likelihood | ✅ | ✅ | ⏳ | |
-| Sunrise / sunset | ✅ | ✅ | ⏳ | |
-| Golden hour windows | ✅ | ✅ | ⏳ | |
-| Civil / nautical / astro twilight | ✅ | ✅ | ⏳ | |
-| Moon phase + illumination | ✅ | ✅ | ⏳ | |
-| 10-body planetary positions | ✅ | ✅ | ⏳ | |
-| Upcoming launches (LL2) | ✅ | ✅ | ⏳ | |
-| Sun day strip (twilight bands) | ❌ | ✅ | ⏳ | Client-only viz; uses backend event times |
-| APRS map (callsign last-known position) | ✅ (`/aprs/locate`) | ✅ | ⏳ | iOS uses MapKit |
+| Source | iOS | Android | Notes |
+|--------|:---:|:-------:|-------|
+| api.weather.gov (earth weather) | ✅ | ⏳ | Direct HTTP from client |
+| tgftp.nws.noaa.gov (marine) | ✅ | ⏳ | Text bulletin, parsed client-side |
+| services.swpc.noaa.gov (Kp + flux) | ✅ | ⏳ | Direct HTTP |
+| ll.thespacedevs.com (launches) | ✅ | ⏳ | Direct HTTP |
+| api.aprs.fi (callsign locate) | ✅ | ⏳ | Direct HTTP with API key in app settings |
+
+## Astronomy (local computation)
+
+| Quantity | iOS | Android | Notes |
+|----------|:---:|:-------:|-------|
+| Sunrise / sunset / twilight | ✅ | ⏳ | NOAA approximation, ~1 min accuracy mid-latitude |
+| Golden hour windows | ✅ | ⏳ | sunset ± 30 min approximation |
+| Moon phase | ✅ | ⏳ | Meeus 47 major periodic terms, <0.5° |
+| Planet positions | ✅ | ⏳ | Mean orbital elements + EoC, ~1-3° accuracy |
+
+## Brief sections (rendered)
+
+| Feature | iOS | Android | Notes |
+|---------|:---:|:-------:|-------|
+| Earth weather | ✅ | ⏳ | |
+| Marine weather | ✅ | ⏳ | |
+| Space weather: Kp + flux + HF + aurora | ✅ | ⏳ | |
+| Sunrise / sunset / golden hour | ✅ | ⏳ | |
+| Civil / nautical / astronomical twilight | ✅ | ⏳ | |
+| Moon phase + illumination | ✅ | ⏳ | |
+| 10-body planetary positions | ✅ | ⏳ | |
+| Upcoming launches | ✅ | ⏳ | |
+| Sun day strip (twilight bands) | ✅ | ⏳ | Pure-data viz |
+| APRS map (callsign last-known) | ✅ | ⏳ | MapKit on iOS |
 
 ## Inputs
 
-| Feature | Backend | iOS | Android | Notes |
-|---------|:-------:|:---:|:-------:|-------|
-| Manual lat / lng | ✅ | ✅ | ⏳ | |
-| Device location (Core Location / FusedLocation) | ❌ | ✅ | ⏳ | Client-only |
-| APRS callsign lookup (aprs.fi) | ✅ | ✅ | ⏳ | |
-| Callsign registry (add / list / remove) | ❌ | ✅ | ⏳ | Client-only, UserDefaults / DataStore |
-| Marine zone selection | ✅ | ✅ | ⏳ | |
-| Timezone | ✅ | ✅ | ⏳ | iOS uses `TimeZone.current.identifier` |
-| Configurable server URL | n/a | ✅ | ⏳ | Settings tab |
+| Feature | iOS | Android | Notes |
+|---------|:---:|:-------:|-------|
+| Manual lat / lng | ✅ | ⏳ | |
+| Device location (Core Location / FusedLocation) | ✅ | ⏳ | |
+| APRS callsign lookup | ✅ | ⏳ | API key in client settings |
+| Callsign registry (add / list / remove) | ✅ | ⏳ | UserDefaults / DataStore |
+| Marine zone selection | ✅ | ⏳ | |
+| Timezone | ✅ | ⏳ | `TimeZone.current.identifier` |
+| User-Agent string | ✅ | ⏳ | Required by NWS |
 
 ## Delivery
 
-| Feature | Backend | iOS | Android | Notes |
-|---------|:-------:|:---:|:-------:|-------|
-| HTTP API (`/brief`, `/brief.md`) | ✅ | n/a | n/a | |
-| Subscriber-driven scheduler | ✅ | n/a | n/a | |
-| Discord webhook | ✅ | ❌ | ⏳ | Backend-side only |
-| Local notifications | ❌ | ✅ | ⏳ | UNUserNotificationCenter / NotificationCompat; 14-day schedule, golden hour + astro dusk |
-| Push notifications | ⏳ | ⏳ | ⏳ | APNs / FCM, requires backend hook |
-| Widget / glance | ❌ | ✅ | ⏳ | WidgetKit (small + medium) / Glance |
+| Feature | iOS | Android | Notes |
+|---------|:---:|:-------:|-------|
+| Local notifications | ✅ | ⏳ | UNUserNotificationCenter; 14-day rolling schedule |
+| Widget / glance | ✅ | ⏳ | WidgetKit (small + medium) |
+| Push notifications | ⏳ | ⏳ | Out of scope for standalone client |
 
 ## Conventions
 
-1. **Backend is the canonical schema.** Both clients decode the same JSON. When a field is added on the backend, the iOS Codable model must update first (in lockstep with the PR); Android follows in a parity PR.
-2. **iOS ships first.** Android does not get a feature before iOS. If a feature lives only on iOS for native reasons (Widget, watch), record it here and skip the Android column with ⏳ pending decision.
-3. **Drift is documented.** Any intentional divergence between iOS and Android lives in this matrix with the ⚠️ symbol and a short note. Detailed drift entries belong in `parity/audits/`.
-4. **Tests are mirrored.** Every iOS unit test in `StatusGalacticTests/` should have a Kotlin counterpart in the Android repo's `src/test/`. If a test cannot be mirrored, mark with ⚠️ and explain.
-5. **Parity sessions are logged.** Each porting session adds a one-liner to `parity/log.md` linking to a detailed audit in `parity/audits/YYYY-MM-DD-<scope>.md`.
+1. **Each client is the canonical implementation.** No shared server-side schema; the `Brief` Swift struct is the contract. Android Kotlin types must encode/decode the same JSON byte-for-byte (via the test fixture in `parity/audits/2026-05-19-standalone-iOS.md`).
+2. **Astronomy formulas are documented constants.** Mean-element tables, Meeus periodic terms, NOAA zenith angles — all must be identical across platforms or briefs disagree about whether the moon is in Cancer or Leo.
+3. **iOS ships first.** Android mirrors. Feature drift is documented in this matrix with ⚠️.
+4. **Tests are mirrored.** Every iOS XCTest should have a Kotlin counterpart. Skip ones that test SwiftUI rendering.
+5. **No backend dependency.** Both clients call public APIs directly. If a feature is impossible client-side (e.g., scheduled push delivery), document and skip.
 
 ## When Android porting begins
 
 1. Create `StatusGalactic-Android/` (Kotlin + Compose).
-2. Copy `ROADMAP.md` to `StatusGalactic-Android/MIGRATION_PLAN.md` and add: Swift→Kotlin type map, SwiftUI→Compose component map, Core Location → FusedLocationProviderClient, UserDefaults → DataStore.
-3. Begin a parity session: append to `parity/log.md`, create the first audit file for the brief decoding contract.
-4. Update this matrix as Android features ship.
+2. Copy `ROADMAP.md` to `StatusGalactic-Android/MIGRATION_PLAN.md` and add: Swift→Kotlin type map, SwiftUI→Compose component map, Core Location → FusedLocationProviderClient, UserDefaults → DataStore, **astronomy formula port (verbatim)**.
+3. Begin a parity session: append to `parity/log.md`, audit each source client port.
+4. Validate astronomy by re-running iOS test fixtures in Kotlin (sunrise within 3 min, moon illumination within 3%, sun in correct zodiac sign).

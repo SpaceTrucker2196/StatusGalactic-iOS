@@ -70,7 +70,7 @@ final class NotificationManager {
 
         for offset in 0..<Self.scheduleDays {
             guard let day = cal.date(byAdding: .day, value: offset, to: today) else { continue }
-            let (_, sunset) = SolarMath.sunriseSunset(
+            let (_, sunset) = SunEvents.sunriseAndSunset(
                 on: day,
                 latitude: latitude,
                 longitude: longitude,

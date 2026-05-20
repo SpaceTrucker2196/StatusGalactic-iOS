@@ -2,33 +2,41 @@ import SwiftUI
 import CoreLocation
 
 struct SettingsView: View {
-    @Environment(ServerConfig.self) private var server
+    @Environment(ClientConfig.self) private var config
     @Environment(LocationManager.self) private var location
     @Environment(NotificationManager.self) private var notifications
 
     var body: some View {
-        @Bindable var server = server
+        @Bindable var config = config
         @Bindable var notifications = notifications
 
         NavigationStack {
             Form {
                 notificationsSection
 
-                Section("Server") {
-                    TextField("Backend URL", text: $server.serverURLString)
-                        .keyboardType(.URL)
+                Section("APRS") {
+                    SecureField("aprs.fi API key", text: $config.aprsAPIKey)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
-                    Text("Default: \(ServerConfig.defaultURLString)")
+                    Text("Required to look up callsigns. Register a key at aprs.fi.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
 
                 Section("Marine zone (default)") {
-                    TextField("e.g. GMZ033", text: $server.defaultMarineZone)
+                    TextField("e.g. GMZ033", text: $config.defaultMarineZone)
                         .textInputAutocapitalization(.characters)
                         .autocorrectionDisabled()
                     Text("Find your zone at weather.gov/marine. Leave blank if inland.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Section("Network") {
+                    TextField("User-Agent", text: $config.userAgent)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                    Text("NWS requires a contact-shaped User-Agent. Default is fine.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -53,15 +61,14 @@ struct SettingsView: View {
                         Text(Bundle.main.shortVersion)
                     }
                     Link(
-                        "Backend repo",
-                        destination: URL(string: "https://github.com/SpaceTrucker2196/weathergalactic")!
-                    )
-                    Link(
                         "iOS repo",
                         destination: URL(string: "https://github.com/SpaceTrucker2196/StatusGalactic-iOS")!
                     )
                 } header: {
                     Text("About")
+                } footer: {
+                    Text("Status Galactic runs entirely on-device. Weather, marine, space-weather, sun, moon, and planetary positions are all computed or fetched directly from public sources.")
+                        .font(.caption)
                 }
             }
             .navigationTitle("Settings")
@@ -74,23 +81,17 @@ struct SettingsView: View {
 
         Section {
             Toggle("Golden hour reminders", isOn: $notifications.goldenHourEnabled)
-                .onChange(of: notifications.goldenHourEnabled) {
-                    handleNotifChange()
-                }
+                .onChange(of: notifications.goldenHourEnabled) { handleNotifChange() }
             Toggle("Astronomical dusk reminders", isOn: $notifications.astronomicalDuskEnabled)
-                .onChange(of: notifications.astronomicalDuskEnabled) {
-                    handleNotifChange()
-                }
+                .onChange(of: notifications.astronomicalDuskEnabled) { handleNotifChange() }
             if let next = notifications.nextGoldenHour, notifications.goldenHourEnabled {
                 LabeledContent("Next golden hour") {
-                    Text(next, style: .relative)
-                        .foregroundStyle(.secondary)
+                    Text(next, style: .relative).foregroundStyle(.secondary)
                 }
             }
             if let next = notifications.nextAstroDusk, notifications.astronomicalDuskEnabled {
                 LabeledContent("Next astro dusk") {
-                    Text(next, style: .relative)
-                        .foregroundStyle(.secondary)
+                    Text(next, style: .relative).foregroundStyle(.secondary)
                 }
             }
             if notifications.authorizationStatus == .denied {
@@ -104,7 +105,7 @@ struct SettingsView: View {
         } header: {
             Text("Notifications")
         } footer: {
-            Text("Schedules up to 14 days of alerts at your last known location. Times computed locally; precise events come from the backend.")
+            Text("Schedules up to 14 days of alerts at your last known location.")
                 .font(.caption)
         }
     }

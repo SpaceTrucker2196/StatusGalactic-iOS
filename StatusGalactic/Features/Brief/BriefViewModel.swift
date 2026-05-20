@@ -14,34 +14,40 @@ final class BriefViewModel {
     var marineZone: String = ""
     var selectedCallsign: String?
 
-    func load(client: BriefAPIClient, location: CLLocation?, tz: String) async {
+    func load(config: ClientConfig, location: CLLocation?, tz: String) async {
         state = .loading
-        do {
-            let brief: Brief
-            if let call = selectedCallsign, !call.isEmpty {
-                brief = try await client.fetchBrief(
-                    call: call,
-                    zone: marineZone.isEmpty ? nil : marineZone,
-                    tz: tz
-                )
-            } else if let loc = location {
-                brief = try await client.fetchBrief(
-                    lat: loc.coordinate.latitude,
-                    lng: loc.coordinate.longitude,
-                    zone: marineZone.isEmpty ? nil : marineZone,
-                    tz: tz
-                )
-            } else {
-                state = .error(
-                    "No location available. Allow Location Services in Settings, or pick a callsign."
-                )
+
+        let lat: Double
+        let lng: Double
+
+        if let call = selectedCallsign, !call.isEmpty {
+            // Resolve callsign to coordinates via aprs.fi.
+            let aprs = APRSClient(userAgent: config.userAgent, apiKey: config.aprsAPIKey)
+            do {
+                let fix = try await aprs.locate(call)
+                lat = fix.lat
+                lng = fix.lng
+            } catch {
+                state = .error("APRS lookup failed: \(error.localizedDescription)")
                 return
             }
-            state = .loaded(brief, fetchedAt: Date())
-        } catch let api as BriefAPIError {
-            state = .error(api.errorDescription ?? "Unknown error")
-        } catch {
-            state = .error(error.localizedDescription)
+        } else if let loc = location {
+            lat = loc.coordinate.latitude
+            lng = loc.coordinate.longitude
+        } else {
+            state = .error(
+                "No location available. Allow Location Services in Settings, or pick a callsign."
+            )
+            return
         }
+
+        let builder = BriefBuilder(config: config)
+        let brief = await builder.build(
+            lat: lat,
+            lng: lng,
+            marineZone: marineZone.isEmpty ? nil : marineZone,
+            timezone: tz
+        )
+        state = .loaded(brief, fetchedAt: Date())
     }
 }

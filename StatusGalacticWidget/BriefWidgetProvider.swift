@@ -28,8 +28,6 @@ struct BriefWidgetProvider: TimelineProvider {
         Task {
             let now = Date()
             let entry = await loadEntry(now: now)
-            // Refresh every 30 minutes. WidgetKit treats this as a hint; the OS
-            // throttles. Brief data is mostly hourly-stable so 30 min is fine.
             let next = Calendar.current.date(byAdding: .minute, value: 30, to: now) ?? now.addingTimeInterval(1800)
             let timeline = Timeline(entries: [entry], policy: .after(next))
             completion(timeline)
@@ -37,18 +35,15 @@ struct BriefWidgetProvider: TimelineProvider {
     }
 
     private func loadEntry(now: Date) async -> BriefWidgetEntry {
-        let client = BriefAPIClient(baseURL: WidgetConfig.defaultServerURL)
-        do {
-            let brief = try await client.fetchBrief(
-                lat: WidgetConfig.defaultLatitude,
-                lng: WidgetConfig.defaultLongitude,
-                tz: TimeZone.current.identifier
-            )
-            return BriefWidgetEntry(date: now, brief: brief, errorMessage: nil)
-        } catch let api as BriefAPIError {
-            return BriefWidgetEntry(date: now, brief: nil, errorMessage: api.errorDescription)
-        } catch {
-            return BriefWidgetEntry(date: now, brief: nil, errorMessage: error.localizedDescription)
-        }
+        let config = ClientConfig()
+        config.userAgent = WidgetConfig.userAgent
+        let builder = BriefBuilder(config: config)
+        let brief = await builder.build(
+            lat: WidgetConfig.defaultLatitude,
+            lng: WidgetConfig.defaultLongitude,
+            marineZone: nil,
+            timezone: TimeZone.current.identifier
+        )
+        return BriefWidgetEntry(date: now, brief: brief, errorMessage: nil)
     }
 }

@@ -2,7 +2,7 @@ import SwiftUI
 
 struct BriefView: View {
     @Environment(LocationManager.self) private var location
-    @Environment(ServerConfig.self) private var server
+    @Environment(ClientConfig.self) private var config
     @Environment(CallsignStore.self) private var callsigns
     @Environment(NotificationManager.self) private var notifications
 
@@ -93,12 +93,11 @@ struct BriefView: View {
     }
 
     private func refresh() async {
-        let client = BriefAPIClient(baseURL: server.serverURL)
         if vm.marineZone.isEmpty {
-            vm.marineZone = server.defaultMarineZone
+            vm.marineZone = config.defaultMarineZone
         }
         await vm.load(
-            client: client,
+            config: config,
             location: location.lastLocation,
             tz: TimeZone.current.identifier
         )

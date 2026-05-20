@@ -55,7 +55,9 @@ targets:
     deploymentTarget: "17.0"
     sources:
       - path: StatusGalactic/Models/Brief.swift
-      - path: StatusGalactic/Services/BriefAPIClient.swift
+      - path: StatusGalactic/Services/ClientConfig.swift
+      - path: StatusGalactic/Services/Brief
+      - path: StatusGalactic/Services/Astronomy
       - path: StatusGalacticWidget
     info:
       path: StatusGalacticWidget/Info.plist

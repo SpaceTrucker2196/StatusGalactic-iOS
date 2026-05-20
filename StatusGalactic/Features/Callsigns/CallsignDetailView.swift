@@ -4,7 +4,7 @@ import MapKit
 struct CallsignDetailView: View {
     let callsign: Callsign
 
-    @Environment(ServerConfig.self) private var server
+    @Environment(ClientConfig.self) private var config
     @Environment(CallsignStore.self) private var store
     @Environment(\.dismiss) private var dismiss
 
@@ -105,7 +105,7 @@ struct CallsignDetailView: View {
         isLoading = true
         error = nil
         defer { isLoading = false }
-        let client = APRSClient(baseURL: server.serverURL)
+        let client = APRSClient(userAgent: config.userAgent, apiKey: config.aprsAPIKey)
         do {
             let result = try await client.locate(callsign.call)
             fix = result
@@ -113,8 +113,8 @@ struct CallsignDetailView: View {
                 center: .init(latitude: result.lat, longitude: result.lng),
                 span: .init(latitudeDelta: 0.5, longitudeDelta: 0.5)
             ))
-        } catch let api as BriefAPIError {
-            error = api.errorDescription
+        } catch let http as HTTPError {
+            error = http.errorDescription
         } catch {
             self.error = error.localizedDescription
         }

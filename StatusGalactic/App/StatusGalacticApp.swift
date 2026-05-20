@@ -4,7 +4,7 @@ import SwiftUI
 struct StatusGalacticApp: App {
     @State private var location = LocationManager()
     @State private var callsigns = CallsignStore()
-    @State private var server = ServerConfig()
+    @State private var config = ClientConfig()
     @State private var notifications = NotificationManager()
 
     var body: some Scene {
@@ -12,7 +12,7 @@ struct StatusGalacticApp: App {
             ContentView()
                 .environment(location)
                 .environment(callsigns)
-                .environment(server)
+                .environment(config)
                 .environment(notifications)
                 .task {
                     await notifications.refreshAuthorization()
