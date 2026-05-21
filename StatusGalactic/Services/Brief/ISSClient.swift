@@ -9,12 +9,10 @@ struct CrewedSpacecraft: Hashable {
 
 enum CrewedSpacecraftCatalog {
     static let iss = CrewedSpacecraft(noradId: 25544, name: "ISS")
-    static let tiangong = CrewedSpacecraft(noradId: 48274, name: "Tiangong (Tianhe)")
 
-    /// All persistent crewed orbital objects worth tracking. Short-duration
-    /// crew vehicles (Soyuz, Dragon, Starliner) come and go; they belong in
-    /// a separate launch-tracker, not this list.
-    static let all: [CrewedSpacecraft] = [iss, tiangong]
+    /// ISS-only for now. Constellation summaries (Starlink, GPS) live in
+    /// their own model + client.
+    static let all: [CrewedSpacecraft] = [iss]
 }
 
 /// wheretheiss.at + N2YO client. Free, no auth for position; N2YO key

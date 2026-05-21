@@ -109,9 +109,22 @@ struct BriefDetailView: View {
                             .padding(.vertical, 4)
                     }
                 } header: {
-                    Text("Crewed Spacecraft")
+                    Text("International Space Station")
                 } footer: {
-                    Text("Live positions from wheretheiss.at · ISS + Tiangong.")
+                    Text("Live position from wheretheiss.at.")
+                        .font(.firaCode(.caption2))
+                }
+            }
+            if !brief.constellations.isEmpty {
+                Section {
+                    ForEach(brief.constellations) { c in
+                        ConstellationRow(summary: c)
+                            .padding(.vertical, 2)
+                    }
+                } header: {
+                    Text("Satellite Constellations")
+                } footer: {
+                    Text("Object counts from Celestrak GP element sets.")
                         .font(.firaCode(.caption2))
                 }
             }
@@ -128,7 +141,31 @@ struct BriefDetailView: View {
                 } header: {
                     Text("Mars Weather")
                 } footer: {
-                    Text("Curiosity REMS via MAAS2 (community proxy).")
+                    Text("Perseverance MEDA via mars.nasa.gov.")
+                        .font(.firaCode(.caption2))
+                }
+            }
+            if !brief.neos.isEmpty {
+                Section {
+                    ForEach(brief.neos) { neo in
+                        NEORow(neo: neo)
+                    }
+                } header: {
+                    Text("Near-Earth Objects")
+                } footer: {
+                    Text("Close approaches in the next week · NASA NEO.")
+                        .font(.firaCode(.caption2))
+                }
+            }
+            if !brief.interstellar.isEmpty {
+                Section {
+                    ForEach(brief.interstellar) { obj in
+                        InterstellarRow(obj: obj)
+                    }
+                } header: {
+                    Text("Interstellar Visitors")
+                } footer: {
+                    Text("Confirmed hyperbolic trajectory · curated.")
                         .font(.firaCode(.caption2))
                 }
             }

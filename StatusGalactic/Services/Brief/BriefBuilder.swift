@@ -37,6 +37,12 @@ struct BriefBuilder {
         let repeaterClient = RepeaterBookClient(session: session, userAgent: config.userAgent)
         let tidesClient = TidesClient(session: session, userAgent: config.userAgent)
         let riverClient = RiverGaugeClient(session: session, userAgent: config.userAgent)
+        let neoClient = NEOClient(
+            session: session, userAgent: config.userAgent, apiKey: config.nasaAPIKey
+        )
+        let constellationsClient = ConstellationsClient(
+            session: session, userAgent: config.userAgent
+        )
 
         // 48-hour window: NWS periods are 12 hours each, so 4 covers today,
         // tonight, tomorrow, and tomorrow night. We render the first one as
@@ -50,6 +56,8 @@ struct BriefBuilder {
         async let crewedTask: [CrewedObject] = issClient.fetchAllCrewedObjects()
         async let tidesTask: Tides? = try? tidesClient.fetchNearestTides(lat: lat, lng: lng)
         async let riverTask: RiverGauge? = try? riverClient.fetchNearestGauge(lat: lat, lng: lng)
+        async let neosTask: [NearEarthObject] = (try? await neoClient.fetchUpcoming()) ?? []
+        async let constellationsTask: [ConstellationSummary] = constellationsClient.fetchAll()
         let n2yoKey = config.n2yoAPIKey
         async let passesTask: [ISSPass] = n2yoKey.isEmpty
             ? []
@@ -90,6 +98,10 @@ struct BriefBuilder {
         let passes = await passesTask
         let tides = await tidesTask
         let river = await riverTask
+        let neos = await neosTask
+        let interstellar = InterstellarObjectCatalog.all
+        let constellations = await constellationsTask
+        if constellations.isEmpty { errors["constellations"] = "Celestrak unavailable" }
         // Visual passes are only meaningful for the ISS (N2YO endpoint we use
         // is ISS-specific). Attach to the ISS entry if present.
         if let issIdx = crewed.firstIndex(where: { $0.noradId == CrewedSpacecraftCatalog.iss.noradId }) {
@@ -127,6 +139,9 @@ struct BriefBuilder {
             repeaters: repeaters,
             tides: tides,
             river: river,
+            neos: neos,
+            interstellar: interstellar,
+            constellations: constellations,
             errors: errors
         )
     }

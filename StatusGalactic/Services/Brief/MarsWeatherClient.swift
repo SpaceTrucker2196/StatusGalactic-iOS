@@ -1,11 +1,13 @@
 import Foundation
 
-/// Current Mars weather, scraped from JPL by the community-maintained MAAS2
-/// proxy at maas2.apollorion.com.
+/// Current Mars weather from NASA Mars 2020 (Perseverance) MEDA data, served
+/// at mars.nasa.gov/rss/api.
 ///
-/// Returns Curiosity's most recent Mars Science Laboratory REMS sol report.
-/// The endpoint occasionally goes down; callers should treat failure as
-/// "no Mars weather available" and continue.
+/// Replaces the long-dead MAAS2 community proxy. The Mars 2020 feed isn't
+/// updated as frequently as MEDA's source — the most recent sol may be a
+/// few weeks old at any given moment. That's OK for a "what's the weather
+/// on Mars" reading; if the feed disappears entirely, the brief just hides
+/// the section.
 struct MarsWeatherClient {
     let session: URLSession
     let userAgent: String
@@ -15,44 +17,49 @@ struct MarsWeatherClient {
         self.userAgent = userAgent
     }
 
-    static let url = URL(string: "https://maas2.apollorion.com/")!
+    static let url = URL(string:
+        "https://mars.nasa.gov/rss/api/?feed=weather&category=mars2020&feedtype=json"
+    )!
 
     func fetchLatest() async throws -> MarsWeather {
-        // Aggressively short timeout: this endpoint has gone offline more than
-        // once, and we'd rather show no Mars card than hang the brief.
-        let data = try await session.getData(from: Self.url, userAgent: userAgent, timeout: 5)
-        do {
-            return try JSONDecoder().decode(MAAS2Response.self, from: data).toMarsWeather()
-        } catch {
-            throw HTTPError.decoding(error)
-        }
-    }
-
-    // MARK: - Wire format
-
-    private struct MAAS2Response: Decodable {
-        let sol: Int?
-        let season: String?
-        let terrestrial_date: String?
-        let min_temp: Double?
-        let max_temp: Double?
-        let pressure: Double?
-        let atmo_opacity: String?
-        let sunrise: String?
-        let sunset: String?
-
-        func toMarsWeather() -> MarsWeather {
-            MarsWeather(
-                sol: sol ?? 0,
-                season: season,
-                terrestrialDate: terrestrial_date,
-                minTempC: min_temp,
-                maxTempC: max_temp,
-                pressurePa: pressure,
-                atmoOpacity: atmo_opacity,
-                sunrise: sunrise,
-                sunset: sunset
+        let data = try await session.getData(from: Self.url, userAgent: userAgent, timeout: 8)
+        guard let payload = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let sols = payload["sols"] as? [[String: Any]],
+              let latest = sols.last
+        else {
+            throw HTTPError.decoding(
+                NSError(
+                    domain: "mars2020",
+                    code: -1,
+                    userInfo: [NSLocalizedDescriptionKey: "No sol data"]
+                )
             )
         }
+
+        let solInt = Self.parseInt(latest["sol"]) ?? 0
+        return MarsWeather(
+            sol: solInt,
+            season: (latest["season"] as? String).map { $0.capitalized },
+            terrestrialDate: latest["terrestrial_date"] as? String,
+            minTempC: Self.parseDouble(latest["min_temp"]),
+            maxTempC: Self.parseDouble(latest["max_temp"]),
+            pressurePa: Self.parseDouble(latest["pressure"]),
+            atmoOpacity: latest["atmo_opacity"] as? String,
+            sunrise: latest["sunrise"] as? String,
+            sunset: latest["sunset"] as? String
+        )
+    }
+
+    // The feed mixes string sentinels ("--") with numerics, so be liberal.
+    private static func parseDouble(_ any: Any?) -> Double? {
+        if let d = any as? Double { return d }
+        if let i = any as? Int { return Double(i) }
+        if let s = any as? String, s != "--", !s.isEmpty { return Double(s) }
+        return nil
+    }
+    private static func parseInt(_ any: Any?) -> Int? {
+        if let i = any as? Int { return i }
+        if let s = any as? String { return Int(s) }
+        return nil
     }
 }

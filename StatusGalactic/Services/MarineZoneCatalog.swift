@@ -24,11 +24,11 @@ enum MarineZoneCatalog {
         .init(code: "GMZ075", name: "Bonita Beach to Englewood out 20 NM",            region: "Florida – Gulf"),
         .init(code: "GMZ876", name: "Tortugas East offshore",                         region: "Florida – Gulf"),
 
-        // MARK: Florida (Atlantic side)
-        .init(code: "AMZ410", name: "Card Sound to Ocean Reef",                       region: "Florida – Atlantic"),
-        .init(code: "AMZ430", name: "Hallandale Beach to Ocean Reef out 20 NM",       region: "Florida – Atlantic"),
+        // MARK: Florida (Atlantic side) — verified active on tgftp May 2026
         .init(code: "AMZ450", name: "Sebastian Inlet to Jupiter Inlet",               region: "Florida – Atlantic"),
+        .init(code: "AMZ452", name: "Sebastian to Jupiter offshore 20–60 NM",         region: "Florida – Atlantic"),
         .init(code: "AMZ470", name: "Flagler Beach to Volusia / Brevard line",        region: "Florida – Atlantic"),
+        .init(code: "AMZ472", name: "Flagler / Volusia offshore 20–60 NM",            region: "Florida – Atlantic"),
         .init(code: "AMZ555", name: "Coastal waters near Jacksonville",               region: "Florida – Atlantic"),
 
         // MARK: Carolinas / Georgia

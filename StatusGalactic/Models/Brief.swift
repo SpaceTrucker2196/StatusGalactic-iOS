@@ -21,13 +21,16 @@ struct Brief: Codable {
     let repeaters: [Repeater]
     let tides: Tides?
     let river: RiverGauge?
+    let neos: [NearEarthObject]
+    let interstellar: [InterstellarObject]
+    let constellations: [ConstellationSummary]
     let errors: [String: String]
 
     enum CodingKeys: String, CodingKey {
         case when, lat, lng, timezone
         case locationName = "location_name"
         case earth, marine, space, sun, moon, planets, launches, apod, mars, crewed
-        case repeaters, tides, river, errors
+        case repeaters, tides, river, neos, interstellar, constellations, errors
     }
 
     init(
@@ -49,6 +52,9 @@ struct Brief: Codable {
         repeaters: [Repeater] = [],
         tides: Tides? = nil,
         river: RiverGauge? = nil,
+        neos: [NearEarthObject] = [],
+        interstellar: [InterstellarObject] = [],
+        constellations: [ConstellationSummary] = [],
         errors: [String: String]
     ) {
         self.when = when
@@ -69,6 +75,9 @@ struct Brief: Codable {
         self.repeaters = repeaters
         self.tides = tides
         self.river = river
+        self.neos = neos
+        self.interstellar = interstellar
+        self.constellations = constellations
         self.errors = errors
     }
 }
@@ -330,6 +339,44 @@ struct Tides: Codable, Hashable {
     let stationName: String
     let distanceKm: Double
     let events: [TideEvent]
+}
+
+/// Aggregate stats for a named satellite constellation, counted via
+/// Celestrak's GP element-set listings.
+struct ConstellationSummary: Codable, Identifiable, Hashable {
+    var id: String { name }
+    let name: String              // "Starlink", "GPS Operational"
+    let group: String             // Celestrak group slug
+    let count: Int                // active objects in the catalog
+    let latestEpochAt: Date?      // most recent element-set epoch seen
+}
+
+/// Near-Earth Object close-approach record from NASA NEO API.
+struct NearEarthObject: Codable, Identifiable, Hashable {
+    var id: String { name + approachAt.ISO8601Format() }
+    let name: String
+    let magnitudeH: Double
+    let diameterMinM: Double
+    let diameterMaxM: Double
+    let isHazardous: Bool
+    let approachAt: Date
+    let missDistanceKm: Double
+    let velocityKps: Double
+    let nasaJplURL: String?
+}
+
+/// One known interstellar object visiting (or having visited) the solar
+/// system. Only a handful are known — small enough that the catalog is
+/// hardcoded rather than fetched.
+struct InterstellarObject: Codable, Identifiable, Hashable {
+    var id: String { designation }
+    let designation: String
+    let discoveryDate: String
+    let perihelionAU: Double?
+    let eccentricity: Double?
+    let inclinationDeg: Double?
+    let status: String
+    let notes: String
 }
 
 /// NOAA NWPS river gauge with current stage and flood thresholds.

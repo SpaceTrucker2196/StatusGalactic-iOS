@@ -19,29 +19,31 @@ struct MarineClient {
         "SL": "sl", "LO": "lo", "LE": "le", "LH": "lh", "LM": "lm", "LS": "ls"
     ]
 
-    func fetchMarineForecast(zoneId rawZone: String, periods: Int = 5) async throws -> MarineWeather {
+    /// Returns nil when the zone is unknown to tgftp (404 on both coastal and
+    /// offshore paths) so the brief simply hides the section rather than
+    /// surfacing a noisy error. Real network failures still throw.
+    func fetchMarineForecast(zoneId rawZone: String, periods: Int = 5) async throws -> MarineWeather? {
         let zone = rawZone.uppercased().trimmingCharacters(in: .whitespaces)
         let prefix = String(zone.prefix(2))
-        guard let region = Self.regionPrefix[prefix] else {
-            throw HTTPError.invalidURL
-        }
+        guard let region = Self.regionPrefix[prefix] else { return nil }
 
         let coastalURL = URL(string: "\(Self.base)/coastal/\(region)/\(zone.lowercased()).txt")!
         let offshoreURL = URL(string: "\(Self.base)/offshore/\(region)/\(zone.lowercased()).txt")!
 
-        let text: String
-        if let coastal = try? await fetchText(url: coastalURL) {
-            text = coastal
-        } else {
-            text = try await fetchText(url: offshoreURL)
+        // Try coastal then offshore. If both 404, return nil instead of
+        // throwing — many user-supplied zones are typos or have been
+        // discontinued, and the brief should just hide the section.
+        if let text = try? await fetchText(url: coastalURL), !text.isEmpty {
+            return MarineWeather(zoneId: zone, periods: Self.parseBulletin(text, maxPeriods: periods))
         }
-
-        let parsed = Self.parseBulletin(text, maxPeriods: periods)
-        return MarineWeather(zoneId: zone, periods: parsed)
+        if let text = try? await fetchText(url: offshoreURL), !text.isEmpty {
+            return MarineWeather(zoneId: zone, periods: Self.parseBulletin(text, maxPeriods: periods))
+        }
+        return nil
     }
 
     private func fetchText(url: URL) async throws -> String {
-        var request = URLRequest(url: url)
+        var request = URLRequest(url: url, timeoutInterval: 10)
         request.setValue(userAgent, forHTTPHeaderField: "User-Agent")
         let (data, response) = try await session.data(for: request)
         guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
