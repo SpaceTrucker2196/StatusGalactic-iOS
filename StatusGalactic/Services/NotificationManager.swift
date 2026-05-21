@@ -171,6 +171,18 @@ final class NotificationManager {
             )
         }
 
+        // NWS severe-weather alerts are always loud — Extreme/Severe gets a
+        // notification regardless of the storm-alerts toggle. The CAP feed is
+        // already filtered to the viewer's coordinates, so a tornado warning
+        // here means it's at your house.
+        for alert in brief.weatherAlerts where alert.severityLevel >= 3 {
+            await fireIfCooled(
+                key: "nws_\(alert.alertId)",
+                title: alert.event,
+                body: alert.headline ?? alert.areaDesc ?? "Tap for details."
+            )
+        }
+
         if stormAlertsEnabled {
             // R-scale (radio blackout)
             if let level = Self.scaleLevel(brief.xRay?.rScale), level >= stormMinLevel {

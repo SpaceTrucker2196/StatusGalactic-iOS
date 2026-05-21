@@ -82,6 +82,9 @@ struct BriefBuilder {
         let dxClient = DXClusterClient(
             session: session, userAgent: config.userAgent
         )
+        let alertsClient = WeatherAlertsClient(
+            session: session, userAgent: config.userAgent
+        )
         let solarCycleClient = SolarCycleClient(
             session: session, userAgent: config.userAgent
         )
@@ -120,6 +123,9 @@ struct BriefBuilder {
         )) ?? []
         async let sotaTask: [SOTASpot] = (try? await sotaClient.fetchRecent()) ?? []
         async let dxTask: [DXSpot] = (try? await dxClient.fetchRecent()) ?? []
+        async let alertsTask: [WeatherAlert] = (try? await alertsClient.fetchActive(
+            lat: lat, lng: lng
+        )) ?? []
         async let solarCycleTask: [SolarCyclePoint] = (try? await solarCycleClient.fetchObserved()) ?? []
         let n2yoKey = config.n2yoAPIKey
         async let passesTask: [ISSPass] = n2yoKey.isEmpty
@@ -179,6 +185,7 @@ struct BriefBuilder {
         let potaSpots = await potaTask
         let sotaSpots = await sotaTask
         let dxSpots = await dxTask
+        let weatherAlerts = await alertsTask
         let solarCycle = await solarCycleTask
         let bandConditions = BandConditions.evaluate(
             sfi: space?.solarFlux,
@@ -243,6 +250,7 @@ struct BriefBuilder {
             sotaSpots: sotaSpots,
             dxSpots: dxSpots,
             solarCycle: solarCycle,
+            weatherAlerts: weatherAlerts,
             errors: errors
         )
     }

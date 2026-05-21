@@ -41,6 +41,7 @@ struct Brief: Codable {
     let sotaSpots: [SOTASpot]
     let dxSpots: [DXSpot]
     let solarCycle: [SolarCyclePoint]
+    let weatherAlerts: [WeatherAlert]
     let errors: [String: String]
 
     enum CodingKeys: String, CodingKey {
@@ -62,6 +63,7 @@ struct Brief: Codable {
         case sotaSpots = "sota_spots"
         case dxSpots = "dx_spots"
         case solarCycle = "solar_cycle"
+        case weatherAlerts = "weather_alerts"
         case errors
     }
 
@@ -104,6 +106,7 @@ struct Brief: Codable {
         sotaSpots: [SOTASpot] = [],
         dxSpots: [DXSpot] = [],
         solarCycle: [SolarCyclePoint] = [],
+        weatherAlerts: [WeatherAlert] = [],
         errors: [String: String]
     ) {
         self.when = when
@@ -144,6 +147,7 @@ struct Brief: Codable {
         self.sotaSpots = sotaSpots
         self.dxSpots = dxSpots
         self.solarCycle = solarCycle
+        self.weatherAlerts = weatherAlerts
         self.errors = errors
     }
 }
@@ -309,6 +313,45 @@ struct SolarWind: Codable, Hashable {
         case temperatureK = "temperature_k"
         case bzNT = "bz_nt"
         case btNT = "bt_nt"
+    }
+}
+
+/// One active NWS alert (warning / watch / advisory) intersecting the
+/// viewer's location. Severity is the CAP severity ordinal, so we can
+/// rank and color reliably even when the event string varies.
+struct WeatherAlert: Codable, Identifiable, Hashable {
+    var id: String { alertId }
+    let alertId: String
+    let event: String                // "Tornado Warning", "Flood Advisory"
+    let severity: String             // "Extreme" | "Severe" | "Moderate" | "Minor" | "Unknown"
+    let certainty: String?
+    let urgency: String?
+    let headline: String?
+    let description: String?
+    let instruction: String?
+    let areaDesc: String?
+    let onsetAt: Date?
+    let expiresAt: Date?
+    let senderName: String?
+
+    enum CodingKeys: String, CodingKey {
+        case alertId = "alert_id"
+        case event, severity, certainty, urgency, headline, description, instruction
+        case areaDesc = "area_desc"
+        case onsetAt = "onset_at"
+        case expiresAt = "expires_at"
+        case senderName = "sender_name"
+    }
+
+    /// 0..4 numeric rank for sorting and palette mapping.
+    var severityLevel: Int {
+        switch severity {
+        case "Extreme":  return 4
+        case "Severe":   return 3
+        case "Moderate": return 2
+        case "Minor":    return 1
+        default:         return 0
+        }
     }
 }
 

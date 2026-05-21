@@ -8,6 +8,21 @@ struct BriefDetailView: View {
 
     var body: some View {
         List {
+            if !brief.weatherAlerts.isEmpty {
+                Section {
+                    ForEach(brief.weatherAlerts) { alert in
+                        WeatherAlertCard(alert: alert)
+                            .padding(.vertical, 4)
+                    }
+                } header: {
+                    Text("Active Alerts")
+                } footer: {
+                    Text("NWS · CAP feed for your coordinates.")
+                        .font(.firaCode(.caption2))
+                }
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
+            }
             Section {
                 AIASunPanel()
             }
