@@ -55,7 +55,11 @@ struct BriefDetailView: View {
             }
             if let space = brief.space {
                 Section("Space Weather") {
-                    SpaceWeatherView(space: space)
+                    NavigationLink {
+                        SolarAlmanacView(space: space)
+                    } label: {
+                        SpaceWeatherView(space: space)
+                    }
                 }
             }
             Section {
