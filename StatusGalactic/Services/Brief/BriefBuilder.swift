@@ -43,6 +43,9 @@ struct BriefBuilder {
         let constellationsClient = ConstellationsClient(
             session: session, userAgent: config.userAgent
         )
+        let quakeClient = EarthquakeClient(
+            session: session, userAgent: config.userAgent
+        )
 
         // 48-hour window: NWS periods are 12 hours each, so 4 covers today,
         // tonight, tomorrow, and tomorrow night. We render the first one as
@@ -58,6 +61,9 @@ struct BriefBuilder {
         async let riverTask: RiverGauge? = try? riverClient.fetchNearestGauge(lat: lat, lng: lng)
         async let neosTask: [NearEarthObject] = (try? await neoClient.fetchUpcoming()) ?? []
         async let constellationsTask: [ConstellationSummary] = constellationsClient.fetchAll()
+        async let quakesTask: [Earthquake] = quakeClient.fetchRecent(
+            viewerLat: lat, viewerLng: lng
+        )
         let n2yoKey = config.n2yoAPIKey
         async let passesTask: [ISSPass] = n2yoKey.isEmpty
             ? []
@@ -102,6 +108,7 @@ struct BriefBuilder {
         let interstellar = InterstellarObjectCatalog.all
         let constellations = await constellationsTask
         if constellations.isEmpty { errors["constellations"] = "Celestrak unavailable" }
+        let quakes = await quakesTask
         // Visual passes are only meaningful for the ISS (N2YO endpoint we use
         // is ISS-specific). Attach to the ISS entry if present.
         if let issIdx = crewed.firstIndex(where: { $0.noradId == CrewedSpacecraftCatalog.iss.noradId }) {
@@ -118,7 +125,7 @@ struct BriefBuilder {
             timezoneName: tz
         )
         let moon = MoonPhase.compute(when: when)
-        let planets = Planets.compute(when: when)
+        let planets = Planets.computeWithEphemeris(when: when, lat: lat, lng: lng)
 
         return Brief(
             when: when,
@@ -142,6 +149,7 @@ struct BriefBuilder {
             neos: neos,
             interstellar: interstellar,
             constellations: constellations,
+            earthquakes: quakes,
             errors: errors
         )
     }

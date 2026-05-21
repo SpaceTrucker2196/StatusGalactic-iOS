@@ -91,7 +91,7 @@ struct BriefDetailView: View {
             if !brief.planets.isEmpty {
                 Section("Planetary Positions") {
                     ForEach(brief.planets) { planet in
-                        PlanetRow(planet: planet)
+                        PlanetRow(planet: planet, timezone: brief.timezone)
                     }
                 }
             }
@@ -169,6 +169,18 @@ struct BriefDetailView: View {
                         .font(.firaCode(.caption2))
                 }
             }
+            if !brief.earthquakes.isEmpty {
+                Section {
+                    ForEach(brief.earthquakes) { q in
+                        EarthquakeRow(quake: q)
+                    }
+                } header: {
+                    Text("Recent Earthquakes")
+                } footer: {
+                    Text("USGS · global significant + nearby past 7 days.")
+                        .font(.firaCode(.caption2))
+                }
+            }
             if !brief.repeaters.isEmpty {
                 Section {
                     ForEach(brief.repeaters) { repeater in
@@ -181,6 +193,11 @@ struct BriefDetailView: View {
                         .font(.firaCode(.caption2))
                 }
             }
+            Section {
+                SiderealFooter(when: brief.when, longitudeEastDeg: brief.lng)
+                    .padding(.vertical, 4)
+            }
+            .listRowBackground(GalacticPalette.deepPurple.opacity(0.35))
             if !brief.errors.isEmpty {
                 Section {
                     ForEach(brief.errors.sorted(by: { $0.key < $1.key }), id: \.key) { key, msg in
@@ -459,19 +476,56 @@ private struct MoonSectionView: View {
 
 private struct PlanetRow: View {
     let planet: Planet
+    let timezone: String
 
     var body: some View {
-        HStack(spacing: 8) {
-            Image(systemName: GalacticSymbols.bodySymbol(for: planet.body))
-                .font(.caption)
-                .foregroundStyle(GalacticSymbols.bodyColor(for: planet.body))
-                .neonGlow(GalacticSymbols.bodyColor(for: planet.body), intensity: 3)
-            Text(planet.body)
-                .font(.firaCode(.subheadline, weight: .semibold))
-            Spacer()
-            Text(String(format: "%.2f° %@", planet.degree, planet.sign))
-                .font(.firaCode(.subheadline))
-                .foregroundStyle(GalacticSymbols.bodyColor(for: planet.body).opacity(0.85))
+        VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: 8) {
+                Image(systemName: GalacticSymbols.bodySymbol(for: planet.body))
+                    .font(.caption)
+                    .foregroundStyle(GalacticSymbols.bodyColor(for: planet.body))
+                    .neonGlow(GalacticSymbols.bodyColor(for: planet.body), intensity: 3)
+                Text(planet.body)
+                    .font(.firaCode(.subheadline, weight: .semibold))
+                Spacer()
+                Text(String(format: "%.2f° %@", planet.degree, planet.sign))
+                    .font(.firaCode(.subheadline))
+                    .foregroundStyle(GalacticSymbols.bodyColor(for: planet.body).opacity(0.85))
+            }
+            ephemerisLine
+        }
+    }
+
+    @ViewBuilder
+    private var ephemerisLine: some View {
+        if let state = planet.circumpolarState {
+            Text(state == "always_up" ? "Always above horizon"
+                                      : "Below horizon all day")
+                .font(.firaCode(.caption2))
+                .foregroundStyle(.secondary)
+        } else if planet.riseAt != nil || planet.setAt != nil || planet.altitudeDeg != nil {
+            HStack(spacing: 10) {
+                if let alt = planet.altitudeDeg {
+                    let glyph = alt >= 0 ? "↑" : "↓"
+                    Text(String(format: "%@ %.0f°", glyph, abs(alt)))
+                        .font(.firaCode(.caption2, weight: .semibold))
+                        .foregroundStyle(alt >= 0
+                            ? GalacticPalette.neonCyan
+                            : GalacticPalette.peach.opacity(0.7))
+                }
+                if let rise = planet.riseAt {
+                    Text("R \(rise.formatted(.dateTime.hour().minute().timeZone()))")
+                        .font(.firaCode(.caption2))
+                        .foregroundStyle(.secondary)
+                }
+                if let set = planet.setAt {
+                    Text("S \(set.formatted(.dateTime.hour().minute().timeZone()))")
+                        .font(.firaCode(.caption2))
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+            }
+            .environment(\.timeZone, TimeZone(identifier: timezone) ?? .current)
         }
     }
 }

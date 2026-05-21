@@ -42,7 +42,20 @@ enum Planets {
         "Pluto":   Element(a: 39.48169, e: 0.248808, L0: 238.929038, rate:   145.207805,  omegaBar: 224.06676),
     ]
 
+    /// Compute the zodiac sign / degree table for every body. No rise/set
+    /// information — call `computeWithEphemeris(when:lat:lng:)` for that.
     static func compute(when: Date) -> [Planet] {
+        computeInternal(when: when, lat: nil, lng: nil)
+    }
+
+    /// Same as `compute` but additionally fills in apparent RA/Dec, current
+    /// altitude/azimuth, and the day's rise/transit/set events for the given
+    /// observer. Pure compute — no I/O.
+    static func computeWithEphemeris(when: Date, lat: Double, lng: Double) -> [Planet] {
+        computeInternal(when: when, lat: lat, lng: lng)
+    }
+
+    private static func computeInternal(when: Date, lat: Double?, lng: Double?) -> [Planet] {
         let jd = JulianDate.from(when)
         let T = JulianDate.centuriesFromJ2000(jd)
 
@@ -56,11 +69,11 @@ enum Planets {
 
         // Sun: geocentric longitude = Earth's heliocentric longitude + 180°.
         let sunGeoLon = (earthLon + 180.0).normalizedDegrees
-        out.append(planet("Sun", lon: sunGeoLon))
+        out.append(enrich("Sun", lon: sunGeoLon, when: when, lat: lat, lng: lng))
 
         // Moon: use the Meeus periodic-term series in MoonPhase.
         let moonLon = MoonPhase.moonEclipticLongitude(T: T)
-        out.append(planet("Moon", lon: moonLon))
+        out.append(enrich("Moon", lon: moonLon, when: when, lat: lat, lng: lng))
 
         for name in ["Mercury", "Venus", "Mars", "Jupiter", "Saturn", "Uranus", "Neptune", "Pluto"] {
             guard let elem = elements[name] else { continue }
@@ -68,10 +81,86 @@ enum Planets {
             let x = r * cos(lon.toRadians) - earthX
             let y = r * sin(lon.toRadians) - earthY
             let geoLon = atan2(y, x).toDegrees.normalizedDegrees
-            out.append(planet(name, lon: geoLon))
+            out.append(enrich(name, lon: geoLon, when: when, lat: lat, lng: lng))
         }
 
         return out
+    }
+
+    /// Mean obliquity of the ecliptic at J2000 (degrees). Adequate for the
+    /// "where is Jupiter going to be tonight" use-case — drift is ~46″/century.
+    private static let obliquityDeg: Double = 23.4392911
+
+    /// Wraps `planet(...)` with optional equatorial coords + rise/set
+    /// computations when the observer is known.
+    private static func enrich(
+        _ body: String, lon eclipticLonDeg: Double,
+        when: Date, lat: Double?, lng: Double?
+    ) -> Planet {
+        var p = planet(body, lon: eclipticLonDeg)
+
+        // Equatorial coords (assumes β = 0 — ignores ecliptic latitude).
+        let lambdaR = eclipticLonDeg.toRadians
+        let epsR = Self.obliquityDeg.toRadians
+        let ra = atan2(sin(lambdaR) * cos(epsR), cos(lambdaR)).toDegrees.normalizedDegrees
+        let dec = asin(sin(lambdaR) * sin(epsR)).toDegrees
+        p.rightAscensionHours = ra / 15.0
+        p.declinationDeg = dec
+
+        guard let lat, let lng else { return p }
+
+        let clock = SiderealClock(when: when, longitudeEastDeg: lng)
+        let lst = clock.lstDegrees
+        let ha = ((lst - ra + 540).truncatingRemainder(dividingBy: 360)) - 180
+        let phiR = lat.toRadians
+        let decR = dec.toRadians
+        let haR = ha.toRadians
+
+        // Current altitude/azimuth.
+        let sinAlt = sin(phiR) * sin(decR) + cos(phiR) * cos(decR) * cos(haR)
+        let alt = asin(max(-1, min(1, sinAlt))).toDegrees
+        let cosAlt = cos(alt.toRadians)
+        let cosAz = cosAlt == 0
+            ? 1.0
+            : (sin(decR) - sin(alt.toRadians) * sin(phiR)) / (cosAlt * cos(phiR))
+        var az = acos(max(-1, min(1, cosAz))).toDegrees
+        if sin(haR) > 0 { az = 360 - az }
+        p.altitudeDeg = alt
+        p.azimuthDeg = az
+
+        // Rise/set: standard altitude for planets ~ -0.5667° (refraction).
+        // Moon uses -0.583° + parallax; Sun -0.833°. Close enough at this scale.
+        let h0Deg: Double
+        switch body {
+        case "Sun":  h0Deg = -0.833
+        case "Moon": h0Deg = 0.125     // average parallax minus refraction
+        default:     h0Deg = -0.5667
+        }
+        let cosH0 = (sin(h0Deg.toRadians) - sin(phiR) * sin(decR)) / (cos(phiR) * cos(decR))
+        if cosH0 > 1 {
+            p.circumpolarState = "always_down"
+        } else if cosH0 < -1 {
+            p.circumpolarState = "always_up"
+        } else {
+            let H0 = acos(cosH0).toDegrees                  // 0..180°
+            // Next transit: hour angle reaches 0 in (360 - HA_now) / siderealRate hours.
+            // Sidereal day = 23.9344696 hours ⇒ 15.04108° / hour LST advance.
+            let siderealRate = 360.0 / 23.9344696
+            let hoursToTransit = ((-ha + 360).truncatingRemainder(dividingBy: 360)) / siderealRate
+            let transit = when.addingTimeInterval(hoursToTransit * 3600)
+            let half = (H0 / siderealRate) * 3600
+            var rise = transit.addingTimeInterval(-half)
+            var set  = transit.addingTimeInterval(+half)
+            // Push past events forward one sidereal day so we always show the
+            // *next* rise/set rather than ones that already happened today.
+            let sidDay: TimeInterval = 23.9344696 * 3600
+            if rise < when { rise = rise.addingTimeInterval(sidDay) }
+            if set  < when { set  = set.addingTimeInterval(sidDay)  }
+            p.riseAt = rise
+            p.transitAt = transit
+            p.setAt = set
+        }
+        return p
     }
 
     /// Heliocentric true longitude + heliocentric distance (AU) at the given

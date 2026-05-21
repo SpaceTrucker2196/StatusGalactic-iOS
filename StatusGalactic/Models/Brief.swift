@@ -24,13 +24,14 @@ struct Brief: Codable {
     let neos: [NearEarthObject]
     let interstellar: [InterstellarObject]
     let constellations: [ConstellationSummary]
+    let earthquakes: [Earthquake]
     let errors: [String: String]
 
     enum CodingKeys: String, CodingKey {
         case when, lat, lng, timezone
         case locationName = "location_name"
         case earth, marine, space, sun, moon, planets, launches, apod, mars, crewed
-        case repeaters, tides, river, neos, interstellar, constellations, errors
+        case repeaters, tides, river, neos, interstellar, constellations, earthquakes, errors
     }
 
     init(
@@ -55,6 +56,7 @@ struct Brief: Codable {
         neos: [NearEarthObject] = [],
         interstellar: [InterstellarObject] = [],
         constellations: [ConstellationSummary] = [],
+        earthquakes: [Earthquake] = [],
         errors: [String: String]
     ) {
         self.when = when
@@ -78,6 +80,7 @@ struct Brief: Codable {
         self.neos = neos
         self.interstellar = interstellar
         self.constellations = constellations
+        self.earthquakes = earthquakes
         self.errors = errors
     }
 }
@@ -222,6 +225,29 @@ struct Planet: Codable, Identifiable {
     let sign: String
     let degree: Double
     let retrograde: Bool
+
+    // Optional ephemeris populated when the brief has observer coordinates.
+    // Decoders that don't supply these fields fall back to `nil`.
+    var rightAscensionHours: Double?
+    var declinationDeg: Double?
+    var altitudeDeg: Double?           // current apparent altitude
+    var azimuthDeg: Double?            // current apparent azimuth (N=0, E=90)
+    var riseAt: Date?
+    var transitAt: Date?
+    var setAt: Date?
+    var circumpolarState: String?      // "always_up" / "always_down" / nil
+
+    enum CodingKeys: String, CodingKey {
+        case body, sign, degree, retrograde
+        case rightAscensionHours = "right_ascension_hours"
+        case declinationDeg = "declination_deg"
+        case altitudeDeg = "altitude_deg"
+        case azimuthDeg = "azimuth_deg"
+        case riseAt = "rise_at"
+        case transitAt = "transit_at"
+        case setAt = "set_at"
+        case circumpolarState = "circumpolar_state"
+    }
 }
 
 struct Launch: Codable, Identifiable {
@@ -377,6 +403,21 @@ struct InterstellarObject: Codable, Identifiable, Hashable {
     let inclinationDeg: Double?
     let status: String
     let notes: String
+}
+
+/// Single USGS earthquake event. Distance is populated only when the
+/// brief has a viewer coordinate to anchor against.
+struct Earthquake: Codable, Identifiable, Hashable {
+    let id: String                 // USGS event id (e.g. "us7000abcd")
+    let magnitude: Double
+    let place: String              // "12km NW of Foo, CA"
+    let time: Date
+    let latitude: Double
+    let longitude: Double
+    let depthKm: Double
+    let usgsURL: String?
+    let isSignificant: Bool
+    var distanceKm: Double?        // from viewer; nil if not computable
 }
 
 /// NOAA NWPS river gauge with current stage and flood thresholds.
