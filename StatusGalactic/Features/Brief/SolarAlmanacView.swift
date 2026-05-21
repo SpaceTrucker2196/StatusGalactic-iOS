@@ -33,6 +33,13 @@ struct SolarAlmanacView: View {
                 if !brief.activeRegions.isEmpty {
                     ActiveRegionsPanel(regions: brief.activeRegions)
                 }
+                if !brief.cmes.isEmpty {
+                    CMETrackerPanel(cmes: brief.cmes)
+                }
+                DRAPPanel()
+                if !brief.solarOutlook.isEmpty {
+                    SolarOutlookPanel(days: brief.solarOutlook)
+                }
                 if isLoading && almanac == nil {
                     ProgressView()
                         .tint(GalacticPalette.neonCyan)

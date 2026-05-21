@@ -58,6 +58,12 @@ struct BriefBuilder {
         let wwvClient = WWVClient(
             session: session, userAgent: config.userAgent
         )
+        let donkiClient = DONKIClient(
+            session: session, userAgent: config.userAgent, apiKey: config.nasaAPIKey
+        )
+        let outlookClient = SolarOutlookClient(
+            session: session, userAgent: config.userAgent
+        )
 
         // 48-hour window: NWS periods are 12 hours each, so 4 covers today,
         // tonight, tomorrow, and tomorrow night. We render the first one as
@@ -80,6 +86,8 @@ struct BriefBuilder {
         async let forecastTask: SpaceWeatherForecastClient.Result? = try? await forecastClient.fetch()
         async let solarWindTask: SolarWind? = solarWindClient.fetch()
         async let wwvTask: WWVBulletin? = try? await wwvClient.fetch()
+        async let cmesTask: [CMEEvent] = (try? await donkiClient.fetchRecent()) ?? []
+        async let outlookTask: [SolarOutlookDay] = (try? await outlookClient.fetch()) ?? []
         let n2yoKey = config.n2yoAPIKey
         async let passesTask: [ISSPass] = n2yoKey.isEmpty
             ? []
@@ -129,6 +137,8 @@ struct BriefBuilder {
         let forecast = await forecastTask
         let solarWind = await solarWindTask
         let wwv = await wwvTask
+        let cmes = await cmesTask
+        let outlook = await outlookTask
         // Visual passes are only meaningful for the ISS (N2YO endpoint we use
         // is ISS-specific). Attach to the ISS entry if present.
         if let issIdx = crewed.firstIndex(where: { $0.noradId == CrewedSpacecraftCatalog.iss.noradId }) {
@@ -175,6 +185,8 @@ struct BriefBuilder {
             kpForecast: forecast?.kpDays ?? [],
             solarWind: solarWind,
             wwvBulletin: wwv,
+            cmes: cmes,
+            solarOutlook: outlook,
             errors: errors
         )
     }

@@ -30,6 +30,8 @@ struct Brief: Codable {
     let kpForecast: [KpForecastDay]
     let solarWind: SolarWind?
     let wwvBulletin: WWVBulletin?
+    let cmes: [CMEEvent]
+    let solarOutlook: [SolarOutlookDay]
     let errors: [String: String]
 
     enum CodingKeys: String, CodingKey {
@@ -42,6 +44,8 @@ struct Brief: Codable {
         case kpForecast = "kp_forecast"
         case solarWind = "solar_wind"
         case wwvBulletin = "wwv_bulletin"
+        case cmes
+        case solarOutlook = "solar_outlook"
         case errors
     }
 
@@ -73,6 +77,8 @@ struct Brief: Codable {
         kpForecast: [KpForecastDay] = [],
         solarWind: SolarWind? = nil,
         wwvBulletin: WWVBulletin? = nil,
+        cmes: [CMEEvent] = [],
+        solarOutlook: [SolarOutlookDay] = [],
         errors: [String: String]
     ) {
         self.when = when
@@ -102,6 +108,8 @@ struct Brief: Codable {
         self.kpForecast = kpForecast
         self.solarWind = solarWind
         self.wwvBulletin = wwvBulletin
+        self.cmes = cmes
+        self.solarOutlook = solarOutlook
         self.errors = errors
     }
 }
@@ -267,6 +275,50 @@ struct SolarWind: Codable, Hashable {
         case temperatureK = "temperature_k"
         case bzNT = "bz_nt"
         case btNT = "bt_nt"
+    }
+}
+
+/// One CME event from NASA DONKI. Speed/direction come from the most
+/// accurate `cmeAnalyses` entry when available; halo CMEs (Earth-directed)
+/// are flagged so the brief can highlight them.
+struct CMEEvent: Codable, Identifiable, Hashable {
+    var id: String { activityID }
+    let activityID: String
+    let startTime: Date
+    let sourceLocation: String?     // heliographic, e.g. "N15W23"
+    let speedKmS: Double?
+    let halfAngleDeg: Double?
+    let isHalo: Bool
+    let arrivalEstimateUtc: Date?
+    let note: String?
+    let linkURL: String?
+
+    enum CodingKeys: String, CodingKey {
+        case activityID = "activity_id"
+        case startTime = "start_time"
+        case sourceLocation = "source_location"
+        case speedKmS = "speed_km_s"
+        case halfAngleDeg = "half_angle_deg"
+        case isHalo = "is_halo"
+        case arrivalEstimateUtc = "arrival_estimate_utc"
+        case note
+        case linkURL = "link_url"
+    }
+}
+
+/// One day in the NOAA SWPC 27-day Space Weather Outlook table.
+struct SolarOutlookDay: Codable, Identifiable, Hashable {
+    var id: Date { date }
+    let date: Date
+    let radioFlux: Int           // F10.7 cm, sfu
+    let aIndex: Int              // Planetary A-index
+    let largestKp: Int           // Largest expected Kp that day
+
+    enum CodingKeys: String, CodingKey {
+        case date
+        case radioFlux = "radio_flux"
+        case aIndex = "a_index"
+        case largestKp = "largest_kp"
     }
 }
 
