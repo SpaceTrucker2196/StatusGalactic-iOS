@@ -3,10 +3,13 @@ import SwiftUI
 /// Status Galactic vaporwave palette.
 ///
 /// The design language: a neon artifact from a future world. Deep cosmic
-/// blacks and purples form the base. Magenta, hot pink, cyan, and electric
-/// blue carry the data. Status, temperature, and Kp all use the same set
-/// of named tokens so a redesign is one file and the Android port mirrors
-/// it verbatim.
+/// blacks and Prussian blues form the base. Magenta, hot pink, cyan, and
+/// electric blue carry the data. Status, temperature, and Kp all use the
+/// same set of named tokens so a redesign is one file and the Android
+/// port mirrors it verbatim.
+///
+/// Token names like `deepPurple`/`twilightPurple` are retained for backward
+/// compatibility; their color values map to deep Prussian blue shades.
 enum GalacticPalette {
 
     // MARK: - Core neon
@@ -15,17 +18,22 @@ enum GalacticPalette {
     static let hotPink      = Color(red: 1.00, green: 0.40, blue: 0.80)
     static let neonCyan     = Color(red: 0.00, green: 0.94, blue: 1.00)
     static let electricBlue = Color(red: 0.30, green: 0.36, blue: 1.00)
-    static let neonPurple   = Color(red: 0.62, green: 0.31, blue: 0.87)
+    /// Bright Prussian-blue accent. Name kept as `neonPurple` for legacy
+    /// callsites; the actual color is now a saturated cobalt/Prussian.
+    static let neonPurple   = Color(red: 0.18, green: 0.42, blue: 0.78)
     static let sunsetOrange = Color(red: 1.00, green: 0.42, blue: 0.21)
     static let peach        = Color(red: 1.00, green: 0.73, blue: 0.59)
     static let mint         = Color(red: 0.60, green: 0.97, blue: 0.78)
 
     // MARK: - Cosmic ground
 
-    static let cosmicBlack  = Color(red: 0.04, green: 0.00, blue: 0.08)
-    static let deepPurple   = Color(red: 0.16, green: 0.04, blue: 0.30)
-    static let twilightPurple = Color(red: 0.24, green: 0.08, blue: 0.44)
-    static let dustyRose    = Color(red: 0.46, green: 0.18, blue: 0.55)
+    static let cosmicBlack  = Color(red: 0.01, green: 0.02, blue: 0.06)
+    /// Deep Prussian blue (#001833). Name retained for backward compatibility.
+    static let deepPurple   = Color(red: 0.00, green: 0.10, blue: 0.20)
+    /// Mid Prussian blue (#0A3052). Name retained for backward compatibility.
+    static let twilightPurple = Color(red: 0.04, green: 0.19, blue: 0.32)
+    /// Dusty steel-blue (replaces the old dusty rose). Name retained.
+    static let dustyRose    = Color(red: 0.20, green: 0.40, blue: 0.55)
 
     // MARK: - Status / activity scale
 
