@@ -256,7 +256,11 @@ struct BriefDetailView: View {
                 }
             }
             Section {
-                SiderealFooter(when: brief.when, longitudeEastDeg: brief.lng)
+                SiderealFooter(
+                    when: brief.when,
+                    longitudeEastDeg: brief.lng,
+                    magnetic: brief.magneticDeclination
+                )
                     .padding(.vertical, 4)
             }
             .listRowBackground(GalacticPalette.deepPurple.opacity(0.35))

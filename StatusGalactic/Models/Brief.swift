@@ -42,6 +42,7 @@ struct Brief: Codable {
     let dxSpots: [DXSpot]
     let solarCycle: [SolarCyclePoint]
     let weatherAlerts: [WeatherAlert]
+    let magneticDeclination: MagneticDeclination?
     let errors: [String: String]
 
     enum CodingKeys: String, CodingKey {
@@ -64,6 +65,7 @@ struct Brief: Codable {
         case dxSpots = "dx_spots"
         case solarCycle = "solar_cycle"
         case weatherAlerts = "weather_alerts"
+        case magneticDeclination = "magnetic_declination"
         case errors
     }
 
@@ -107,6 +109,7 @@ struct Brief: Codable {
         dxSpots: [DXSpot] = [],
         solarCycle: [SolarCyclePoint] = [],
         weatherAlerts: [WeatherAlert] = [],
+        magneticDeclination: MagneticDeclination? = nil,
         errors: [String: String]
     ) {
         self.when = when
@@ -148,6 +151,7 @@ struct Brief: Codable {
         self.dxSpots = dxSpots
         self.solarCycle = solarCycle
         self.weatherAlerts = weatherAlerts
+        self.magneticDeclination = magneticDeclination
         self.errors = errors
     }
 }
@@ -313,6 +317,37 @@ struct SolarWind: Codable, Hashable {
         case temperatureK = "temperature_k"
         case bzNT = "bz_nt"
         case btNT = "bt_nt"
+    }
+}
+
+/// NOAA WMM magnetic declination at the viewer's coordinates. Hams and
+/// astrophotographers both want this: it's the offset between true north
+/// (where you really need to point a Yagi / polar-align a mount) and the
+/// magnetic compass bearing.
+struct MagneticDeclination: Codable, Hashable {
+    let latitude: Double
+    let longitude: Double
+    let declinationDeg: Double         // east-positive
+    let inclinationDeg: Double?        // dip angle
+    let totalFieldNT: Double?          // |B|, nT
+    let modelDate: Double?             // decimal year used for evaluation
+    let model: String?                 // e.g. "WMM-2025"
+    let observedAt: Date
+
+    /// "2.3°E" / "1.1°W" / "0.0°"
+    var formatted: String {
+        if abs(declinationDeg) < 0.05 { return "0.0°" }
+        let suffix = declinationDeg >= 0 ? "E" : "W"
+        return String(format: "%.1f°%@", abs(declinationDeg), suffix)
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case latitude, longitude, model
+        case declinationDeg = "declination_deg"
+        case inclinationDeg = "inclination_deg"
+        case totalFieldNT = "total_field_nt"
+        case modelDate = "model_date"
+        case observedAt = "observed_at"
     }
 }
 

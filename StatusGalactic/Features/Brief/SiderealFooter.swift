@@ -4,6 +4,13 @@ import SwiftUI
 struct SiderealFooter: View {
     let when: Date
     let longitudeEastDeg: Double
+    let magnetic: MagneticDeclination?
+
+    init(when: Date, longitudeEastDeg: Double, magnetic: MagneticDeclination? = nil) {
+        self.when = when
+        self.longitudeEastDeg = longitudeEastDeg
+        self.magnetic = magnetic
+    }
 
     private var clock: SiderealClock {
         SiderealClock(when: when, longitudeEastDeg: longitudeEastDeg)
@@ -27,6 +34,18 @@ struct SiderealFooter: View {
             HStack(spacing: 12) {
                 clockColumn(label: "LST", value: clock.lstFormatted, accent: GalacticPalette.hotPink)
                 clockColumn(label: "GMST", value: clock.gmstFormatted, accent: GalacticPalette.electricBlue)
+                if let magnetic {
+                    clockColumn(
+                        label: "Mag dec",
+                        value: magnetic.formatted,
+                        accent: GalacticPalette.mint
+                    )
+                }
+            }
+            if let magnetic, let model = magnetic.model {
+                Text("\(model) · point compass \(magnetic.formatted) off true north")
+                    .font(.firaCode(.caption2))
+                    .foregroundStyle(.secondary)
             }
         }
     }
