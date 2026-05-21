@@ -4,11 +4,13 @@ struct APRSView: View {
     @Environment(ClientConfig.self) private var config
     @Environment(APRSMessageStore.self) private var store
     @Environment(LocationManager.self) private var location
+    @Environment(APRSStationLogStore.self) private var log
 
     @State private var showCompose = false
     @State private var isRefreshing = false
     @State private var error: String?
     @State private var dxStats = APRSDXStats(today: nil, month: nil, year: nil)
+    @State private var myFix: APRSFix?
 
     var body: some View {
         NavigationStack {
@@ -59,10 +61,27 @@ struct APRSView: View {
             List {
                 Section {
                     StationHeader(callsign: config.myCallsign, isRefreshing: isRefreshing)
+                    if let fix = myFix {
+                        MyStationFixRows(fix: fix)
+                    }
                 } header: {
                     Text("Your station")
                 }
                 .listRowBackground(GalacticPalette.deepPurple.opacity(0.4))
+
+                if !log.entries.isEmpty {
+                    Section("Station log") {
+                        ForEach(log.entries.prefix(5)) { entry in
+                            StationLogRow(entry: entry)
+                        }
+                        if log.entries.count > 5 {
+                            Text("+\(log.entries.count - 5) older fixes stored")
+                                .font(.firaCode(.caption2))
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .listRowBackground(GalacticPalette.deepPurple.opacity(0.25))
+                }
 
                 if let error {
                     Section {
@@ -118,6 +137,7 @@ struct APRSView: View {
         isRefreshing = true
         defer { isRefreshing = false }
         let client = APRSMessaging(userAgent: config.userAgent)
+        let aprs = APRSClient(userAgent: config.userAgent, apiKey: config.aprsAPIKey)
         do {
             async let incomingTask = client.receive(
                 forCallsign: config.myCallsign,
@@ -126,10 +146,18 @@ struct APRSView: View {
             async let bulletinsTask: [APRSMessage] = (try? await client.receiveBulletins(
                 apiKey: config.aprsAPIKey
             )) ?? []
+            // Pull richer station data for the user's own callsign in the
+            // same refresh cycle so the My Station block + log update in step.
+            async let myFixTask: APRSFix? = (try? await aprs.locate(config.myCallsign))
+
             let incoming = try await incomingTask
             let bulletins = await bulletinsTask
             store.upsert(many: incoming)
             store.upsert(many: bulletins)
+            if let fix = await myFixTask {
+                myFix = fix
+                log.append(fix)
+            }
             error = nil
         } catch let http as HTTPError {
             error = http.errorDescription
@@ -141,7 +169,6 @@ struct APRSView: View {
         // with position + distance, then recompute the DX stats panel.
         // Bidirectional: outgoing messages now contribute to DX too.
         if let here = location.lastLocation {
-            let aprs = APRSClient(userAgent: config.userAgent, apiKey: config.aprsAPIKey)
             await store.enrichDistances(
                 observerLat: here.coordinate.latitude,
                 observerLng: here.coordinate.longitude,

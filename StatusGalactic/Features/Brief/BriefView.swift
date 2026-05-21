@@ -13,7 +13,7 @@ struct BriefView: View {
     var body: some View {
         NavigationStack {
             content
-                .navigationTitle("Galactic SITREP")
+                .navigationTitle("SITREP Galactic")
                 .sensoryFeedback(.success, trigger: loadCount)
                 .sensoryFeedback(.error, trigger: errorCount)
                 .toolbar {

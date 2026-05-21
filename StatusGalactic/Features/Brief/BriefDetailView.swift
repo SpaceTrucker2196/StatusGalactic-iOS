@@ -7,6 +7,18 @@ struct BriefDetailView: View {
     var body: some View {
         List {
             Section {
+                AIASunPanel()
+            }
+            .listRowBackground(Color.clear)
+            .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
+            if let sun = brief.sun {
+                Section("Sun") {
+                    SunStrip(sun: sun, now: fetchedAt)
+                        .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                    SunSectionView(sun: sun)
+                }
+            }
+            Section {
                 LocationHeader(brief: brief, fetchedAt: fetchedAt)
             }
             .listRowBackground(Color.clear)
@@ -71,13 +83,6 @@ struct BriefDetailView: View {
             } footer: {
                 Text("Curated stills from Hubble + JWST press releases. New APOD picks may appear under Astronomy Picture of the Day below.")
             }
-            if let sun = brief.sun {
-                Section("Sun") {
-                    SunStrip(sun: sun, now: fetchedAt)
-                        .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
-                    SunSectionView(sun: sun)
-                }
-            }
             if let moon = brief.moon {
                 Section("Moon") {
                     MoonSectionView(moon: moon)
@@ -97,14 +102,16 @@ struct BriefDetailView: View {
                     }
                 }
             }
-            if let iss = brief.iss {
+            if !brief.crewed.isEmpty {
                 Section {
-                    ISSCard(iss: iss, observerLat: brief.lat, observerLng: brief.lng)
-                        .padding(.vertical, 4)
+                    ForEach(brief.crewed) { obj in
+                        ISSCard(iss: obj, observerLat: brief.lat, observerLng: brief.lng)
+                            .padding(.vertical, 4)
+                    }
                 } header: {
-                    Text("International Space Station")
+                    Text("Crewed Spacecraft")
                 } footer: {
-                    Text("Live position from wheretheiss.at.")
+                    Text("Live positions from wheretheiss.at · ISS + Tiangong.")
                         .font(.firaCode(.caption2))
                 }
             }

@@ -29,7 +29,9 @@ final class ISSWireDecodingTests: XCTestCase {
         // a mocked URLSession in an integration test or trust the conversion.
         // Here we just confirm the public ISSPosition struct round-trips JSON.
 
-        let pos = ISSPosition(
+        let pos = CrewedObject(
+            noradId: 25544,
+            name: "ISS",
             latitude: 42.1234,
             longitude: -71.5678,
             altitudeKm: 418.5,
@@ -39,10 +41,12 @@ final class ISSWireDecodingTests: XCTestCase {
             observedAt: Date(timeIntervalSince1970: 1747700000)
         )
         let encoded = try JSONEncoder().encode(pos)
-        let decoded = try JSONDecoder().decode(ISSPosition.self, from: encoded)
+        let decoded = try JSONDecoder().decode(CrewedObject.self, from: encoded)
         XCTAssertEqual(decoded.latitude, 42.1234)
         XCTAssertEqual(decoded.visibility, "daylight")
         XCTAssertEqual(decoded.passes, [])
+        XCTAssertEqual(decoded.name, "ISS")
+        XCTAssertEqual(decoded.noradId, 25544)
 
         // And the raw N2YO-shaped fixture decodes to ISSPass via round-trip.
         let pass = ISSPass(

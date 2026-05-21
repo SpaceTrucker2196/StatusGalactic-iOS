@@ -47,7 +47,7 @@ struct BriefBuilder {
         async let launchTask: [Launch] = (try? await launches.fetchUpcomingLaunches()) ?? []
         async let apodTask: APOD? = try? apodClient.fetchToday()
         async let marsTask: MarsWeather? = try? marsClient.fetchLatest()
-        async let issTask: ISSPosition? = try? issClient.fetchPosition()
+        async let crewedTask: [CrewedObject] = issClient.fetchAllCrewedObjects()
         async let tidesTask: Tides? = try? tidesClient.fetchNearestTides(lat: lat, lng: lng)
         async let riverTask: RiverGauge? = try? riverClient.fetchNearestGauge(lat: lat, lng: lng)
         let n2yoKey = config.n2yoAPIKey
@@ -86,16 +86,18 @@ struct BriefBuilder {
         let launchList = await launchTask
         let apod = await apodTask
         let mars = await marsTask
-        var iss = await issTask
+        var crewed = await crewedTask
         let passes = await passesTask
         let tides = await tidesTask
         let river = await riverTask
-        if iss != nil {
-            iss?.passes = passes
+        // Visual passes are only meaningful for the ISS (N2YO endpoint we use
+        // is ISS-specific). Attach to the ISS entry if present.
+        if let issIdx = crewed.firstIndex(where: { $0.noradId == CrewedSpacecraftCatalog.iss.noradId }) {
+            crewed[issIdx].passes = passes
         }
         if apod == nil { errors["apod"] = "APOD unavailable (NASA API)" }
         if mars == nil { errors["mars"] = "Mars weather unavailable (MAAS2)" }
-        if iss == nil { errors["iss"] = "ISS position unavailable" }
+        if crewed.isEmpty { errors["crewed"] = "No crewed-spacecraft positions available" }
 
         let sun = SunEvents.compute(
             when: when,
@@ -121,7 +123,7 @@ struct BriefBuilder {
             launches: launchList,
             apod: apod,
             mars: mars,
-            iss: iss,
+            crewed: crewed,
             repeaters: repeaters,
             tides: tides,
             river: river,

@@ -17,7 +17,7 @@ struct Brief: Codable {
     let launches: [Launch]
     let apod: APOD?
     let mars: MarsWeather?
-    let iss: ISSPosition?
+    let crewed: [CrewedObject]
     let repeaters: [Repeater]
     let tides: Tides?
     let river: RiverGauge?
@@ -26,7 +26,7 @@ struct Brief: Codable {
     enum CodingKeys: String, CodingKey {
         case when, lat, lng, timezone
         case locationName = "location_name"
-        case earth, marine, space, sun, moon, planets, launches, apod, mars, iss
+        case earth, marine, space, sun, moon, planets, launches, apod, mars, crewed
         case repeaters, tides, river, errors
     }
 
@@ -45,7 +45,7 @@ struct Brief: Codable {
         launches: [Launch],
         apod: APOD? = nil,
         mars: MarsWeather? = nil,
-        iss: ISSPosition? = nil,
+        crewed: [CrewedObject] = [],
         repeaters: [Repeater] = [],
         tides: Tides? = nil,
         river: RiverGauge? = nil,
@@ -65,7 +65,7 @@ struct Brief: Codable {
         self.launches = launches
         self.apod = apod
         self.mars = mars
-        self.iss = iss
+        self.crewed = crewed
         self.repeaters = repeaters
         self.tides = tides
         self.river = river
@@ -271,7 +271,12 @@ struct MarsWeather: Codable, Hashable {
     let sunset: String?
 }
 
-struct ISSPosition: Codable, Hashable {
+/// A live position snapshot for a crewed orbital spacecraft. `passes` is only
+/// populated for objects we can predict passes for (today: ISS via N2YO).
+struct CrewedObject: Codable, Hashable, Identifiable {
+    var id: Int { noradId }
+    let noradId: Int
+    let name: String
     let latitude: Double
     let longitude: Double
     let altitudeKm: Double

@@ -1,8 +1,12 @@
 import SwiftUI
 import MapKit
 
+/// Generic crewed-spacecraft card. Originally written for the ISS; now also
+/// renders Tianhe / Tiangong and anything else `CrewedSpacecraftCatalog`
+/// exposes. The `iss` parameter name is preserved internally to avoid
+/// touching every call site.
 struct ISSCard: View {
-    let iss: ISSPosition
+    let iss: CrewedObject
     let observerLat: Double
     let observerLng: Double
 
@@ -35,7 +39,7 @@ struct ISSCard: View {
             Image(systemName: "satellite.fill")
                 .foregroundStyle(GalacticPalette.neonCyan)
                 .neonGlow(GalacticPalette.neonCyan, intensity: 5)
-            Text("ISS")
+            Text(iss.name)
                 .font(.firaCode(.headline, weight: .bold))
                 .foregroundStyle(GalacticPalette.neonCyan)
             Spacer()
@@ -73,7 +77,7 @@ struct ISSCard: View {
             span: .init(latitudeDelta: span, longitudeDelta: span)
         )
         return Map(initialPosition: .region(region)) {
-            Marker("ISS", systemImage: "satellite.fill", coordinate: issCoord)
+            Marker(iss.name, systemImage: "satellite.fill", coordinate: issCoord)
                 .tint(GalacticPalette.neonCyan)
             Marker("Me", systemImage: "location.fill", coordinate: observerCoord)
                 .tint(GalacticPalette.hotPink)

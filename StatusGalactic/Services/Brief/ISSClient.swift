@@ -1,9 +1,24 @@
 import Foundation
 
-/// Current ISS position via `wheretheiss.at`. Free, no auth.
-///
-/// Returns approximately real-time lat/lng/altitude/velocity for the ISS
-/// (NORAD ID 25544) plus a daylight/eclipsed visibility flag.
+/// Currently-tracked persistent crewed orbital platforms. Add more by
+/// looking up the NORAD ID and confirming wheretheiss.at returns a row.
+struct CrewedSpacecraft: Hashable {
+    let noradId: Int
+    let name: String
+}
+
+enum CrewedSpacecraftCatalog {
+    static let iss = CrewedSpacecraft(noradId: 25544, name: "ISS")
+    static let tiangong = CrewedSpacecraft(noradId: 48274, name: "Tiangong (Tianhe)")
+
+    /// All persistent crewed orbital objects worth tracking. Short-duration
+    /// crew vehicles (Soyuz, Dragon, Starliner) come and go; they belong in
+    /// a separate launch-tracker, not this list.
+    static let all: [CrewedSpacecraft] = [iss, tiangong]
+}
+
+/// wheretheiss.at + N2YO client. Free, no auth for position; N2YO key
+/// required for pass predictions.
 struct ISSClient {
     let session: URLSession
     let userAgent: String
@@ -13,19 +28,49 @@ struct ISSClient {
         self.userAgent = userAgent
     }
 
-    static let url = URL(string: "https://api.wheretheiss.at/v1/satellites/25544")!
+    static let baseURL = "https://api.wheretheiss.at/v1/satellites"
 
-    func fetchPosition() async throws -> ISSPosition {
-        let data = try await session.getData(from: Self.url, userAgent: userAgent)
+    /// Current position for an arbitrary NORAD satellite ID. The API supports
+    /// any object in its catalog; we use it for ISS (25544) and Tianhe (48274).
+    func fetchPosition(noradId: Int, name: String) async throws -> CrewedObject {
+        guard let url = URL(string: "\(Self.baseURL)/\(noradId)") else {
+            throw HTTPError.invalidURL
+        }
+        let data = try await session.getData(from: url, userAgent: userAgent)
         do {
-            return try JSONDecoder().decode(Wire.self, from: data).toPosition()
+            return try JSONDecoder().decode(Wire.self, from: data).toCrewedObject(
+                noradId: noradId,
+                name: name
+            )
         } catch {
             throw HTTPError.decoding(error)
         }
     }
 
-    /// Upcoming visible ISS passes for an observer at (lat, lng) over the
-    /// next `days` days. Requires an N2YO API key (free at n2yo.com).
+    /// Convenience wrapper that hits the full catalog in parallel and returns
+    /// whatever came back. Failures per object are silently dropped.
+    func fetchAllCrewedObjects() async -> [CrewedObject] {
+        let session = self.session
+        let userAgent = self.userAgent
+        return await withTaskGroup(of: CrewedObject?.self) { group in
+            for ship in CrewedSpacecraftCatalog.all {
+                group.addTask {
+                    let one = ISSClient(session: session, userAgent: userAgent)
+                    return try? await one.fetchPosition(noradId: ship.noradId, name: ship.name)
+                }
+            }
+            var out: [CrewedObject] = []
+            for await result in group {
+                if let result { out.append(result) }
+            }
+            // Stable order matching the catalog list.
+            return CrewedSpacecraftCatalog.all.compactMap { ship in
+                out.first { $0.noradId == ship.noradId }
+            }
+        }
+    }
+
+    /// Upcoming visible ISS passes (only ISS today). Requires N2YO key.
     func fetchVisualPasses(
         lat: Double,
         lng: Double,
@@ -83,12 +128,14 @@ struct ISSClient {
         let longitude: Double
         let altitude: Double      // km
         let velocity: Double      // km/h
-        let visibility: String?   // "daylight" | "eclipsed"
+        let visibility: String?
         let footprint: Double?    // km
         let timestamp: TimeInterval
 
-        func toPosition() -> ISSPosition {
-            ISSPosition(
+        func toCrewedObject(noradId: Int, name: String) -> CrewedObject {
+            CrewedObject(
+                noradId: noradId,
+                name: name,
                 latitude: latitude,
                 longitude: longitude,
                 altitudeKm: altitude,
