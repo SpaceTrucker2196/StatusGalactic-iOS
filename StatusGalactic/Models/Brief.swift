@@ -32,6 +32,9 @@ struct Brief: Codable {
     let wwvBulletin: WWVBulletin?
     let cmes: [CMEEvent]
     let solarOutlook: [SolarOutlookDay]
+    let xRay: XRayState?
+    let proton: ProtonState?
+    let ionosondes: [IonosondeStation]
     let errors: [String: String]
 
     enum CodingKeys: String, CodingKey {
@@ -46,6 +49,8 @@ struct Brief: Codable {
         case wwvBulletin = "wwv_bulletin"
         case cmes
         case solarOutlook = "solar_outlook"
+        case xRay = "x_ray"
+        case proton, ionosondes
         case errors
     }
 
@@ -79,6 +84,9 @@ struct Brief: Codable {
         wwvBulletin: WWVBulletin? = nil,
         cmes: [CMEEvent] = [],
         solarOutlook: [SolarOutlookDay] = [],
+        xRay: XRayState? = nil,
+        proton: ProtonState? = nil,
+        ionosondes: [IonosondeStation] = [],
         errors: [String: String]
     ) {
         self.when = when
@@ -110,6 +118,9 @@ struct Brief: Codable {
         self.wwvBulletin = wwvBulletin
         self.cmes = cmes
         self.solarOutlook = solarOutlook
+        self.xRay = xRay
+        self.proton = proton
+        self.ionosondes = ionosondes
         self.errors = errors
     }
 }
@@ -276,6 +287,37 @@ struct SolarWind: Codable, Hashable {
         case bzNT = "bz_nt"
         case btNT = "bt_nt"
     }
+}
+
+/// Current + 24h-peak GOES soft X-ray state and the derived NOAA R-scale
+/// (radio blackout) badge. Long-wave channel (1-8Å) is the canonical one.
+struct XRayState: Codable, Hashable {
+    let currentFlux: Double         // W/m², 1-8Å
+    let currentClass: String        // e.g. "B5.2", "M1.0", "X1.4"
+    let peakFlux24h: Double
+    let peakClass24h: String
+    let rScale: String              // "R0".."R5"
+    let observedAt: Date
+}
+
+/// Current GOES integral proton flux (≥10 MeV) and derived S-scale.
+struct ProtonState: Codable, Hashable {
+    let fluxPfu: Double             // particle flux units
+    let sScale: String              // "S0".."S5"
+    let observedAt: Date
+}
+
+/// One digisonde station from prop.kc2g.com — the community ionosonde
+/// network used by ham operators for HF propagation planning.
+struct IonosondeStation: Codable, Identifiable, Hashable {
+    var id: String { name }
+    let name: String                // 5-char IUWDS code, e.g. "WP937"
+    let latitude: Double
+    let longitude: Double
+    let fof2MHz: Double?            // critical frequency, F2 layer
+    let mufMHz: Double?             // MUF(3000)F2 — long-haul HF ceiling
+    let observedAt: Date?
+    var distanceKm: Double?         // from viewer
 }
 
 /// One CME event from NASA DONKI. Speed/direction come from the most

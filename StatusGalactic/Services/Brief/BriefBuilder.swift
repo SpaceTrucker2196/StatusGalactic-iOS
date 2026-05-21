@@ -64,6 +64,12 @@ struct BriefBuilder {
         let outlookClient = SolarOutlookClient(
             session: session, userAgent: config.userAgent
         )
+        let goesClient = GOESParticleClient(
+            session: session, userAgent: config.userAgent
+        )
+        let ionosondeClient = IonosondeClient(
+            session: session, userAgent: config.userAgent
+        )
 
         // 48-hour window: NWS periods are 12 hours each, so 4 covers today,
         // tonight, tomorrow, and tomorrow night. We render the first one as
@@ -88,6 +94,11 @@ struct BriefBuilder {
         async let wwvTask: WWVBulletin? = try? await wwvClient.fetch()
         async let cmesTask: [CMEEvent] = (try? await donkiClient.fetchRecent()) ?? []
         async let outlookTask: [SolarOutlookDay] = (try? await outlookClient.fetch()) ?? []
+        async let xRayTask: XRayState? = try? await goesClient.fetchXRay()
+        async let protonTask: ProtonState? = try? await goesClient.fetchProton()
+        async let ionosondesTask: [IonosondeStation] = (try? await ionosondeClient.fetchNearest(
+            lat: lat, lng: lng
+        )) ?? []
         let n2yoKey = config.n2yoAPIKey
         async let passesTask: [ISSPass] = n2yoKey.isEmpty
             ? []
@@ -139,6 +150,9 @@ struct BriefBuilder {
         let wwv = await wwvTask
         let cmes = await cmesTask
         let outlook = await outlookTask
+        let xRay = await xRayTask
+        let proton = await protonTask
+        let ionosondes = await ionosondesTask
         // Visual passes are only meaningful for the ISS (N2YO endpoint we use
         // is ISS-specific). Attach to the ISS entry if present.
         if let issIdx = crewed.firstIndex(where: { $0.noradId == CrewedSpacecraftCatalog.iss.noradId }) {
@@ -187,6 +201,9 @@ struct BriefBuilder {
             wwvBulletin: wwv,
             cmes: cmes,
             solarOutlook: outlook,
+            xRay: xRay,
+            proton: proton,
+            ionosondes: ionosondes,
             errors: errors
         )
     }

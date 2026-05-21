@@ -40,6 +40,9 @@ struct SolarAlmanacView: View {
                 if !brief.solarOutlook.isEmpty {
                     SolarOutlookPanel(days: brief.solarOutlook)
                 }
+                if !brief.ionosondes.isEmpty {
+                    IonosondePanel(stations: brief.ionosondes)
+                }
                 if isLoading && almanac == nil {
                     ProgressView()
                         .tint(GalacticPalette.neonCyan)

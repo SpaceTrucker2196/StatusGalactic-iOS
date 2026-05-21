@@ -13,6 +13,11 @@ struct BriefDetailView: View {
             }
             .listRowBackground(Color.clear)
             .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
+            Section {
+                StormScaleRow(brief: brief)
+            }
+            .listRowBackground(Color.clear)
+            .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 4, trailing: 16))
             if let sun = brief.sun {
                 Section("Sun") {
                     SunStrip(sun: sun, now: fetchedAt)
