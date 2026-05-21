@@ -140,7 +140,8 @@ struct BriefView: View {
         await vm.load(
             config: config,
             location: location.lastLocation,
-            tz: TimeZone.current.identifier
+            tz: TimeZone.current.identifier,
+            notifications: notifications
         )
         // Refresh local notification schedule from the freshest known location.
         if case .loaded(let brief, _) = vm.state {

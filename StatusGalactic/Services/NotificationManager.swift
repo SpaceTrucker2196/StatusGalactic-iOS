@@ -6,10 +6,21 @@ import CoreLocation
 final class NotificationManager {
     static let goldenHourIdPrefix = "io.river.statusgalactic.goldenHour"
     static let astronomicalDuskIdPrefix = "io.river.statusgalactic.astroDusk"
+    static let spaceWeatherIdPrefix = "io.river.statusgalactic.spaceWX"
 
     private static let goldenEnabledKey = "io.river.statusgalactic.notif.goldenEnabled"
     private static let astroEnabledKey = "io.river.statusgalactic.notif.astroEnabled"
     private static let scheduleDays = 14
+
+    private static let auroraAlertsEnabledKey = "io.river.statusgalactic.notif.auroraEnabled"
+    private static let stormAlertsEnabledKey = "io.river.statusgalactic.notif.stormEnabled"
+    private static let auroraThresholdKey = "io.river.statusgalactic.notif.auroraThreshold"
+    private static let stormMinLevelKey = "io.river.statusgalactic.notif.stormMinLevel"
+
+    /// Per-alert "last fired" timestamp store. Keeps us from re-pinging a
+    /// user every 5 minutes for the same ongoing storm.
+    private static let lastFiredPrefix = "io.river.statusgalactic.notif.lastFired."
+    private static let alertCooldown: TimeInterval = 90 * 60
 
     var authorizationStatus: UNAuthorizationStatus = .notDetermined
     var goldenHourEnabled: Bool {
@@ -21,10 +32,33 @@ final class NotificationManager {
     var nextGoldenHour: Date?
     var nextAstroDusk: Date?
 
+    /// Fire when local aurora probability crosses this value.
+    var auroraAlertsEnabled: Bool {
+        didSet { UserDefaults.standard.set(auroraAlertsEnabled, forKey: Self.auroraAlertsEnabledKey) }
+    }
+    var auroraThresholdPct: Int {
+        didSet { UserDefaults.standard.set(auroraThresholdPct, forKey: Self.auroraThresholdKey) }
+    }
+
+    /// Fire when R/S/G storm scale (digit 1..5) reaches at least this level.
+    var stormAlertsEnabled: Bool {
+        didSet { UserDefaults.standard.set(stormAlertsEnabled, forKey: Self.stormAlertsEnabledKey) }
+    }
+    var stormMinLevel: Int {
+        didSet { UserDefaults.standard.set(stormMinLevel, forKey: Self.stormMinLevelKey) }
+    }
+
     init() {
         let defaults = UserDefaults.standard
         self.goldenHourEnabled = defaults.bool(forKey: Self.goldenEnabledKey)
         self.astronomicalDuskEnabled = defaults.bool(forKey: Self.astroEnabledKey)
+        self.auroraAlertsEnabled = defaults.bool(forKey: Self.auroraAlertsEnabledKey)
+        self.stormAlertsEnabled = defaults.bool(forKey: Self.stormAlertsEnabledKey)
+        // Defaults: 30% aurora, G2/R2/S2 storm.
+        let storedAurora = defaults.integer(forKey: Self.auroraThresholdKey)
+        self.auroraThresholdPct = storedAurora == 0 ? 30 : storedAurora
+        let storedStorm = defaults.integer(forKey: Self.stormMinLevelKey)
+        self.stormMinLevel = storedStorm == 0 ? 2 : storedStorm
     }
 
     func refreshAuthorization() async {
@@ -115,6 +149,92 @@ final class NotificationManager {
 
         nextGoldenHour = soonestGolden
         nextAstroDusk = soonestAstro
+    }
+
+    // MARK: - Space-weather alerts
+
+    /// Inspect the latest brief and fire immediate notifications when the
+    /// user's configured thresholds are crossed. Per-alert cooldown stops
+    /// repeat firings of the same ongoing storm.
+    func evaluateSpaceWeather(brief: Brief) async {
+        await refreshAuthorization()
+        guard authorizationStatus == .authorized || authorizationStatus == .provisional else {
+            return
+        }
+
+        if auroraAlertsEnabled, let aurora = brief.aurora,
+           aurora.localProbabilityPct >= auroraThresholdPct {
+            await fireIfCooled(
+                key: "aurora",
+                title: "Aurora at your location",
+                body: "OVATION shows \(aurora.localProbabilityPct)% probability right now — peak \(aurora.globalMaxPct)% on the oval."
+            )
+        }
+
+        if stormAlertsEnabled {
+            // R-scale (radio blackout)
+            if let level = Self.scaleLevel(brief.xRay?.rScale), level >= stormMinLevel {
+                await fireIfCooled(
+                    key: "radio_blackout",
+                    title: "Radio blackout: R\(level)",
+                    body: "Peak X-ray class \(brief.xRay?.peakClass24h ?? "?"). HF degraded on the sunlit side."
+                )
+            }
+            // S-scale (solar radiation)
+            if let level = Self.scaleLevel(brief.proton?.sScale), level >= stormMinLevel {
+                await fireIfCooled(
+                    key: "solar_radiation",
+                    title: "Solar radiation storm: S\(level)",
+                    body: String(format: "Proton flux %.0f pfu ≥10 MeV.", brief.proton?.fluxPfu ?? 0)
+                )
+            }
+            // G-scale (geomagnetic) — derive from Kp.
+            if let kp = brief.space?.kpIndex {
+                let gString = SpaceWeatherForecastClient.gScaleString(forKp: kp)
+                if let level = Self.scaleLevel(gString), level >= stormMinLevel {
+                    await fireIfCooled(
+                        key: "geomag",
+                        title: "Geomagnetic storm: G\(level)",
+                        body: String(format: "Kp %.1f. HF noisy; aurora pushing south.", kp)
+                    )
+                }
+            }
+        }
+    }
+
+    /// Extract the numeric severity from a NOAA scale string like "R3" / "G2".
+    /// Returns nil for "X0" / unknown — we only alert on actual storms.
+    static func scaleLevel(_ scale: String?) -> Int? {
+        guard let scale, scale.count >= 2,
+              let digit = scale.last.flatMap({ Int(String($0)) }),
+              digit >= 1
+        else { return nil }
+        return digit
+    }
+
+    private func fireIfCooled(key: String, title: String, body: String) async {
+        let defaults = UserDefaults.standard
+        let storeKey = Self.lastFiredPrefix + key
+        let lastFiredEpoch = defaults.double(forKey: storeKey)
+        let now = Date().timeIntervalSince1970
+        if lastFiredEpoch > 0 && (now - lastFiredEpoch) < Self.alertCooldown {
+            return
+        }
+        let content = UNMutableNotificationContent()
+        content.title = title
+        content.body = body
+        content.sound = .default
+        let req = UNNotificationRequest(
+            identifier: "\(Self.spaceWeatherIdPrefix).\(key).\(Int(now))",
+            content: content,
+            trigger: UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)
+        )
+        do {
+            try await UNUserNotificationCenter.current().add(req)
+            defaults.set(now, forKey: storeKey)
+        } catch {
+            // Drop silently — alert delivery is best-effort.
+        }
     }
 
     func cancelAll() {

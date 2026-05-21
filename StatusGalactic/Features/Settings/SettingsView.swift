@@ -164,6 +164,27 @@ struct SettingsView: View {
                 .onChange(of: notifications.goldenHourEnabled) { handleNotifChange() }
             Toggle("Astronomical dusk reminders", isOn: $notifications.astronomicalDuskEnabled)
                 .onChange(of: notifications.astronomicalDuskEnabled) { handleNotifChange() }
+            Toggle("Aurora alert at my location", isOn: $notifications.auroraAlertsEnabled)
+                .onChange(of: notifications.auroraAlertsEnabled) { handleNotifChange() }
+            if notifications.auroraAlertsEnabled {
+                Stepper(
+                    "Fire when ≥ \(notifications.auroraThresholdPct)%",
+                    value: $notifications.auroraThresholdPct,
+                    in: 5...90,
+                    step: 5
+                )
+                .font(.firaCode(.caption))
+            }
+            Toggle("R / S / G storm alerts", isOn: $notifications.stormAlertsEnabled)
+                .onChange(of: notifications.stormAlertsEnabled) { handleNotifChange() }
+            if notifications.stormAlertsEnabled {
+                Stepper(
+                    "Fire when scale ≥ \(notifications.stormMinLevel)",
+                    value: $notifications.stormMinLevel,
+                    in: 1...5
+                )
+                .font(.firaCode(.caption))
+            }
             if let next = notifications.nextGoldenHour, notifications.goldenHourEnabled {
                 LabeledContent("Next golden hour") {
                     Text(next, style: .relative).foregroundStyle(.secondary)

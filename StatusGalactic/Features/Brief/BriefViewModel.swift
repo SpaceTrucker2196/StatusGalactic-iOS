@@ -14,7 +14,12 @@ final class BriefViewModel {
     var marineZone: String = ""
     var selectedCallsign: String?
 
-    func load(config: ClientConfig, location: CLLocation?, tz: String) async {
+    func load(
+        config: ClientConfig,
+        location: CLLocation?,
+        tz: String,
+        notifications: NotificationManager? = nil
+    ) async {
         state = .loading
 
         let lat: Double
@@ -53,5 +58,8 @@ final class BriefViewModel {
             timezone: tz
         )
         state = .loaded(brief, fetchedAt: Date())
+        if let notifications {
+            await notifications.evaluateSpaceWeather(brief: brief)
+        }
     }
 }
