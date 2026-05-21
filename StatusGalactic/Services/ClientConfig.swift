@@ -13,6 +13,7 @@ final class ClientConfig {
     static let myCallsignKey = "io.river.statusgalactic.myCallsign"
     static let marineZoneKey = "io.river.statusgalactic.defaultMarineZone"
     static let userAgentKey = "io.river.statusgalactic.userAgent"
+    static let apodBackgroundKey = "io.river.statusgalactic.useAPODBackground"
 
     static let defaultUserAgent =
         "StatusGalactic-iOS/0.2 (+https://github.com/SpaceTrucker2196/StatusGalactic-iOS)"
@@ -44,6 +45,12 @@ final class ClientConfig {
         }
     }
 
+    /// When true, the brief uses the Astronomy Picture of the Day as a faint
+    /// background image behind the cosmic-sky gradient.
+    var useAPODBackground: Bool {
+        didSet { UserDefaults.standard.set(useAPODBackground, forKey: Self.apodBackgroundKey) }
+    }
+
     init() {
         let defaults = UserDefaults.standard
         self.aprsAPIKey = defaults.string(forKey: Self.aprsKeyKey) ?? ""
@@ -52,6 +59,7 @@ final class ClientConfig {
         self.myCallsign = defaults.string(forKey: Self.myCallsignKey) ?? ""
         self.defaultMarineZone = defaults.string(forKey: Self.marineZoneKey) ?? ""
         self.userAgent = defaults.string(forKey: Self.userAgentKey) ?? Self.defaultUserAgent
+        self.useAPODBackground = defaults.object(forKey: Self.apodBackgroundKey) as? Bool ?? true
 
         // Mirror to the shared app-group suite so the widget and watch
         // complications can read the latest User-Agent without their own

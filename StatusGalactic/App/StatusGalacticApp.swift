@@ -20,6 +20,7 @@ struct StatusGalacticApp: App {
                 .environment(aprsStationLog)
                 .task {
                     await notifications.refreshAuthorization()
+                    await ImageCache.shared.purgeExpired()
                 }
         }
     }

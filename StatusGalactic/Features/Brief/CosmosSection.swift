@@ -12,26 +12,24 @@ struct APODCard: View {
         } label: {
             VStack(alignment: .leading, spacing: 8) {
                 if let url = apod.displayImageURL {
-                    AsyncImage(url: url) { phase in
-                        switch phase {
-                        case .success(let img):
-                            img.resizable().aspectRatio(contentMode: .fill)
-                        case .failure:
+                    CachedAsyncImage(
+                        url: url,
+                        placeholder: {
+                            ZStack {
+                                Color.black
+                                ProgressView().tint(.white)
+                            }
+                        },
+                        failure: {
                             ZStack {
                                 Color.black
                                 Image(systemName: "sparkles")
                                     .font(.title)
                                     .foregroundStyle(GalacticPalette.neonPurple)
                             }
-                        case .empty:
-                            ZStack {
-                                Color.black
-                                ProgressView().tint(.white)
-                            }
-                        @unknown default:
-                            Color.black
                         }
-                    }
+                    )
+                    .aspectRatio(contentMode: .fill)
                     .frame(height: 200)
                     .frame(maxWidth: .infinity)
                     .clipShape(RoundedRectangle(cornerRadius: 10))
@@ -86,20 +84,16 @@ private struct APODDetail: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     if let url = apod.displayImageURL {
-                        AsyncImage(url: url) { phase in
-                            switch phase {
-                            case .success(let img):
-                                img.resizable().aspectRatio(contentMode: .fit)
-                                    .background(Color.black)
-                            case .failure:
+                        CachedAsyncImage(
+                            url: url,
+                            placeholder: { ProgressView().padding() },
+                            failure: {
                                 Label("Image unavailable", systemImage: "exclamationmark.triangle")
                                     .padding()
-                            case .empty:
-                                ProgressView().padding()
-                            @unknown default:
-                                EmptyView()
                             }
-                        }
+                        )
+                        .aspectRatio(contentMode: .fit)
+                        .background(Color.black)
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                     }
                     Text(apod.title)

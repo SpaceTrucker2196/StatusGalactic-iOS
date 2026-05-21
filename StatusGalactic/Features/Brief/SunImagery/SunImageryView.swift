@@ -52,28 +52,24 @@ private struct SunImageTile: View {
             showDetail = true
         } label: {
             VStack(alignment: .leading, spacing: 4) {
-                AsyncImage(url: image.url, transaction: .init(animation: .default)) { phase in
-                    switch phase {
-                    case .success(let img):
-                        img
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                    case .failure:
+                CachedAsyncImage(
+                    url: image.url,
+                    placeholder: {
+                        ZStack {
+                            Color.black
+                            ProgressView().tint(GalacticPalette.neonCyan)
+                        }
+                    },
+                    failure: {
                         ZStack {
                             Color.black
                             Image(systemName: "sun.max.trianglebadge.exclamationmark")
                                 .font(.title2)
                                 .foregroundStyle(GalacticPalette.neonMagenta.opacity(0.7))
                         }
-                    case .empty:
-                        ZStack {
-                            Color.black
-                            ProgressView().tint(GalacticPalette.neonCyan)
-                        }
-                    @unknown default:
-                        Color.black
                     }
-                }
+                )
+                .aspectRatio(contentMode: .fill)
                 .frame(width: width, height: height)
                 .clipShape(RoundedRectangle(cornerRadius: 10))
                 .overlay(
@@ -108,30 +104,26 @@ private struct SunImageDetailView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
-                    AsyncImage(url: image.url) { phase in
-                        switch phase {
-                        case .success(let img):
-                            img
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                                .background(.black)
-                        case .failure:
+                    CachedAsyncImage(
+                        url: image.url,
+                        placeholder: {
+                            ZStack {
+                                Color.black
+                                ProgressView().tint(.white)
+                            }
+                            .aspectRatio(1, contentMode: .fit)
+                        },
+                        failure: {
                             ZStack {
                                 Color.black
                                 Label("Image unavailable", systemImage: "exclamationmark.triangle")
                                     .foregroundStyle(.secondary)
                             }
                             .aspectRatio(1, contentMode: .fit)
-                        case .empty:
-                            ZStack {
-                                Color.black
-                                ProgressView().tint(.white)
-                            }
-                            .aspectRatio(1, contentMode: .fit)
-                        @unknown default:
-                            Color.black
                         }
-                    }
+                    )
+                    .aspectRatio(contentMode: .fit)
+                    .background(.black)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
 
                     VStack(alignment: .leading, spacing: 8) {

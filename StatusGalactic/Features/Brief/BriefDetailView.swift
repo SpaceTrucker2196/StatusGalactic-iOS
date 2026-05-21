@@ -4,6 +4,8 @@ struct BriefDetailView: View {
     let brief: Brief
     let fetchedAt: Date
 
+    @Environment(ClientConfig.self) private var config
+
     var body: some View {
         List {
             Section {
@@ -218,7 +220,29 @@ struct BriefDetailView: View {
         }
         .listStyle(.insetGrouped)
         .scrollContentBackground(.hidden)
-        .background(GalacticPalette.cosmicSky.ignoresSafeArea())
+        .background(briefBackground.ignoresSafeArea())
+    }
+
+    @ViewBuilder
+    private var briefBackground: some View {
+        if config.useAPODBackground,
+           let apod = brief.apod,
+           let url = apod.displayImageURL {
+            ZStack {
+                Color.black
+                CachedAsyncImage(
+                    url: url,
+                    placeholder: { Color.black },
+                    failure: { Color.black }
+                )
+                .aspectRatio(contentMode: .fill)
+                .opacity(0.35)
+                .blur(radius: 6)
+                GalacticPalette.cosmicSky.opacity(0.65)
+            }
+        } else {
+            GalacticPalette.cosmicSky
+        }
     }
 }
 

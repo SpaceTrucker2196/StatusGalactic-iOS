@@ -18,13 +18,16 @@ struct AIASunPanel: View {
             Button {
                 showDetail = true
             } label: {
-                AsyncImage(url: source.url, transaction: .init(animation: .default)) { phase in
-                    switch phase {
-                    case .success(let img):
-                        img
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                    case .failure:
+                CachedAsyncImage(
+                    url: source.url,
+                    placeholder: {
+                        ZStack {
+                            Color.black
+                            ProgressView().tint(GalacticPalette.neonCyan)
+                        }
+                        .aspectRatio(1, contentMode: .fit)
+                    },
+                    failure: {
                         ZStack {
                             Color.black
                             Image(systemName: "sun.max.trianglebadge.exclamationmark")
@@ -32,16 +35,9 @@ struct AIASunPanel: View {
                                 .foregroundStyle(GalacticPalette.neonMagenta)
                         }
                         .aspectRatio(1, contentMode: .fit)
-                    case .empty:
-                        ZStack {
-                            Color.black
-                            ProgressView().tint(GalacticPalette.neonCyan)
-                        }
-                        .aspectRatio(1, contentMode: .fit)
-                    @unknown default:
-                        Color.black
                     }
-                }
+                )
+                .aspectRatio(contentMode: .fill)
                 .frame(maxWidth: .infinity)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 .overlay(
@@ -80,20 +76,16 @@ private struct AIASunPanelDetail: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
-                    AsyncImage(url: image.url) { phase in
-                        switch phase {
-                        case .success(let img):
-                            img.resizable().aspectRatio(contentMode: .fit)
-                                .background(Color.black)
-                        case .failure:
+                    CachedAsyncImage(
+                        url: image.url,
+                        placeholder: { ProgressView().padding() },
+                        failure: {
                             Label("Image unavailable", systemImage: "exclamationmark.triangle")
                                 .padding()
-                        case .empty:
-                            ProgressView().padding()
-                        @unknown default:
-                            EmptyView()
                         }
-                    }
+                    )
+                    .aspectRatio(contentMode: .fit)
+                    .background(Color.black)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                     Text(image.label)
                         .font(.firaCode(.title3, weight: .bold))

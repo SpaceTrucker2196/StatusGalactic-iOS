@@ -65,6 +65,19 @@ struct SettingsView: View {
                         .foregroundStyle(.secondary)
                 }
 
+                Section {
+                    Toggle("APOD as brief background", isOn: $config.useAPODBackground)
+                    Button("Clear image cache") {
+                        Task { await ImageCache.shared.clear() }
+                    }
+                    .foregroundStyle(GalacticPalette.hotPink)
+                } header: {
+                    Text("Imagery")
+                } footer: {
+                    Text("Images are cached on-device; stale entries are purged after 90 days.")
+                        .font(.caption)
+                }
+
                 Section("Network") {
                     TextField("User-Agent", text: $config.userAgent)
                         .textInputAutocapitalization(.never)
