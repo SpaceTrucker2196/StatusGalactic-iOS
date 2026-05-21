@@ -12,7 +12,12 @@ struct BriefDetailView: View {
             .listRowBackground(Color.clear)
             if let earth = brief.earth, let summary = earth.periods.first {
                 Section("Earth Weather") {
-                    WeatherSummaryView(period: summary)
+                    NavigationLink {
+                        WeatherAlmanacView(earth: earth, timezoneName: brief.timezone)
+                    } label: {
+                        WeatherSummaryView(period: summary)
+                    }
+                    .buttonStyle(.plain)
                 }
             }
             if let river = brief.river {

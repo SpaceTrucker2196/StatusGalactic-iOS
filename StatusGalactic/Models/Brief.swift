@@ -99,23 +99,40 @@ struct EarthWeather: Codable {
     let city: String?
     let state: String?
     let periods: [WeatherPeriod]
+    let hourly: [HourlySample]
 
     enum CodingKeys: String, CodingKey {
         case locationName = "location_name"
-        case city, state, periods
+        case city, state, periods, hourly
     }
 
     init(
         locationName: String?,
         city: String? = nil,
         state: String? = nil,
-        periods: [WeatherPeriod]
+        periods: [WeatherPeriod],
+        hourly: [HourlySample] = []
     ) {
         self.locationName = locationName
         self.city = city
         self.state = state
         self.periods = periods
+        self.hourly = hourly
     }
+}
+
+/// One hour of NWS hourly forecast. Powers the almanac sparkline view.
+struct HourlySample: Codable, Identifiable, Hashable {
+    var id: Date { time }
+    let time: Date
+    let temperatureF: Double?
+    let dewpointC: Double?
+    let humidityPct: Double?
+    let windSpeedMph: Double?
+    let windDirection: String?
+    let precipChancePct: Double?
+    let shortForecast: String?
+    let isDaytime: Bool
 }
 
 struct MarineWeather: Codable {
