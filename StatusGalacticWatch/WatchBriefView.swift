@@ -8,6 +8,13 @@ struct WatchBriefView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 10) {
                 header
+                if !brief.weatherAlerts.isEmpty {
+                    alertsCard
+                }
+                stormScaleCard
+                if let aurora = brief.aurora, aurora.localProbabilityPct >= 10 {
+                    auroraCard(aurora: aurora)
+                }
                 if let earth = brief.earth, let period = earth.periods.first {
                     earthCard(period: period)
                 }
@@ -28,6 +35,111 @@ struct WatchBriefView: View {
             }
             .padding(.horizontal, 4)
         }
+    }
+
+    /// Tornado / severe / extreme-rated NWS warnings get top billing on the
+    /// watch. We collapse to a single card showing the highest-severity event
+    /// plus a count badge.
+    private var alertsCard: some View {
+        let top = brief.weatherAlerts.first
+        let accent: Color = {
+            switch top?.severityLevel {
+            case 4: return .red
+            case 3: return .orange
+            case 2: return .yellow
+            case 1: return .secondary
+            default: return .secondary
+            }
+        }()
+        return HStack(alignment: .top, spacing: 6) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(accent)
+            VStack(alignment: .leading, spacing: 1) {
+                if let top {
+                    Text(top.event)
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(accent)
+                        .lineLimit(2)
+                }
+                if brief.weatherAlerts.count > 1 {
+                    Text("+\(brief.weatherAlerts.count - 1) more")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+                if let area = top?.areaDesc {
+                    Text(area)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+            }
+            Spacer()
+        }
+        .padding(8)
+        .background(RoundedRectangle(cornerRadius: 10).fill(accent.opacity(0.18)))
+        .overlay(RoundedRectangle(cornerRadius: 10).stroke(accent, lineWidth: 0.75))
+    }
+
+    /// Three-pill row: R-scale (radio blackout), S-scale (solar radiation),
+    /// G-scale (geomag). Mirrors the storm-scale band on the phone brief.
+    private var stormScaleCard: some View {
+        HStack(spacing: 4) {
+            scalePill(letter: "R", level: brief.xRay?.rScale ?? "R0")
+            scalePill(letter: "S", level: brief.proton?.sScale ?? "S0")
+            scalePill(letter: "G", level: gScale)
+        }
+    }
+
+    private var gScale: String {
+        guard let kp = brief.space?.kpIndex else { return "G0" }
+        switch kp {
+        case ..<5: return "G0"
+        case ..<6: return "G1"
+        case ..<7: return "G2"
+        case ..<8: return "G3"
+        case ..<9: return "G4"
+        default:   return "G5"
+        }
+    }
+
+    private func scalePill(letter: String, level: String) -> some View {
+        let digit = level.last.flatMap { Int(String($0)) } ?? 0
+        let color: Color = {
+            switch digit {
+            case 0: return .green
+            case 1: return .yellow
+            case 2: return .orange
+            case 3: return .red
+            default: return .pink
+            }
+        }()
+        return Text(level)
+            .font(.caption2.weight(.bold))
+            .foregroundStyle(color)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 6)
+            .background(
+                RoundedRectangle(cornerRadius: 8).fill(color.opacity(0.18))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 8).stroke(color.opacity(0.7), lineWidth: 0.6)
+            )
+            .accessibilityLabel("\(letter)-scale \(level)")
+    }
+
+    private func auroraCard(aurora: AuroraForecast) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: "aqi.medium").foregroundStyle(.purple)
+            Text("Aurora \(aurora.localProbabilityPct)%")
+                .font(.caption.weight(.semibold))
+            Spacer()
+            Text("peak \(aurora.globalMaxPct)%")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .monospacedDigit()
+        }
+        .padding(8)
+        .background(RoundedRectangle(cornerRadius: 10).fill(.fill.secondary))
     }
 
     private var header: some View {
