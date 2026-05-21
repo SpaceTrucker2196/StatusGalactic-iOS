@@ -204,6 +204,30 @@ struct BriefDetailView: View {
                         .font(.firaCode(.caption2))
                 }
             }
+            if !brief.sotaSpots.isEmpty {
+                Section {
+                    ForEach(brief.sotaSpots) { spot in
+                        SOTASpotRow(spot: spot)
+                    }
+                } header: {
+                    Text("Summits On The Air")
+                } footer: {
+                    Text("Most recent SOTA spots worldwide.")
+                        .font(.firaCode(.caption2))
+                }
+            }
+            if !brief.dxSpots.isEmpty {
+                Section {
+                    ForEach(brief.dxSpots) { spot in
+                        DXSpotRow(spot: spot)
+                    }
+                } header: {
+                    Text("DX Cluster")
+                } footer: {
+                    Text("Recent DX spots via dxsummit.fi.")
+                        .font(.firaCode(.caption2))
+                }
+            }
             if !brief.repeaters.isEmpty {
                 Section {
                     ForEach(brief.repeaters) { repeater in

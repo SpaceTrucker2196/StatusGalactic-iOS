@@ -76,6 +76,12 @@ struct BriefBuilder {
         let potaClient = POTAClient(
             session: session, userAgent: config.userAgent
         )
+        let sotaClient = SOTAClient(
+            session: session, userAgent: config.userAgent
+        )
+        let dxClient = DXClusterClient(
+            session: session, userAgent: config.userAgent
+        )
         let solarCycleClient = SolarCycleClient(
             session: session, userAgent: config.userAgent
         )
@@ -112,6 +118,8 @@ struct BriefBuilder {
         async let potaTask: [POTASpot] = (try? await potaClient.fetchRecent(
             viewerLat: lat, viewerLng: lng
         )) ?? []
+        async let sotaTask: [SOTASpot] = (try? await sotaClient.fetchRecent()) ?? []
+        async let dxTask: [DXSpot] = (try? await dxClient.fetchRecent()) ?? []
         async let solarCycleTask: [SolarCyclePoint] = (try? await solarCycleClient.fetchObserved()) ?? []
         let n2yoKey = config.n2yoAPIKey
         async let passesTask: [ISSPass] = n2yoKey.isEmpty
@@ -169,6 +177,8 @@ struct BriefBuilder {
         let ionosondes = await ionosondesTask
         let aurora = await auroraTask
         let potaSpots = await potaTask
+        let sotaSpots = await sotaTask
+        let dxSpots = await dxTask
         let solarCycle = await solarCycleTask
         let bandConditions = BandConditions.evaluate(
             sfi: space?.solarFlux,
@@ -230,6 +240,8 @@ struct BriefBuilder {
             aurora: aurora,
             bandConditions: bandConditions,
             potaSpots: potaSpots,
+            sotaSpots: sotaSpots,
+            dxSpots: dxSpots,
             solarCycle: solarCycle,
             errors: errors
         )

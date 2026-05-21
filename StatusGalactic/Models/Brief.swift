@@ -38,6 +38,8 @@ struct Brief: Codable {
     let aurora: AuroraForecast?
     let bandConditions: [BandCondition]
     let potaSpots: [POTASpot]
+    let sotaSpots: [SOTASpot]
+    let dxSpots: [DXSpot]
     let solarCycle: [SolarCyclePoint]
     let errors: [String: String]
 
@@ -57,6 +59,8 @@ struct Brief: Codable {
         case proton, ionosondes, aurora
         case bandConditions = "band_conditions"
         case potaSpots = "pota_spots"
+        case sotaSpots = "sota_spots"
+        case dxSpots = "dx_spots"
         case solarCycle = "solar_cycle"
         case errors
     }
@@ -97,6 +101,8 @@ struct Brief: Codable {
         aurora: AuroraForecast? = nil,
         bandConditions: [BandCondition] = [],
         potaSpots: [POTASpot] = [],
+        sotaSpots: [SOTASpot] = [],
+        dxSpots: [DXSpot] = [],
         solarCycle: [SolarCyclePoint] = [],
         errors: [String: String]
     ) {
@@ -135,6 +141,8 @@ struct Brief: Codable {
         self.aurora = aurora
         self.bandConditions = bandConditions
         self.potaSpots = potaSpots
+        self.sotaSpots = sotaSpots
+        self.dxSpots = dxSpots
         self.solarCycle = solarCycle
         self.errors = errors
     }
@@ -302,6 +310,32 @@ struct SolarWind: Codable, Hashable {
         case bzNT = "bz_nt"
         case btNT = "bt_nt"
     }
+}
+
+/// One live Summits On The Air spot. Same shape as POTASpot but the
+/// reference is a summit code (e.g. `W4V/CT-001`) and the program puts
+/// the elevation in the details string.
+struct SOTASpot: Codable, Identifiable, Hashable {
+    var id: Int { spotId }
+    let spotId: Int
+    let activator: String
+    let summitCode: String
+    let summitDetails: String          // "Mount Mitchell, 2037m"
+    let frequencyKHz: Double
+    let mode: String
+    let spotTime: Date
+    let comments: String?
+}
+
+/// One DX cluster spot — short-lived sighting of a distant station broadcast
+/// by another operator. dxsummit.fi serves them as JSON.
+struct DXSpot: Codable, Identifiable, Hashable {
+    var id: String { spotter + dxCallsign + spotTime.ISO8601Format() }
+    let dxCallsign: String        // the rare/DX station being spotted
+    let spotter: String           // who spotted them
+    let frequencyKHz: Double
+    let info: String?             // free-form remark
+    let spotTime: Date
 }
 
 /// One live Parks On The Air spot. POTA's API publishes spots roughly
