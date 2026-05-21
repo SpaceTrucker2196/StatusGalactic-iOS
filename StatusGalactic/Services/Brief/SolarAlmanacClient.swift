@@ -40,7 +40,7 @@ struct SolarAlmanacClient {
     }
 
     func fetchFlux() async throws -> [SolarFluxPoint] {
-        let data = try await session.getData(from: Self.fluxURL, userAgent: userAgent, timeout: 12)
+        let data = try await session.getData(from: Self.fluxURL, userAgent: userAgent, timeout: 8)
         guard let rows = try JSONSerialization.jsonObject(with: data) as? [[String: Any]] else {
             return []
         }
@@ -71,7 +71,7 @@ struct SolarAlmanacClient {
     }
 
     func fetchKp() async throws -> [KpPoint] {
-        let data = try await session.getData(from: Self.kpURL, userAgent: userAgent, timeout: 12)
+        let data = try await session.getData(from: Self.kpURL, userAgent: userAgent, timeout: 8)
         guard let rows = try JSONSerialization.jsonObject(with: data) as? [[Any]],
               rows.count > 1
         else { return [] }

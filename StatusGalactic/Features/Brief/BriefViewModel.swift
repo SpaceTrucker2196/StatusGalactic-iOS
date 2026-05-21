@@ -11,6 +11,10 @@ final class BriefViewModel {
     }
 
     var state: LoadState = .idle
+    /// True while a refresh is in flight. The previous `.loaded` brief is
+    /// kept rendered while this is true so the UI doesn't blank out for
+    /// 10+ seconds on a slow network.
+    var isRefreshing: Bool = false
     var marineZone: String = ""
     var selectedCallsign: String?
 
@@ -20,7 +24,13 @@ final class BriefViewModel {
         tz: String,
         notifications: NotificationManager? = nil
     ) async {
-        state = .loading
+        if case .loaded = state {
+            // Keep the existing brief visible while we refresh.
+            isRefreshing = true
+        } else {
+            state = .loading
+        }
+        defer { isRefreshing = false }
 
         let lat: Double
         let lng: Double

@@ -19,7 +19,7 @@ struct SOTAClient {
     static let url = URL(string: "https://api-db2.sota.org.uk/api/spots/-1/all")!
 
     func fetchRecent(limit: Int = 8) async throws -> [SOTASpot] {
-        let data = try await session.getData(from: Self.url, userAgent: userAgent, timeout: 12)
+        let data = try await session.getData(from: Self.url, userAgent: userAgent, timeout: 8)
         guard let rows = try JSONSerialization.jsonObject(with: data) as? [[String: Any]] else {
             return []
         }

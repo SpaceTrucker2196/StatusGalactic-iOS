@@ -22,7 +22,7 @@ struct IonosondeClient {
     func fetchNearest(
         lat: Double, lng: Double, limit: Int = 5
     ) async throws -> [IonosondeStation] {
-        let data = try await session.getData(from: Self.url, userAgent: userAgent, timeout: 12)
+        let data = try await session.getData(from: Self.url, userAgent: userAgent, timeout: 8)
         guard let rows = try JSONSerialization.jsonObject(with: data) as? [[String: Any]] else {
             return []
         }

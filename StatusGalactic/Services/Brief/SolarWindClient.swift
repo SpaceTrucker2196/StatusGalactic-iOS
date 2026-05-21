@@ -54,7 +54,7 @@ struct SolarWindClient {
     }
 
     private func fetchLastPlasma() async throws -> PlasmaSample? {
-        let data = try await session.getData(from: Self.plasmaURL, userAgent: userAgent, timeout: 12)
+        let data = try await session.getData(from: Self.plasmaURL, userAgent: userAgent, timeout: 8)
         guard let rows = try JSONSerialization.jsonObject(with: data) as? [[Any]],
               rows.count > 1 else { return nil }
         let header = rows[0].compactMap { $0 as? String }
@@ -71,7 +71,7 @@ struct SolarWindClient {
     }
 
     private func fetchLastMag() async throws -> MagSample? {
-        let data = try await session.getData(from: Self.magURL, userAgent: userAgent, timeout: 12)
+        let data = try await session.getData(from: Self.magURL, userAgent: userAgent, timeout: 8)
         guard let rows = try JSONSerialization.jsonObject(with: data) as? [[Any]],
               rows.count > 1 else { return nil }
         let header = rows[0].compactMap { $0 as? String }

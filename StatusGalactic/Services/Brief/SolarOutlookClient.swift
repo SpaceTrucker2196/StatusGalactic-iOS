@@ -18,7 +18,7 @@ struct SolarOutlookClient {
     static let url = URL(string: "https://services.swpc.noaa.gov/text/27-day-outlook.txt")!
 
     func fetch() async throws -> [SolarOutlookDay] {
-        let data = try await session.getData(from: Self.url, userAgent: userAgent, timeout: 12)
+        let data = try await session.getData(from: Self.url, userAgent: userAgent, timeout: 8)
         let text = String(data: data, encoding: .utf8) ?? ""
         return Self.parse(text)
     }

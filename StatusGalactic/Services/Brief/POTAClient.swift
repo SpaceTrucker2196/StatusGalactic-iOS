@@ -22,7 +22,7 @@ struct POTAClient {
     func fetchRecent(
         viewerLat: Double?, viewerLng: Double?, limit: Int = 8
     ) async throws -> [POTASpot] {
-        let data = try await session.getData(from: Self.url, userAgent: userAgent, timeout: 12)
+        let data = try await session.getData(from: Self.url, userAgent: userAgent, timeout: 8)
         guard let rows = try JSONSerialization.jsonObject(with: data) as? [[String: Any]] else {
             return []
         }

@@ -24,8 +24,13 @@ struct BriefView: View {
                         Button {
                             Task { await refresh() }
                         } label: {
-                            Image(systemName: "arrow.clockwise")
+                            if vm.isRefreshing {
+                                ProgressView()
+                            } else {
+                                Image(systemName: "arrow.clockwise")
+                            }
                         }
+                        .disabled(vm.isRefreshing)
                     }
                 }
                 .task {

@@ -18,7 +18,7 @@ struct WeatherAlertsClient {
         var c = URLComponents(string: "https://api.weather.gov/alerts/active")!
         c.queryItems = [URLQueryItem(name: "point", value: "\(lat),\(lng)")]
         guard let url = c.url else { throw HTTPError.invalidURL }
-        let data = try await session.getData(from: url, userAgent: userAgent, timeout: 12)
+        let data = try await session.getData(from: url, userAgent: userAgent, timeout: 8)
         return Self.parse(data)
     }
 

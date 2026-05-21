@@ -38,7 +38,7 @@ struct DONKIClient {
             URLQueryItem(name: "api_key", value: apiKey),
         ]
         guard let url = c.url else { throw HTTPError.invalidURL }
-        let data = try await session.getData(from: url, userAgent: userAgent, timeout: 15)
+        let data = try await session.getData(from: url, userAgent: userAgent, timeout: 8)
         guard let rows = try JSONSerialization.jsonObject(with: data) as? [[String: Any]] else {
             return []
         }

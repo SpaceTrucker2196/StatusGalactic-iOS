@@ -53,7 +53,7 @@ struct ConstellationsClient {
         ]
         guard let url = components.url else { throw HTTPError.invalidURL }
 
-        let data = try await session.getData(from: url, userAgent: userAgent, timeout: 15)
+        let data = try await session.getData(from: url, userAgent: userAgent, timeout: 8)
         guard let rows = try JSONSerialization.jsonObject(with: data) as? [[String: Any]] else {
             return ConstellationSummary(name: name, group: group, count: 0, latestEpochAt: nil)
         }

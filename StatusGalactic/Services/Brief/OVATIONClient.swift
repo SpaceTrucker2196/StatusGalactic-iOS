@@ -29,7 +29,7 @@ struct OVATIONClient {
     )!
 
     func fetch(lat: Double, lng: Double) async throws -> AuroraForecast? {
-        let data = try await session.getData(from: Self.url, userAgent: userAgent, timeout: 12)
+        let data = try await session.getData(from: Self.url, userAgent: userAgent, timeout: 8)
         guard let payload = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
             return nil
         }

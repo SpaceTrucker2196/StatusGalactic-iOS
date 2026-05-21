@@ -21,7 +21,7 @@ struct SolarCycleClient {
     /// Returns the last `monthsBack` months of observations, sorted oldest
     /// → newest. Smoothed values may be nil for the tail.
     func fetchObserved(monthsBack: Int = 60) async throws -> [SolarCyclePoint] {
-        let data = try await session.getData(from: Self.url, userAgent: userAgent, timeout: 15)
+        let data = try await session.getData(from: Self.url, userAgent: userAgent, timeout: 8)
         guard let rows = try JSONSerialization.jsonObject(with: data) as? [[String: Any]] else {
             return []
         }

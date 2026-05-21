@@ -30,7 +30,7 @@ struct SpaceWeatherForecastClient {
     }
 
     func fetch() async throws -> Result {
-        let data = try await session.getData(from: Self.url, userAgent: userAgent, timeout: 12)
+        let data = try await session.getData(from: Self.url, userAgent: userAgent, timeout: 8)
         let text = String(data: data, encoding: .utf8) ?? ""
         return Self.parse(text)
     }

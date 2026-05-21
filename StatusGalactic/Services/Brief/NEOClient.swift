@@ -36,7 +36,7 @@ struct NEOClient {
         ]
         guard let url = components.url else { throw HTTPError.invalidURL }
 
-        let data = try await session.getData(from: url, userAgent: userAgent, timeout: 12)
+        let data = try await session.getData(from: url, userAgent: userAgent, timeout: 8)
         guard let payload = try JSONSerialization.jsonObject(with: data) as? [String: Any],
               let neoMap = payload["near_earth_objects"] as? [String: [[String: Any]]]
         else { return [] }

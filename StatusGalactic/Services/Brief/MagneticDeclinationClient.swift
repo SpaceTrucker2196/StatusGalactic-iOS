@@ -43,7 +43,7 @@ struct MagneticDeclinationClient {
             URLQueryItem(name: "model", value: "WMM"),
         ]
         guard let url = c.url else { throw HTTPError.invalidURL }
-        let data = try await session.getData(from: url, userAgent: userAgent, timeout: 12)
+        let data = try await session.getData(from: url, userAgent: userAgent, timeout: 8)
         return Self.parse(data, lat: lat, lng: lng)
     }
 

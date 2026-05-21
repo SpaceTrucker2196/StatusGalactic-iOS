@@ -59,7 +59,7 @@ struct EarthquakeClient {
     }
 
     func fetchSignificant() async throws -> [Earthquake] {
-        let data = try await session.getData(from: Self.significantURL, userAgent: userAgent, timeout: 12)
+        let data = try await session.getData(from: Self.significantURL, userAgent: userAgent, timeout: 8)
         return Self.parseFeed(data: data, forceSignificant: true)
     }
 
@@ -84,7 +84,7 @@ struct EarthquakeClient {
             URLQueryItem(name: "limit", value: "20"),
         ]
         guard let url = c.url else { throw HTTPError.invalidURL }
-        let data = try await session.getData(from: url, userAgent: userAgent, timeout: 12)
+        let data = try await session.getData(from: url, userAgent: userAgent, timeout: 8)
         return Self.parseFeed(data: data, forceSignificant: false)
     }
 

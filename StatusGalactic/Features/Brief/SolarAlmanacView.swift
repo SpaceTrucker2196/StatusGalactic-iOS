@@ -19,7 +19,7 @@ struct SolarAlmanacView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
+            LazyVStack(alignment: .leading, spacing: 16) {
                 headlineRow
                 if !brief.bandConditions.isEmpty {
                     BandConditionsPanel(bands: brief.bandConditions)

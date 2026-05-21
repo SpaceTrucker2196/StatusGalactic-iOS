@@ -24,7 +24,7 @@ struct GOESParticleClient {
     )!
 
     func fetchXRay() async throws -> XRayState? {
-        let data = try await session.getData(from: Self.xrayURL, userAgent: userAgent, timeout: 12)
+        let data = try await session.getData(from: Self.xrayURL, userAgent: userAgent, timeout: 8)
         guard let rows = try JSONSerialization.jsonObject(with: data) as? [[String: Any]] else {
             return nil
         }
@@ -56,7 +56,7 @@ struct GOESParticleClient {
     }
 
     func fetchProton() async throws -> ProtonState? {
-        let data = try await session.getData(from: Self.protonURL, userAgent: userAgent, timeout: 12)
+        let data = try await session.getData(from: Self.protonURL, userAgent: userAgent, timeout: 8)
         guard let rows = try JSONSerialization.jsonObject(with: data) as? [[String: Any]] else {
             return nil
         }

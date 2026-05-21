@@ -21,7 +21,7 @@ struct ActiveRegionsClient {
     /// Only the latest observed date in the file is kept — older snapshots are
     /// discarded so the table reflects "what's on the Sun right now".
     func fetchActive() async throws -> [ActiveRegion] {
-        let data = try await session.getData(from: Self.url, userAgent: userAgent, timeout: 12)
+        let data = try await session.getData(from: Self.url, userAgent: userAgent, timeout: 8)
         guard let rows = try JSONSerialization.jsonObject(with: data) as? [[String: Any]] else {
             return []
         }
