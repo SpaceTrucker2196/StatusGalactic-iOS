@@ -70,6 +70,9 @@ struct BriefBuilder {
         let ionosondeClient = IonosondeClient(
             session: session, userAgent: config.userAgent
         )
+        let ovationClient = OVATIONClient(
+            session: session, userAgent: config.userAgent
+        )
 
         // 48-hour window: NWS periods are 12 hours each, so 4 covers today,
         // tonight, tomorrow, and tomorrow night. We render the first one as
@@ -99,6 +102,7 @@ struct BriefBuilder {
         async let ionosondesTask: [IonosondeStation] = (try? await ionosondeClient.fetchNearest(
             lat: lat, lng: lng
         )) ?? []
+        async let auroraTask: AuroraForecast? = try? await ovationClient.fetch(lat: lat, lng: lng)
         let n2yoKey = config.n2yoAPIKey
         async let passesTask: [ISSPass] = n2yoKey.isEmpty
             ? []
@@ -153,6 +157,13 @@ struct BriefBuilder {
         let xRay = await xRayTask
         let proton = await protonTask
         let ionosondes = await ionosondesTask
+        let aurora = await auroraTask
+        let bandConditions = BandConditions.evaluate(
+            sfi: space?.solarFlux,
+            kp: space?.kpIndex,
+            rScale: xRay?.rScale,
+            mufMHz: ionosondes.first?.mufMHz
+        )
         // Visual passes are only meaningful for the ISS (N2YO endpoint we use
         // is ISS-specific). Attach to the ISS entry if present.
         if let issIdx = crewed.firstIndex(where: { $0.noradId == CrewedSpacecraftCatalog.iss.noradId }) {
@@ -204,6 +215,8 @@ struct BriefBuilder {
             xRay: xRay,
             proton: proton,
             ionosondes: ionosondes,
+            aurora: aurora,
+            bandConditions: bandConditions,
             errors: errors
         )
     }

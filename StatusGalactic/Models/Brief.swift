@@ -35,6 +35,8 @@ struct Brief: Codable {
     let xRay: XRayState?
     let proton: ProtonState?
     let ionosondes: [IonosondeStation]
+    let aurora: AuroraForecast?
+    let bandConditions: [BandCondition]
     let errors: [String: String]
 
     enum CodingKeys: String, CodingKey {
@@ -50,7 +52,8 @@ struct Brief: Codable {
         case cmes
         case solarOutlook = "solar_outlook"
         case xRay = "x_ray"
-        case proton, ionosondes
+        case proton, ionosondes, aurora
+        case bandConditions = "band_conditions"
         case errors
     }
 
@@ -87,6 +90,8 @@ struct Brief: Codable {
         xRay: XRayState? = nil,
         proton: ProtonState? = nil,
         ionosondes: [IonosondeStation] = [],
+        aurora: AuroraForecast? = nil,
+        bandConditions: [BandCondition] = [],
         errors: [String: String]
     ) {
         self.when = when
@@ -121,6 +126,8 @@ struct Brief: Codable {
         self.xRay = xRay
         self.proton = proton
         self.ionosondes = ionosondes
+        self.aurora = aurora
+        self.bandConditions = bandConditions
         self.errors = errors
     }
 }
@@ -287,6 +294,27 @@ struct SolarWind: Codable, Hashable {
         case bzNT = "bz_nt"
         case btNT = "bt_nt"
     }
+}
+
+/// OVATION 30-minute aurora forecast sampled at the observer's location.
+/// `localProbabilityPct` is 0..100; the global maximum is included so we
+/// can show "the oval is currently up to 60% at its peak" alongside.
+struct AuroraForecast: Codable, Hashable {
+    let observedAt: Date?
+    let forecastFor: Date?
+    let localProbabilityPct: Int
+    let globalMaxPct: Int
+}
+
+/// Synthesized HF band condition (open/fair/poor/closed) plus the dominant
+/// reason driving that label.
+struct BandCondition: Codable, Identifiable, Hashable {
+    var id: String { band }
+    let band: String              // "80m", "40m", "20m", "17m", "15m", "12m", "10m", "6m"
+    let centerMHz: Double         // nominal frequency for the band
+    let dayStatus: String         // "Open", "Fair", "Poor", "Closed"
+    let nightStatus: String
+    let reason: String?           // dominant limiting factor, e.g. "G2 storm", "MUF 9 MHz"
 }
 
 /// Current + 24h-peak GOES soft X-ray state and the derived NOAA R-scale

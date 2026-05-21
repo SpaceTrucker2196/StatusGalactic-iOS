@@ -21,6 +21,12 @@ struct SolarAlmanacView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 headlineRow
+                if !brief.bandConditions.isEmpty {
+                    BandConditionsPanel(bands: brief.bandConditions)
+                }
+                if let aurora = brief.aurora {
+                    AuroraForecastPanel(forecast: aurora)
+                }
                 if let wind = brief.solarWind {
                     SolarWindPanel(wind: wind)
                 }
