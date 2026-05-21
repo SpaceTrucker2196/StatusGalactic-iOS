@@ -192,6 +192,18 @@ struct BriefDetailView: View {
                         .font(.firaCode(.caption2))
                 }
             }
+            if !brief.potaSpots.isEmpty {
+                Section {
+                    ForEach(brief.potaSpots) { spot in
+                        POTASpotRow(spot: spot)
+                    }
+                } header: {
+                    Text("Parks On The Air")
+                } footer: {
+                    Text("Active POTA spots, sorted by distance.")
+                        .font(.firaCode(.caption2))
+                }
+            }
             if !brief.repeaters.isEmpty {
                 Section {
                     ForEach(brief.repeaters) { repeater in

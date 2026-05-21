@@ -37,6 +37,8 @@ struct Brief: Codable {
     let ionosondes: [IonosondeStation]
     let aurora: AuroraForecast?
     let bandConditions: [BandCondition]
+    let potaSpots: [POTASpot]
+    let solarCycle: [SolarCyclePoint]
     let errors: [String: String]
 
     enum CodingKeys: String, CodingKey {
@@ -54,6 +56,8 @@ struct Brief: Codable {
         case xRay = "x_ray"
         case proton, ionosondes, aurora
         case bandConditions = "band_conditions"
+        case potaSpots = "pota_spots"
+        case solarCycle = "solar_cycle"
         case errors
     }
 
@@ -92,6 +96,8 @@ struct Brief: Codable {
         ionosondes: [IonosondeStation] = [],
         aurora: AuroraForecast? = nil,
         bandConditions: [BandCondition] = [],
+        potaSpots: [POTASpot] = [],
+        solarCycle: [SolarCyclePoint] = [],
         errors: [String: String]
     ) {
         self.when = when
@@ -128,6 +134,8 @@ struct Brief: Codable {
         self.ionosondes = ionosondes
         self.aurora = aurora
         self.bandConditions = bandConditions
+        self.potaSpots = potaSpots
+        self.solarCycle = solarCycle
         self.errors = errors
     }
 }
@@ -293,6 +301,44 @@ struct SolarWind: Codable, Hashable {
         case temperatureK = "temperature_k"
         case bzNT = "bz_nt"
         case btNT = "bt_nt"
+    }
+}
+
+/// One live Parks On The Air spot. POTA's API publishes spots roughly
+/// every minute; we re-rank by distance to the viewer.
+struct POTASpot: Codable, Identifiable, Hashable {
+    var id: String { String(spotId) }
+    let spotId: Int
+    let activator: String
+    let parkRef: String           // "K-1234", "VE-0123"
+    let parkName: String
+    let frequencyKHz: Double
+    let mode: String              // "CW", "SSB", "FT8", ...
+    let spotTime: Date
+    let latitude: Double?
+    let longitude: Double?
+    let locationDesc: String?     // "US-WI"
+    let comments: String?
+    var distanceKm: Double?
+}
+
+/// One month in the long-running NOAA observed solar-cycle indices table.
+/// Smoothed values may be nil for the trailing 6 months (the smoothing
+/// window hasn't caught up yet).
+struct SolarCyclePoint: Codable, Identifiable, Hashable {
+    var id: Date { month }
+    let month: Date
+    let sunspotNumber: Double
+    let smoothedSunspotNumber: Double?
+    let radioFlux: Double
+    let smoothedRadioFlux: Double?
+
+    enum CodingKeys: String, CodingKey {
+        case month
+        case sunspotNumber = "sunspot_number"
+        case smoothedSunspotNumber = "smoothed_sunspot_number"
+        case radioFlux = "radio_flux"
+        case smoothedRadioFlux = "smoothed_radio_flux"
     }
 }
 

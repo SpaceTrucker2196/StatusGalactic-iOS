@@ -73,6 +73,12 @@ struct BriefBuilder {
         let ovationClient = OVATIONClient(
             session: session, userAgent: config.userAgent
         )
+        let potaClient = POTAClient(
+            session: session, userAgent: config.userAgent
+        )
+        let solarCycleClient = SolarCycleClient(
+            session: session, userAgent: config.userAgent
+        )
 
         // 48-hour window: NWS periods are 12 hours each, so 4 covers today,
         // tonight, tomorrow, and tomorrow night. We render the first one as
@@ -103,6 +109,10 @@ struct BriefBuilder {
             lat: lat, lng: lng
         )) ?? []
         async let auroraTask: AuroraForecast? = try? await ovationClient.fetch(lat: lat, lng: lng)
+        async let potaTask: [POTASpot] = (try? await potaClient.fetchRecent(
+            viewerLat: lat, viewerLng: lng
+        )) ?? []
+        async let solarCycleTask: [SolarCyclePoint] = (try? await solarCycleClient.fetchObserved()) ?? []
         let n2yoKey = config.n2yoAPIKey
         async let passesTask: [ISSPass] = n2yoKey.isEmpty
             ? []
@@ -158,6 +168,8 @@ struct BriefBuilder {
         let proton = await protonTask
         let ionosondes = await ionosondesTask
         let aurora = await auroraTask
+        let potaSpots = await potaTask
+        let solarCycle = await solarCycleTask
         let bandConditions = BandConditions.evaluate(
             sfi: space?.solarFlux,
             kp: space?.kpIndex,
@@ -217,6 +229,8 @@ struct BriefBuilder {
             ionosondes: ionosondes,
             aurora: aurora,
             bandConditions: bandConditions,
+            potaSpots: potaSpots,
+            solarCycle: solarCycle,
             errors: errors
         )
     }

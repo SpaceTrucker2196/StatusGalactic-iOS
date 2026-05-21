@@ -49,6 +49,9 @@ struct SolarAlmanacView: View {
                 if !brief.ionosondes.isEmpty {
                     IonosondePanel(stations: brief.ionosondes)
                 }
+                if !brief.solarCycle.isEmpty {
+                    SolarCyclePanel(points: brief.solarCycle)
+                }
                 if isLoading && almanac == nil {
                     ProgressView()
                         .tint(GalacticPalette.neonCyan)
