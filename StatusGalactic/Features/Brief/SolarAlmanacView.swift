@@ -5,7 +5,12 @@ import Charts
 /// stats row, sparklines for F10.7 flux and planetary Kp, then a per-band
 /// HF propagation breakdown.
 struct SolarAlmanacView: View {
-    let space: SpaceWeather
+    let brief: Brief
+
+    private var space: SpaceWeather { brief.space ?? SpaceWeather(
+        solarFlux: nil, kpIndex: nil, kpStatus: nil,
+        auroraLikely: false, hfSummary: nil, observedAt: nil
+    ) }
 
     @Environment(ClientConfig.self) private var config
     @State private var almanac: SolarAlmanac?
@@ -16,6 +21,18 @@ struct SolarAlmanacView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 headlineRow
+                if let wind = brief.solarWind {
+                    SolarWindPanel(wind: wind)
+                }
+                if let flare = brief.flareProbability {
+                    FlareProbabilityPanel(flare: flare)
+                }
+                if !brief.kpForecast.isEmpty {
+                    KpForecastPanel(days: brief.kpForecast)
+                }
+                if !brief.activeRegions.isEmpty {
+                    ActiveRegionsPanel(regions: brief.activeRegions)
+                }
                 if isLoading && almanac == nil {
                     ProgressView()
                         .tint(GalacticPalette.neonCyan)
@@ -32,6 +49,9 @@ struct SolarAlmanacView: View {
                             .font(.firaCode(.caption))
                             .foregroundStyle(.secondary)
                     }
+                }
+                if let wwv = brief.wwvBulletin {
+                    WWVBulletinPanel(bulletin: wwv)
                 }
                 if let hf = space.hfSummary, !hf.isEmpty {
                     hfPanel(hf)

@@ -25,13 +25,24 @@ struct Brief: Codable {
     let interstellar: [InterstellarObject]
     let constellations: [ConstellationSummary]
     let earthquakes: [Earthquake]
+    let activeRegions: [ActiveRegion]
+    let flareProbability: FlareProbability?
+    let kpForecast: [KpForecastDay]
+    let solarWind: SolarWind?
+    let wwvBulletin: WWVBulletin?
     let errors: [String: String]
 
     enum CodingKeys: String, CodingKey {
         case when, lat, lng, timezone
         case locationName = "location_name"
         case earth, marine, space, sun, moon, planets, launches, apod, mars, crewed
-        case repeaters, tides, river, neos, interstellar, constellations, earthquakes, errors
+        case repeaters, tides, river, neos, interstellar, constellations, earthquakes
+        case activeRegions = "active_regions"
+        case flareProbability = "flare_probability"
+        case kpForecast = "kp_forecast"
+        case solarWind = "solar_wind"
+        case wwvBulletin = "wwv_bulletin"
+        case errors
     }
 
     init(
@@ -57,6 +68,11 @@ struct Brief: Codable {
         interstellar: [InterstellarObject] = [],
         constellations: [ConstellationSummary] = [],
         earthquakes: [Earthquake] = [],
+        activeRegions: [ActiveRegion] = [],
+        flareProbability: FlareProbability? = nil,
+        kpForecast: [KpForecastDay] = [],
+        solarWind: SolarWind? = nil,
+        wwvBulletin: WWVBulletin? = nil,
         errors: [String: String]
     ) {
         self.when = when
@@ -81,6 +97,11 @@ struct Brief: Codable {
         self.interstellar = interstellar
         self.constellations = constellations
         self.earthquakes = earthquakes
+        self.activeRegions = activeRegions
+        self.flareProbability = flareProbability
+        self.kpForecast = kpForecast
+        self.solarWind = solarWind
+        self.wwvBulletin = wwvBulletin
         self.errors = errors
     }
 }
@@ -172,6 +193,103 @@ struct SpaceWeather: Codable {
         case auroraLikely = "aurora_likely"
         case hfSummary = "hf_summary"
         case observedAt = "observed_at"
+    }
+}
+
+/// One numbered NOAA sunspot active region, current at the latest SRS issue.
+struct ActiveRegion: Codable, Identifiable, Hashable {
+    var id: Int { region }
+    let region: Int                 // e.g. 4443
+    let location: String            // heliographic coords, "S16E23"
+    let latitude: Int?
+    let longitude: Int?
+    let area: Int?                  // millionths of solar disk
+    let numberOfSpots: Int?
+    let magClass: String?           // Mt Wilson class: "Alpha", "Beta", "Beta-Gamma", ...
+    let spotClass: String?          // McIntosh class, e.g. "Cao"
+    let observedAt: Date?
+
+    enum CodingKeys: String, CodingKey {
+        case region, location, latitude, longitude, area
+        case numberOfSpots = "number_spots"
+        case magClass = "mag_class"
+        case spotClass = "spot_class"
+        case observedAt = "observed_at"
+    }
+}
+
+/// 24-hour flare and proton-event probability forecast (percent, 0..100).
+/// Issued daily by NOAA SWPC alongside the geomagnetic forecast.
+struct FlareProbability: Codable, Hashable {
+    let issuedAt: Date?
+    let cClassPct: Int      // ≥C-class flare next 24h
+    let mClassPct: Int
+    let xClassPct: Int
+    let protonEventPct: Int
+
+    enum CodingKeys: String, CodingKey {
+        case issuedAt = "issued_at"
+        case cClassPct = "c_class_pct"
+        case mClassPct = "m_class_pct"
+        case xClassPct = "x_class_pct"
+        case protonEventPct = "proton_event_pct"
+    }
+}
+
+/// One day in the SWPC 3-day geomagnetic forecast: peak expected Kp plus
+/// the human-readable G-scale (G0..G5) derived from that peak.
+struct KpForecastDay: Codable, Identifiable, Hashable {
+    var id: Date { date }
+    let date: Date
+    let maxKp: Double
+    let gScale: String      // "G0", "G1", ...
+
+    enum CodingKeys: String, CodingKey {
+        case date
+        case maxKp = "max_kp"
+        case gScale = "g_scale"
+    }
+}
+
+/// Real-time L1 solar wind snapshot from DSCOVR/ACE via NOAA SWPC.
+struct SolarWind: Codable, Hashable {
+    let observedAt: Date
+    let speedKmS: Double?       // bulk speed, km/s
+    let densityP: Double?       // proton density, p/cm³
+    let temperatureK: Double?   // plasma temperature, K
+    let bzNT: Double?           // IMF Bz GSM, nT (negative = southward, aurora-friendly)
+    let btNT: Double?           // total field magnitude, nT
+
+    enum CodingKeys: String, CodingKey {
+        case observedAt = "observed_at"
+        case speedKmS = "speed_km_s"
+        case densityP = "density_p"
+        case temperatureK = "temperature_k"
+        case bzNT = "bz_nt"
+        case btNT = "bt_nt"
+    }
+}
+
+/// Parsed NOAA WWV "Geophysical Alert Message" bulletin (5/15-minute audio
+/// transcript). Carries the daily solar/geomag summary in operator-friendly
+/// language.
+struct WWVBulletin: Codable, Hashable {
+    let issuedAt: Date?
+    let solarFlux: Int?
+    let aIndex: Int?
+    let kIndex: Int?
+    let geomagSummary: String?    // e.g. "The geomagnetic field has been quiet to unsettled."
+    let propagationSummary: String?
+    let rawText: String
+
+    enum CodingKeys: String, CodingKey {
+        case issuedAt = "issued_at"
+        case solarFlux = "solar_flux"
+        case aIndex = "a_index"
+        case kIndex = "k_index"
+        case geomagSummary = "geomag_summary"
+        case propagationSummary = "propagation_summary"
+        case rawText = "raw_text"
     }
 }
 

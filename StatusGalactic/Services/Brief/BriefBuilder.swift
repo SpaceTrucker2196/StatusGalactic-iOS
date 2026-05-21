@@ -46,6 +46,18 @@ struct BriefBuilder {
         let quakeClient = EarthquakeClient(
             session: session, userAgent: config.userAgent
         )
+        let activeRegionsClient = ActiveRegionsClient(
+            session: session, userAgent: config.userAgent
+        )
+        let forecastClient = SpaceWeatherForecastClient(
+            session: session, userAgent: config.userAgent
+        )
+        let solarWindClient = SolarWindClient(
+            session: session, userAgent: config.userAgent
+        )
+        let wwvClient = WWVClient(
+            session: session, userAgent: config.userAgent
+        )
 
         // 48-hour window: NWS periods are 12 hours each, so 4 covers today,
         // tonight, tomorrow, and tomorrow night. We render the first one as
@@ -64,6 +76,10 @@ struct BriefBuilder {
         async let quakesTask: [Earthquake] = quakeClient.fetchRecent(
             viewerLat: lat, viewerLng: lng
         )
+        async let activeRegionsTask: [ActiveRegion] = (try? await activeRegionsClient.fetchActive()) ?? []
+        async let forecastTask: SpaceWeatherForecastClient.Result? = try? await forecastClient.fetch()
+        async let solarWindTask: SolarWind? = solarWindClient.fetch()
+        async let wwvTask: WWVBulletin? = try? await wwvClient.fetch()
         let n2yoKey = config.n2yoAPIKey
         async let passesTask: [ISSPass] = n2yoKey.isEmpty
             ? []
@@ -109,6 +125,10 @@ struct BriefBuilder {
         let constellations = await constellationsTask
         if constellations.isEmpty { errors["constellations"] = "Celestrak unavailable" }
         let quakes = await quakesTask
+        let activeRegions = await activeRegionsTask
+        let forecast = await forecastTask
+        let solarWind = await solarWindTask
+        let wwv = await wwvTask
         // Visual passes are only meaningful for the ISS (N2YO endpoint we use
         // is ISS-specific). Attach to the ISS entry if present.
         if let issIdx = crewed.firstIndex(where: { $0.noradId == CrewedSpacecraftCatalog.iss.noradId }) {
@@ -150,6 +170,11 @@ struct BriefBuilder {
             interstellar: interstellar,
             constellations: constellations,
             earthquakes: quakes,
+            activeRegions: activeRegions,
+            flareProbability: forecast?.flares,
+            kpForecast: forecast?.kpDays ?? [],
+            solarWind: solarWind,
+            wwvBulletin: wwv,
             errors: errors
         )
     }
