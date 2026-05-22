@@ -25,13 +25,13 @@ targets:
     info:
       path: StatusGalactic/App/Info.plist
       properties:
-        CFBundleDisplayName: Status Galactic
+        CFBundleDisplayName: Spacetrucker Galactic
         CFBundleShortVersionString: "0.1.0"
         CFBundleVersion: "1"
         UILaunchScreen:
           UIColorName: AccentColor
         NSLocationWhenInUseUsageDescription: >-
-          Status Galactic uses your location to build a Galactic Weather Report
+          Spacetrucker Galactic uses your location to build a Galactic Weather Report
           for where you are right now.
         NSAppTransportSecurity:
           NSAllowsLocalNetworking: true
@@ -76,7 +76,7 @@ targets:
     info:
       path: StatusGalacticWidget/Info.plist
       properties:
-        CFBundleDisplayName: Status Galactic
+        CFBundleDisplayName: Spacetrucker Galactic
         CFBundleShortVersionString: "0.1.0"
         CFBundleVersion: "1"
         NSExtension:
@@ -103,13 +103,13 @@ targets:
     info:
       path: StatusGalacticWatch/Info.plist
       properties:
-        CFBundleDisplayName: Status Galactic
+        CFBundleDisplayName: Spacetrucker Galactic
         CFBundleShortVersionString: "0.2.0"
         CFBundleVersion: "1"
         WKApplication: true
         WKWatchOnly: true
         NSLocationWhenInUseUsageDescription: >-
-          Status Galactic uses your location to build a Galactic Weather Report
+          Spacetrucker Galactic uses your location to build a Galactic Weather Report
           for where you are right now.
         NSAppTransportSecurity:
           NSAllowsLocalNetworking: true
@@ -137,7 +137,7 @@ targets:
     info:
       path: StatusGalacticWatchComplications/Info.plist
       properties:
-        CFBundleDisplayName: Status Galactic
+        CFBundleDisplayName: Spacetrucker Galactic
         CFBundleShortVersionString: "0.2.0"
         CFBundleVersion: "1"
         NSExtension:

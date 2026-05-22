@@ -13,7 +13,7 @@ struct BriefView: View {
     var body: some View {
         NavigationStack {
             content
-                .navigationTitle("SITREP Galactic")
+                .navigationTitle("Spacetrucker Galactic")
                 .sensoryFeedback(.success, trigger: loadCount)
                 .sensoryFeedback(.error, trigger: errorCount)
                 .toolbar {
@@ -86,7 +86,7 @@ struct BriefView: View {
             ContentUnavailableView {
                 Label("Location needed", systemImage: "location.slash")
             } description: {
-                Text("Status Galactic uses your location to build a brief for where you are. You can also add a callsign instead.")
+                Text("Spacetrucker Galactic uses your location to build a brief for where you are. You can also add a callsign instead.")
             }
             HStack {
                 if location.authorizationStatus == .notDetermined {

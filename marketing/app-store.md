@@ -1,4 +1,4 @@
-# Status Galactic — App Store Metadata
+# Spacetrucker Galactic — App Store Metadata
 
 Drop-in copy for the App Store Connect listing.
 
@@ -6,7 +6,7 @@ Drop-in copy for the App Store Connect listing.
 
 ## Name (30 char max)
 
-**Status Galactic**
+**Spacetrucker Galactic**
 
 ## Subtitle (30 char max)
 
@@ -33,7 +33,7 @@ weather,marine,nws,aprs,space weather,sunrise,sunset,twilight,moon,planets,kp,la
 
 **One brief. Everything above and below the horizon.**
 
-Status Galactic is a daily almanac for travelers, photographers, and anyone who likes to know what the sky is doing. It pulls together the forecasts and ephemerides that normally live in eight separate tabs, and gives them to you in one quiet view, tuned to where you are.
+Spacetrucker Galactic is a daily almanac for travelers, photographers, and anyone who likes to know what the sky is doing. It pulls together the forecasts and ephemerides that normally live in eight separate tabs, and gives them to you in one quiet view, tuned to where you are.
 
 **Earth weather.** Pulled straight from the National Weather Service's forecast grid for your coordinates. Six periods, temperature, wind, conditions.
 
@@ -57,7 +57,7 @@ Status Galactic is a daily almanac for travelers, photographers, and anyone who 
 - **Home-screen widget** in small and medium sizes with the headline brief.
 - **Watch app and complications** for the four accessory families on Apple Watch.
 - **Open in Maps** for navigation to a callsign's coordinates.
-- **No tracking, no analytics, no accounts.** The app talks directly to public weather and APRS services. Nothing is sent to a Status Galactic server because there isn't one.
+- **No tracking, no analytics, no accounts.** The app talks directly to public weather and APRS services. Nothing is sent to a Spacetrucker Galactic server because there isn't one.
 
 **Built for the road.**
 
@@ -69,7 +69,7 @@ Originally written for a 2025 Coachmen Remote pulled by a 4Runner across the Sou
 
 ### v0.2 — Standalone
 
-- Status Galactic now runs entirely on your device. Every data source is fetched directly from its public origin; nothing is routed through a Status Galactic server.
+- Spacetrucker Galactic now runs entirely on your device. Every data source is fetched directly from its public origin; nothing is routed through a Spacetrucker Galactic server.
 - All astronomy math (sun, moon, planets, twilight) computed locally with Meeus and NOAA formulas. No ephemeris file required.
 - New Apple Watch app with five glance cards and four complication families.
 - Apple Maps deep linking: drop a pin or get driving directions from a callsign's last-known position.

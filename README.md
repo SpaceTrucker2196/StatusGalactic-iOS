@@ -1,7 +1,7 @@
-# Status Galactic for iOS
+# Spacetrucker Galactic for iOS
 
 <p align="center">
-  <img src="StatusGalactic/Resources/Assets.xcassets/AppIcon.appiconset/icon-1024.png" width="180" alt="Status Galactic icon" />
+  <img src="StatusGalactic/Resources/Assets.xcassets/AppIcon.appiconset/icon-1024.png" width="180" alt="Spacetrucker Galactic icon" />
 </p>
 
 <p align="center"><em>The sky and the road, briefed.</em></p>

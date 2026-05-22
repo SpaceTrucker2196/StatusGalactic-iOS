@@ -1,4 +1,4 @@
-# Status Galactic — Release Notes
+# Spacetrucker Galactic — Release Notes
 
 Authoritative changelog for App Store "What's New" entries and the GitHub Releases page. Keep newest first.
 
@@ -8,7 +8,7 @@ Authoritative changelog for App Store "What's New" entries and the GitHub Releas
 
 ### Highlights
 
-- **Status Galactic now runs entirely on your device.** Every data source is fetched directly from its public origin; nothing is routed through a Status Galactic server.
+- **Spacetrucker Galactic now runs entirely on your device.** Every data source is fetched directly from its public origin; nothing is routed through a Spacetrucker Galactic server.
 - All astronomy math (sun, moon, planets, twilight) computed locally with Meeus and NOAA formulas. No ephemeris file required, no licensing concerns.
 
 ### Additions

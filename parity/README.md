@@ -1,6 +1,6 @@
 # Parity Workspace
 
-Cross-platform parity tracking for Status Galactic, modeled on the CareTime parity pattern.
+Cross-platform parity tracking for Spacetrucker Galactic, modeled on the CareTime parity pattern.
 
 ## Why this exists
 

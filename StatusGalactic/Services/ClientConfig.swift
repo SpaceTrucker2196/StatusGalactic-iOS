@@ -2,7 +2,7 @@ import Foundation
 
 /// User-configurable client settings, persisted to `UserDefaults`.
 ///
-/// Status Galactic now runs all API calls locally. The only configuration that
+/// Spacetrucker Galactic now runs all API calls locally. The only configuration that
 /// matters is the aprs.fi read API key (required for callsign lookups) and a
 /// default marine zone for coastal users.
 @Observable

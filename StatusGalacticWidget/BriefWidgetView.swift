@@ -94,7 +94,7 @@ private struct SmallView: View {
     private var placeholder: some View {
         VStack(alignment: .leading) {
             Image(systemName: "globe.americas").font(.title2)
-            Text("Status Galactic").font(.caption.weight(.semibold))
+            Text("Spacetrucker Galactic").font(.caption.weight(.semibold))
             if let err = entry.errorMessage {
                 Text(err).font(.caption2).foregroundStyle(.secondary).lineLimit(3)
             } else {

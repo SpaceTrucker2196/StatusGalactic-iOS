@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Status Galactic</string>
+	<string>Spacetrucker Galactic</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -41,7 +41,7 @@
 		</dict>
 	</dict>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Status Galactic uses your location to build a Galactic Weather Report for where you are right now.</string>
+	<string>Spacetrucker Galactic uses your location to build a Galactic Weather Report for where you are right now.</string>
 	<key>UIAppFonts</key>
 	<array>
 		<string>FiraCode-Regular.ttf</string>

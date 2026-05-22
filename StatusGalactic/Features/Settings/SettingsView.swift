@@ -113,7 +113,7 @@ struct SettingsView: View {
                 } header: {
                     Text("About")
                 } footer: {
-                    Text("Status Galactic runs entirely on-device. Weather, marine, space-weather, sun, moon, and planetary positions are all computed or fetched directly from public sources.")
+                    Text("Spacetrucker Galactic runs entirely on-device. Weather, marine, space-weather, sun, moon, and planetary positions are all computed or fetched directly from public sources.")
                         .font(.caption)
                 }
             }

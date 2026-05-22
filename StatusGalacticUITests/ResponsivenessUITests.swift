@@ -23,7 +23,7 @@ final class ResponsivenessUITests: XCTestCase {
     /// the SwiftUI scene mounts without being blocked by anything in
     /// StatusGalacticApp.task (notifications refresh + ImageCache purge).
     func testNavBarAppearsQuickly() {
-        let title = app.navigationBars["SITREP Galactic"]
+        let title = app.navigationBars["Spacetrucker Galactic"]
         XCTAssertTrue(
             title.waitForExistence(timeout: 5),
             "Nav bar didn't appear within 5s — app likely blocked at launch."
@@ -35,7 +35,7 @@ final class ResponsivenessUITests: XCTestCase {
     /// thread makes tap() hang past the implicit XCUI timeout (~75s).
     /// We probe it twice to also exercise the disabled→re-enabled cycle.
     func testRefreshButtonStaysResponsive() {
-        let title = app.navigationBars["SITREP Galactic"]
+        let title = app.navigationBars["Spacetrucker Galactic"]
         XCTAssertTrue(title.waitForExistence(timeout: 10))
 
         // The toolbar carries the source picker on the left and refresh
@@ -72,7 +72,7 @@ final class ResponsivenessUITests: XCTestCase {
     /// state. A blocked main thread would stall the swipe gesture's
     /// event delivery.
     func testMainScrollViewRespondsToSwipe() {
-        let title = app.navigationBars["SITREP Galactic"]
+        let title = app.navigationBars["Spacetrucker Galactic"]
         XCTAssertTrue(title.waitForExistence(timeout: 10))
 
         // The brief renders as a List inside a NavigationStack; the empty
@@ -97,7 +97,7 @@ final class ResponsivenessUITests: XCTestCase {
     /// This is the test that catches the kind of multi-second hang the
     /// user reported on a slow network.
     func testInteractionsStayUnderBudgetDuringRefresh() {
-        let title = app.navigationBars["SITREP Galactic"]
+        let title = app.navigationBars["Spacetrucker Galactic"]
         XCTAssertTrue(title.waitForExistence(timeout: 10))
 
         // Kick off a refresh.

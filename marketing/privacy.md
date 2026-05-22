@@ -1,4 +1,4 @@
-# Status Galactic — Privacy Disclosure
+# Spacetrucker Galactic — Privacy Disclosure
 
 This document is the source of truth for the App Store privacy questionnaire and the in-app/repo privacy disclosure. Update if any of these statements stop being true.
 
@@ -6,11 +6,11 @@ This document is the source of truth for the App Store privacy questionnaire and
 
 ## Plain-English summary
 
-Status Galactic is a thin, on-device app. It talks to public weather and astronomy services directly. It does not have a backend server, an analytics SDK, or a user account.
+Spacetrucker Galactic is a thin, on-device app. It talks to public weather and astronomy services directly. It does not have a backend server, an analytics SDK, or a user account.
 
 - **No tracking.** No SDKs that track you across apps or websites. No advertising identifier reads.
 - **No analytics.** No Firebase, no Mixpanel, no Sentry, no anything.
-- **No data leaves the app to Status Galactic.** Status Galactic operates no servers and has no telemetry.
+- **No data leaves the app to Spacetrucker Galactic.** Spacetrucker Galactic operates no servers and has no telemetry.
 - **No accounts.** No sign-in.
 - **No purchases.** No StoreKit, no IAP.
 
@@ -61,7 +61,7 @@ Apple's privacy questionnaire breaks data into categories. Here are the right an
 **Do you or your third-party partners collect data from this app?**
 **No.**
 
-(Justification: location is read on-device and sent only to the public weather APIs above on the user's behalf. Apple's questionnaire defines "collect" as "transmit data off the device in a way that allows you to access it" — Status Galactic never receives any of this data.)
+(Justification: location is read on-device and sent only to the public weather APIs above on the user's behalf. Apple's questionnaire defines "collect" as "transmit data off the device in a way that allows you to access it" — Spacetrucker Galactic never receives any of this data.)
 
 If Apple's review insists on a more conservative answer because location is transmitted to third parties:
 

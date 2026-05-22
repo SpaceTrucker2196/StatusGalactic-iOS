@@ -9,7 +9,7 @@ struct WatchRootView: View {
     var body: some View {
         NavigationStack {
             content
-                .navigationTitle("SITREP")
+                .navigationTitle("Spacetrucker")
                 .toolbar {
                     ToolbarItem(placement: .topBarTrailing) {
                         Button {

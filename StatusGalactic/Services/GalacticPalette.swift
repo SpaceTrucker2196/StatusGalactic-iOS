@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Status Galactic vaporwave palette.
+/// Spacetrucker Galactic vaporwave palette.
 ///
 /// The design language: a neon artifact from a future world. Deep cosmic
 /// blacks and Prussian blues form the base. Magenta, hot pink, cyan, and

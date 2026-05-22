@@ -1,4 +1,4 @@
-# Status Galactic Feature Matrix
+# Spacetrucker Galactic Feature Matrix
 
 Cross-platform parity tracking. **As of v0.2 there is no backend dependency for the iOS app.** Each client owns its own source clients and astronomy. The legacy `weathergalactic` repo remains for server-side delivery (Discord scheduler) but is not on the data path for the iOS app.
 

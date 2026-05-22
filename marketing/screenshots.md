@@ -1,4 +1,4 @@
-# Status Galactic — Screenshot Plan
+# Spacetrucker Galactic — Screenshot Plan
 
 App Store Connect requires screenshots for at least the 6.7" iPhone class (currently iPhone 17 Pro Max, 1320 × 2868) and 6.1" (iPhone 17 Pro). 5–10 shots per device size. Watch app needs separate watchOS screenshots.
 
@@ -23,7 +23,7 @@ App Store Connect requires screenshots for at least the 6.7" iPhone class (curre
    - Caption: "**Track friends by callsign.**"
 
 5. **Widget on home screen**
-   - Set up iOS 17 Pro home screen with medium Status Galactic widget
+   - Set up iOS 17 Pro home screen with medium Spacetrucker Galactic widget
    - Caption: "**Glance at the day.**"
 
 6. **Settings**

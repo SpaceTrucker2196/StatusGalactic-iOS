@@ -1,4 +1,4 @@
-# Status Galactic iOS Roadmap
+# Spacetrucker Galactic iOS Roadmap
 
 Phases follow the CareTime convention: iOS ships first, Android mirrors. **As of v0.2 the app is fully standalone** (no backend dependency); iOS itself is the canonical implementation. Milestones are numbered Mxx so the future Android repo can key its milestones (Axx) to align.
 

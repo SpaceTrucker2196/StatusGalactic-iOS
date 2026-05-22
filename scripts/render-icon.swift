@@ -1,6 +1,6 @@
 #!/usr/bin/env swift
 
-// Renders the Status Galactic app icon as a 1024x1024 PNG.
+// Renders the Spacetrucker Galactic app icon as a 1024x1024 PNG.
 //
 // Vaporwave design:
 //   - Cosmic gradient: black → deep purple → twilight purple → magenta tint
