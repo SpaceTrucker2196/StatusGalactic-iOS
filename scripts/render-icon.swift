@@ -21,6 +21,10 @@ let size: CGFloat = 1024
 let outputDefault = "StatusGalactic/Resources/Assets.xcassets/AppIcon.appiconset/icon-1024.png"
 let outputPath = CommandLine.arguments.count > 1 ? CommandLine.arguments[1] : outputDefault
 
+// App Store icons must be opaque (no alpha channel). Use noneSkipLast
+// (32-bit RGBX) so the encoded PNG has no alpha channel — Apple's
+// "ITMS-90717 Invalid App Store Icon" rejection fires when alpha is
+// present.
 guard let context = CGContext(
     data: nil,
     width: Int(size),
@@ -28,11 +32,16 @@ guard let context = CGContext(
     bitsPerComponent: 8,
     bytesPerRow: 0,
     space: CGColorSpaceCreateDeviceRGB(),
-    bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+    bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue
 ) else {
     fputs("error: failed to create CGContext\n", stderr)
     exit(1)
 }
+
+// Paint the canvas opaque before drawing anything else so even where
+// the artwork doesn't cover, the icon is solid rather than transparent.
+context.setFillColor(CGColor(red: 10/255, green: 0/255, blue: 20/255, alpha: 1))
+context.fill(CGRect(x: 0, y: 0, width: size, height: size))
 
 NSGraphicsContext.saveGraphicsState()
 NSGraphicsContext.current = NSGraphicsContext(cgContext: context, flipped: false)
@@ -41,16 +50,10 @@ func color(_ r: CGFloat, _ g: CGFloat, _ b: CGFloat, _ a: CGFloat = 1) -> NSColo
     NSColor(red: r/255, green: g/255, blue: b/255, alpha: a)
 }
 
-let cornerRadius: CGFloat = size * 0.225
-
-// MARK: - Rounded clip + background gradient
-
-let backgroundPath = NSBezierPath(
-    roundedRect: NSRect(x: 0, y: 0, width: size, height: size),
-    xRadius: cornerRadius,
-    yRadius: cornerRadius
-)
-backgroundPath.addClip()
+// MARK: - Background gradient (full square, no rounding)
+// App Store guidelines: the asset must be a flat square. iOS applies
+// the mask at install time. Submitting an already-rounded icon
+// triggers ITMS-90022 / ITMS-90713.
 
 let skyGradient = NSGradient(colors: [
     color(10, 0, 20),           // cosmic black (top)
