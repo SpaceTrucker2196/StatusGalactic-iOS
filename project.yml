@@ -11,7 +11,7 @@ settings:
   base:
     SWIFT_VERSION: "5.10"
     ENABLE_USER_SCRIPT_SANDBOXING: NO
-    DEVELOPMENT_TEAM: ""
+    DEVELOPMENT_TEAM: "U3Z59VXPUB"
 
 targets:
   StatusGalactic:
