@@ -12,6 +12,9 @@ struct RFView: View {
     @State private var error: String?
     @State private var dxStats = APRSDXStats(today: nil, month: nil, year: nil)
     @State private var myFix: APRSFix?
+    @State private var didInitialRefresh = false
+    @State private var lastRefreshAt: Date = .distantPast
+    @Environment(\.scenePhase) private var scenePhase
 
     /// The latest brief snapshot, when one is available. Used to populate
     /// the RF Propagation + RF Activity sections at the top.
@@ -23,6 +26,20 @@ struct RFView: View {
     private var isStale: Bool {
         if case .loaded(_, _, let stale) = brief.state { return stale }
         return false
+    }
+
+    private var hasAnyDX: Bool {
+        dxStats.today != nil || dxStats.month != nil || dxStats.year != nil
+    }
+
+    /// 5-minute freshness window — same gate the brief uses for
+    /// foreground refreshes. Keeps a quick tab-out/tab-in from
+    /// re-pounding aprs.fi.
+    private static let freshness: TimeInterval = 5 * 60
+
+    private func refreshIfStale() async {
+        guard Date().timeIntervalSince(lastRefreshAt) >= Self.freshness else { return }
+        await refresh()
     }
 
     var body: some View {
@@ -44,12 +61,26 @@ struct RFView: View {
                         Button {
                             Task { await refresh() }
                         } label: {
-                            Image(systemName: "arrow.clockwise")
+                            if isRefreshing {
+                                ProgressView()
+                            } else {
+                                Image(systemName: "arrow.clockwise")
+                            }
                         }
                         .disabled(config.myCallsign.isEmpty || isRefreshing)
                     }
                 }
-                .task { await refresh() }
+                .task {
+                    // One-shot on first appearance per session, gated so
+                    // tab switches don't keep re-firing the APRS API.
+                    if !didInitialRefresh {
+                        didInitialRefresh = true
+                        await refresh()
+                    }
+                }
+                .onChange(of: scenePhase) { _, phase in
+                    if phase == .active { Task { await refreshIfStale() } }
+                }
                 .refreshable { await refresh() }
                 .sheet(isPresented: $showCompose) {
                     APRSComposeView(prefilledRecipient: nil)
@@ -86,12 +117,38 @@ struct RFView: View {
                 }
                 .listRowBackground(GalacticPalette.deepPurple.opacity(0.4))
 
-                // RF propagation / activity sections sourced from the
-                // shared brief. Rendered grey when the brief itself is
-                // showing cached data.
-                rfBriefSections
-                    .opacity(isStale ? 0.55 : 1)
-                    .grayscale(isStale ? 0.85 : 0)
+                // DX Stats now sits directly under Your station — it's the
+                // bragging-rights number, not a footer. Hidden entirely when
+                // there's nothing yet so a fresh callsign doesn't get a row
+                // of dashes.
+                if hasAnyDX {
+                    Section("DX Stats") {
+                        APRSDXStatsView(stats: dxStats)
+                    }
+                    .listRowBackground(GalacticPalette.deepPurple.opacity(0.35))
+                }
+
+                let bulletins = store.bulletins
+
+                if !threads.isEmpty {
+                    Section("Conversations") {
+                        ForEach(threads) { thread in
+                            NavigationLink(value: thread) {
+                                APRSThreadRow(thread: thread, myCallsign: config.myCallsign)
+                            }
+                        }
+                    }
+                    .listRowBackground(GalacticPalette.deepPurple.opacity(0.25))
+                }
+
+                if !bulletins.isEmpty {
+                    Section("Bulletins") {
+                        ForEach(bulletins.prefix(10)) { msg in
+                            BulletinRow(message: msg)
+                        }
+                    }
+                    .listRowBackground(GalacticPalette.deepPurple.opacity(0.25))
+                }
 
                 if !log.entries.isEmpty {
                     Section("Station log") {
@@ -107,6 +164,22 @@ struct RFView: View {
                     .listRowBackground(GalacticPalette.deepPurple.opacity(0.25))
                 }
 
+                // Brief-derived RF context (propagation, activity, repeaters)
+                // sits below the personal radio dashboard. Greyed when the
+                // brief is showing cached data.
+                rfBriefSections
+                    .opacity(isStale ? 0.55 : 1)
+                    .grayscale(isStale ? 0.85 : 0)
+
+                if threads.isEmpty && bulletins.isEmpty {
+                    Section {
+                        Text("No conversations or bulletins yet. Pull down or hit refresh.")
+                            .font(.firaCode(.subheadline))
+                            .foregroundStyle(GalacticPalette.peach.opacity(0.8))
+                    }
+                    .listRowBackground(Color.clear)
+                }
+
                 if let error {
                     Section {
                         Label(error, systemImage: "exclamationmark.triangle")
@@ -114,39 +187,6 @@ struct RFView: View {
                             .foregroundStyle(GalacticPalette.storm)
                     }
                     .listRowBackground(Color.clear)
-                }
-
-                Section("DX Stats") {
-                    APRSDXStatsView(stats: dxStats)
-                }
-                .listRowBackground(GalacticPalette.deepPurple.opacity(0.35))
-
-                let bulletins = store.bulletins
-                if !bulletins.isEmpty {
-                    Section("Bulletins") {
-                        ForEach(bulletins.prefix(10)) { msg in
-                            BulletinRow(message: msg)
-                        }
-                    }
-                    .listRowBackground(GalacticPalette.deepPurple.opacity(0.25))
-                }
-
-                if threads.isEmpty && bulletins.isEmpty {
-                    Section {
-                        Text("No conversations or bulletins yet. Pull to refresh.")
-                            .font(.firaCode(.subheadline))
-                            .foregroundStyle(GalacticPalette.peach.opacity(0.8))
-                    }
-                    .listRowBackground(Color.clear)
-                } else if !threads.isEmpty {
-                    Section("Conversations") {
-                        ForEach(threads) { thread in
-                            NavigationLink(value: thread) {
-                                APRSThreadRow(thread: thread, myCallsign: config.myCallsign)
-                            }
-                        }
-                    }
-                    .listRowBackground(GalacticPalette.deepPurple.opacity(0.25))
                 }
             }
         }
@@ -211,6 +251,7 @@ struct RFView: View {
             }
         }
         dxStats = store.dxStats(myCallsign: config.myCallsign)
+        lastRefreshAt = Date()
     }
 
     // MARK: - RF brief sections
