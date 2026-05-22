@@ -1,4 +1,54 @@
 import SwiftUI
+import Charts
+
+/// Compact bar chart of recent earthquake magnitudes. Each event is one
+/// bar; bars sit on the event timestamp and color by magnitude band.
+struct EarthquakeTimelineChart: View {
+    let quakes: [Earthquake]
+
+    var body: some View {
+        Chart {
+            ForEach(quakes) { q in
+                BarMark(
+                    x: .value("When", q.time),
+                    y: .value("Mag", q.magnitude)
+                )
+                .foregroundStyle(magColor(q.magnitude))
+            }
+            RuleMark(y: .value("M5", 5))
+                .lineStyle(StrokeStyle(lineWidth: 0.6, dash: [3, 3]))
+                .foregroundStyle(GalacticPalette.storm.opacity(0.7))
+        }
+        .chartXAxis {
+            AxisMarks(values: .stride(by: .day, count: 1)) { _ in
+                AxisGridLine().foregroundStyle(.white.opacity(0.08))
+                AxisValueLabel(format: .dateTime.month(.abbreviated).day())
+                    .font(.firaCode(.caption2))
+                    .foregroundStyle(GalacticPalette.peach.opacity(0.7))
+            }
+        }
+        .chartYAxis {
+            AxisMarks(position: .leading, values: [0, 3, 5, 7]) { _ in
+                AxisGridLine().foregroundStyle(.white.opacity(0.08))
+                AxisValueLabel()
+                    .font(.firaCode(.caption2))
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .frame(height: 90)
+        .padding(.vertical, 4)
+    }
+
+    private func magColor(_ m: Double) -> Color {
+        switch m {
+        case ..<3:   return GalacticPalette.mint
+        case ..<4.5: return GalacticPalette.peach
+        case ..<6:   return GalacticPalette.sunsetOrange
+        case ..<7:   return GalacticPalette.hotPink
+        default:     return GalacticPalette.severe
+        }
+    }
+}
 
 struct EarthquakeRow: View {
     let quake: Earthquake

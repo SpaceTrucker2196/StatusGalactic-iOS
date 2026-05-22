@@ -305,7 +305,16 @@ struct KpForecastDay: Codable, Identifiable, Hashable {
     }
 }
 
-/// Real-time L1 solar wind snapshot from DSCOVR/ACE via NOAA SWPC.
+/// One observed sample on the solar-wind 24h history. Used to sparkline
+/// speed and Bz inside the Solar Almanac.
+struct SolarWindSample: Codable, Hashable {
+    let time: Date
+    let speedKmS: Double?
+    let bzNT: Double?
+}
+
+/// Real-time L1 solar wind snapshot from DSCOVR/ACE via NOAA SWPC plus
+/// the 24h trailing history for sparkline rendering.
 struct SolarWind: Codable, Hashable {
     let observedAt: Date
     let speedKmS: Double?       // bulk speed, km/s
@@ -313,6 +322,20 @@ struct SolarWind: Codable, Hashable {
     let temperatureK: Double?   // plasma temperature, K
     let bzNT: Double?           // IMF Bz GSM, nT (negative = southward, aurora-friendly)
     let btNT: Double?           // total field magnitude, nT
+    /// Past ~24 hours of speed + Bz samples (1-min cadence from SWPC).
+    /// Empty when only the current snapshot was decoded.
+    let history: [SolarWindSample]
+
+    init(observedAt: Date, speedKmS: Double?, densityP: Double?, temperatureK: Double?,
+         bzNT: Double?, btNT: Double?, history: [SolarWindSample] = []) {
+        self.observedAt = observedAt
+        self.speedKmS = speedKmS
+        self.densityP = densityP
+        self.temperatureK = temperatureK
+        self.bzNT = bzNT
+        self.btNT = btNT
+        self.history = history
+    }
 
     enum CodingKeys: String, CodingKey {
         case observedAt = "observed_at"
@@ -321,6 +344,18 @@ struct SolarWind: Codable, Hashable {
         case temperatureK = "temperature_k"
         case bzNT = "bz_nt"
         case btNT = "bt_nt"
+        case history
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        observedAt = try c.decode(Date.self, forKey: .observedAt)
+        speedKmS = try c.decodeIfPresent(Double.self, forKey: .speedKmS)
+        densityP = try c.decodeIfPresent(Double.self, forKey: .densityP)
+        temperatureK = try c.decodeIfPresent(Double.self, forKey: .temperatureK)
+        bzNT = try c.decodeIfPresent(Double.self, forKey: .bzNT)
+        btNT = try c.decodeIfPresent(Double.self, forKey: .btNT)
+        history = try c.decodeIfPresent([SolarWindSample].self, forKey: .history) ?? []
     }
 }
 

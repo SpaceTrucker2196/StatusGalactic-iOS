@@ -221,6 +221,7 @@ struct BriefDetailView: View {
             }
             if !brief.earthquakes.isEmpty {
                 Section {
+                    EarthquakeTimelineChart(quakes: brief.earthquakes)
                     ForEach(brief.earthquakes) { q in
                         EarthquakeRow(quake: q)
                     }

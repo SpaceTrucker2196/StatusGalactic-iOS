@@ -1,4 +1,5 @@
 import SwiftUI
+import Charts
 
 struct TidesCard: View {
     let tides: Tides
@@ -7,10 +8,77 @@ struct TidesCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             header
+            tideCurve
             ForEach(upcoming) { event in
                 TideRow(event: event, timezoneName: timezoneName)
             }
             footer
+        }
+    }
+
+    /// Smooth Catmull-Rom interpolation through the published high/low
+    /// events gives a serviceable approximation of the tide curve. The
+    /// PointMark glyphs sit on each event so the reader can still spot
+    /// the discrete predictions.
+    @ViewBuilder
+    private var tideCurve: some View {
+        let visible = Array(tides.events.prefix(8))
+        if visible.count >= 2 {
+            Chart {
+                ForEach(visible) { event in
+                    LineMark(
+                        x: .value("Time", event.time),
+                        y: .value("Ft", event.heightFt)
+                    )
+                    .interpolationMethod(.catmullRom)
+                    .foregroundStyle(GalacticPalette.electricBlue)
+                    .lineStyle(StrokeStyle(lineWidth: 2))
+                    AreaMark(
+                        x: .value("Time", event.time),
+                        y: .value("Ft", event.heightFt)
+                    )
+                    .interpolationMethod(.catmullRom)
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [
+                                GalacticPalette.electricBlue.opacity(0.4),
+                                GalacticPalette.electricBlue.opacity(0.02)
+                            ],
+                            startPoint: .top, endPoint: .bottom
+                        )
+                    )
+                    PointMark(
+                        x: .value("Time", event.time),
+                        y: .value("Ft", event.heightFt)
+                    )
+                    .foregroundStyle(event.kind == .high
+                                     ? GalacticPalette.hotPink
+                                     : GalacticPalette.electricBlue)
+                    .symbolSize(40)
+                }
+                if let now = (tides.events.first { $0.time >= Date() })?.time {
+                    RuleMark(x: .value("Now", now))
+                        .lineStyle(StrokeStyle(lineWidth: 0.7, dash: [3, 3]))
+                        .foregroundStyle(GalacticPalette.neonCyan.opacity(0.7))
+                }
+            }
+            .chartXAxis {
+                AxisMarks(values: .stride(by: .hour, count: 12)) { _ in
+                    AxisGridLine().foregroundStyle(.white.opacity(0.08))
+                    AxisValueLabel(format: .dateTime.weekday(.abbreviated).hour())
+                        .font(.firaCode(.caption2))
+                        .foregroundStyle(GalacticPalette.peach.opacity(0.7))
+                }
+            }
+            .chartYAxis {
+                AxisMarks(position: .leading) { _ in
+                    AxisGridLine().foregroundStyle(.white.opacity(0.08))
+                    AxisValueLabel()
+                        .font(.firaCode(.caption2))
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .frame(height: 90)
         }
     }
 

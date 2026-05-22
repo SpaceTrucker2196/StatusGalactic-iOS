@@ -1,4 +1,5 @@
 import SwiftUI
+import Charts
 
 // MARK: - Solar wind
 
@@ -37,6 +38,9 @@ struct SolarWindPanel: View {
                 )
             }
             .fixedSize(horizontal: false, vertical: true)
+            if !wind.history.isEmpty {
+                sparklines
+            }
             Text("DSCOVR/ACE · \(wind.observedAt.formatted(.dateTime.hour().minute().timeZone()))")
                 .font(.firaCode(.caption2))
                 .foregroundStyle(.secondary)
@@ -47,6 +51,53 @@ struct SolarWindPanel: View {
             RoundedRectangle(cornerRadius: 10)
                 .fill(GalacticPalette.deepPurple.opacity(0.42))
         )
+    }
+
+    @ViewBuilder
+    private var sparklines: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("24h speed (km/s)")
+                .font(.firaCode(.caption2))
+                .foregroundStyle(.secondary)
+            Chart {
+                ForEach(wind.history, id: \.time) { s in
+                    if let v = s.speedKmS {
+                        LineMark(
+                            x: .value("Time", s.time),
+                            y: .value("Speed", v)
+                        )
+                        .foregroundStyle(GalacticPalette.sun)
+                        .lineStyle(StrokeStyle(lineWidth: 1.5))
+                    }
+                }
+            }
+            .chartXAxis(.hidden)
+            .chartYAxis(.hidden)
+            .frame(height: 36)
+
+            Text("24h Bz (nT) — southward is aurora-friendly")
+                .font(.firaCode(.caption2))
+                .foregroundStyle(.secondary)
+            Chart {
+                ForEach(wind.history, id: \.time) { s in
+                    if let v = s.bzNT {
+                        AreaMark(
+                            x: .value("Time", s.time),
+                            yStart: .value("Zero", 0),
+                            yEnd: .value("Bz", v)
+                        )
+                        .foregroundStyle(v < 0
+                                         ? GalacticPalette.hotPink.opacity(0.55)
+                                         : GalacticPalette.electricBlue.opacity(0.45))
+                    }
+                }
+                RuleMark(y: .value("Zero", 0))
+                    .lineStyle(StrokeStyle(lineWidth: 0.7, dash: [3, 3]))
+                    .foregroundStyle(.white.opacity(0.5))
+            }
+            .chartXAxis(.hidden)
+            .frame(height: 50)
+        }
     }
 
     private func tile(label: String, value: String, unit: String, accent: Color) -> some View {
