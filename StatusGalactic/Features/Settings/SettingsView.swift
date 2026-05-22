@@ -16,7 +16,7 @@ struct SettingsView: View {
             Form {
                 notificationsSection
 
-                Section("APRS") {
+                Section {
                     TextField("Your callsign (e.g. W9FJC)", text: $config.myCallsign)
                         .textInputAutocapitalization(.characters)
                         .autocorrectionDisabled()
@@ -30,30 +30,45 @@ struct SettingsView: View {
                                 .monospacedDigit()
                         }
                     }
-                    SecureField("aprs.fi API key", text: $config.aprsAPIKey)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
+                    HStack {
+                        SecureField("aprs.fi API key", text: $config.aprsAPIKey)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                        APIKeyHelpButton(info: .aprsFi)
+                    }
                     Text("Callsign is required for APRS send/receive. The aprs.fi key is required for lookups and receiving messages.")
                         .font(.firaCode(.caption2))
                         .foregroundStyle(.secondary)
+                } header: {
+                    Text("APRS")
                 }
 
-                Section("NASA") {
-                    SecureField("api.nasa.gov key (optional)", text: $config.nasaAPIKey)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                    Text("Used for APOD. DEMO_KEY works for a few requests per hour. Get a free key at api.nasa.gov.")
+                Section {
+                    HStack {
+                        SecureField("api.nasa.gov key (optional)", text: $config.nasaAPIKey)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                        APIKeyHelpButton(info: .nasa)
+                    }
+                    Text("Used for APOD, NEO close approaches, and DONKI CMEs. DEMO_KEY works for a few requests/hour.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                } header: {
+                    Text("NASA")
                 }
 
-                Section("N2YO") {
-                    SecureField("n2yo.com API key (optional)", text: $config.n2yoAPIKey)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                    Text("Adds upcoming visible ISS passes for your location. Free key at n2yo.com.")
+                Section {
+                    HStack {
+                        SecureField("n2yo.com API key (optional)", text: $config.n2yoAPIKey)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                        APIKeyHelpButton(info: .n2yo)
+                    }
+                    Text("Adds upcoming visible ISS passes for your location.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                } header: {
+                    Text("N2YO")
                 }
 
                 Section("Marine zone (default)") {
@@ -80,13 +95,18 @@ struct SettingsView: View {
                         .font(.caption)
                 }
 
-                Section("Network") {
-                    TextField("User-Agent", text: $config.userAgent)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
+                Section {
+                    HStack {
+                        TextField("User-Agent", text: $config.userAgent)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                        APIKeyHelpButton(info: .userAgent)
+                    }
                     Text("NWS requires a contact-shaped User-Agent. Default is fine.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                } header: {
+                    Text("Network")
                 }
 
                 Section("Location") {
