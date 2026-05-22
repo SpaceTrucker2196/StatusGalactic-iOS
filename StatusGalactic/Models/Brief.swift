@@ -514,6 +514,12 @@ struct BandCondition: Codable, Identifiable, Hashable {
     let reason: String?           // dominant limiting factor, e.g. "G2 storm", "MUF 9 MHz"
 }
 
+/// One sample on the GOES X-ray 24h history — used for the sparkline.
+struct XRaySample: Codable, Hashable {
+    let time: Date
+    let flux: Double                // W/m², 1-8Å
+}
+
 /// Current + 24h-peak GOES soft X-ray state and the derived NOAA R-scale
 /// (radio blackout) badge. Long-wave channel (1-8Å) is the canonical one.
 struct XRayState: Codable, Hashable {
@@ -523,6 +529,43 @@ struct XRayState: Codable, Hashable {
     let peakClass24h: String
     let rScale: String              // "R0".."R5"
     let observedAt: Date
+    /// Trailing-24h flux samples for sparkline rendering. Empty when only
+    /// the current/peak summary was decoded (older payloads round-trip).
+    let history: [XRaySample]
+
+    init(currentFlux: Double, currentClass: String,
+         peakFlux24h: Double, peakClass24h: String,
+         rScale: String, observedAt: Date,
+         history: [XRaySample] = []) {
+        self.currentFlux = currentFlux
+        self.currentClass = currentClass
+        self.peakFlux24h = peakFlux24h
+        self.peakClass24h = peakClass24h
+        self.rScale = rScale
+        self.observedAt = observedAt
+        self.history = history
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case currentFlux = "current_flux"
+        case currentClass = "current_class"
+        case peakFlux24h = "peak_flux_24h"
+        case peakClass24h = "peak_class_24h"
+        case rScale = "r_scale"
+        case observedAt = "observed_at"
+        case history
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        currentFlux = try c.decode(Double.self, forKey: .currentFlux)
+        currentClass = try c.decode(String.self, forKey: .currentClass)
+        peakFlux24h = try c.decode(Double.self, forKey: .peakFlux24h)
+        peakClass24h = try c.decode(String.self, forKey: .peakClass24h)
+        rScale = try c.decode(String.self, forKey: .rScale)
+        observedAt = try c.decode(Date.self, forKey: .observedAt)
+        history = try c.decodeIfPresent([XRaySample].self, forKey: .history) ?? []
+    }
 }
 
 /// Current GOES integral proton flux (≥10 MeV) and derived S-scale.

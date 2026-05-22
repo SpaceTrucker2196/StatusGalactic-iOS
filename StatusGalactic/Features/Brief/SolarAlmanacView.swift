@@ -30,6 +30,9 @@ struct SolarAlmanacView: View {
                 if let wind = brief.solarWind {
                     SolarWindPanel(wind: wind)
                 }
+                if let xRay = brief.xRay {
+                    XRayFluxPanel(state: xRay)
+                }
                 if let flare = brief.flareProbability {
                     FlareProbabilityPanel(flare: flare)
                 }

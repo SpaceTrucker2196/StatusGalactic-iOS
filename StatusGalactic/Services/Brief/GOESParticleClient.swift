@@ -37,21 +37,26 @@ struct GOESParticleClient {
         f2.formatOptions = [.withInternetDateTime]
         var current: (flux: Double, when: Date)?
         var peak: (flux: Double, when: Date)?
+        var samples: [XRaySample] = []
+        samples.reserveCapacity(longWave.count)
         for row in longWave {
-            guard let flux = row["flux"] as? Double else { continue }
+            guard let flux = row["flux"] as? Double, flux > 0 else { continue }
             let when = (row["time_tag"] as? String).flatMap { f.date(from: $0) ?? f2.date(from: $0) }
             guard let when else { continue }
+            samples.append(XRaySample(time: when, flux: flux))
             if current == nil || when > current!.when { current = (flux, when) }
             if peak == nil || flux > peak!.flux { peak = (flux, when) }
         }
         guard let current, let peak else { return nil }
+        samples.sort { $0.time < $1.time }
         return XRayState(
             currentFlux: current.flux,
             currentClass: Self.classify(flux: current.flux),
             peakFlux24h: peak.flux,
             peakClass24h: Self.classify(flux: peak.flux),
             rScale: Self.rScale(forPeakFlux: peak.flux),
-            observedAt: current.when
+            observedAt: current.when,
+            history: samples
         )
     }
 
