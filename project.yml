@@ -163,6 +163,20 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.spacetrucker.statusgalactic.tests
         GENERATE_INFOPLIST_FILE: YES
 
+  StatusGalacticUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources:
+      - path: StatusGalacticUITests
+    dependencies:
+      - target: StatusGalactic
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.spacetrucker.statusgalactic.uitests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: StatusGalactic
+
 # Explicit shared schemes. Order here = order in Xcode's scheme dropdown.
 # StatusGalactic (iOS app) is first so it's the default when the project
 # is opened fresh.
@@ -173,9 +187,11 @@ schemes:
         StatusGalactic: all
         StatusGalacticWidget: all
         StatusGalacticTests: [test]
+        StatusGalacticUITests: [test]
     test:
       targets:
         - StatusGalacticTests
+        - StatusGalacticUITests
       gatherCoverageData: false
     run:
       config: Debug
