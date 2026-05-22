@@ -23,7 +23,10 @@ struct TidesCard: View {
     @ViewBuilder
     private var tideCurve: some View {
         let visible = Array(tides.events.prefix(8))
-        if visible.count >= 2 {
+        // Need at least 2 distinct heights to draw a curve that isn't a flat
+        // line; Catmull-Rom traps with all-equal y-values on iOS 17.
+        let uniqueHeights = Set(visible.map { $0.heightFt })
+        if visible.count >= 2 && uniqueHeights.count >= 2 {
             Chart {
                 ForEach(visible) { event in
                     LineMark(

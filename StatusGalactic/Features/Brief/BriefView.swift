@@ -56,8 +56,8 @@ struct BriefView: View {
             }
         case .loading:
             ProgressView("Loading brief…")
-        case .loaded(let brief, let fetchedAt):
-            BriefDetailView(brief: brief, fetchedAt: fetchedAt)
+        case .loaded(let brief, let fetchedAt, let isStale):
+            BriefDetailView(brief: brief, fetchedAt: fetchedAt, isStale: isStale)
         case .error(let message):
             VStack(spacing: 16) {
                 ContentUnavailableView(
@@ -149,7 +149,7 @@ struct BriefView: View {
             notifications: notifications
         )
         // Refresh local notification schedule from the freshest known location.
-        if case .loaded(let brief, _) = vm.state {
+        if case .loaded(let brief, _, _) = vm.state {
             await notifications.reschedule(latitude: brief.lat, longitude: brief.lng)
             // Share the resolved location with the widget + watch complications
             // via the App Group suite (when entitled). Silently a no-op when

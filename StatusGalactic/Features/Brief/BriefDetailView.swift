@@ -3,10 +3,44 @@ import SwiftUI
 struct BriefDetailView: View {
     let brief: Brief
     let fetchedAt: Date
+    let isStale: Bool
 
     @Environment(ClientConfig.self) private var config
 
+    init(brief: Brief, fetchedAt: Date, isStale: Bool = false) {
+        self.brief = brief
+        self.fetchedAt = fetchedAt
+        self.isStale = isStale
+    }
+
     var body: some View {
+        listBody
+            .opacity(isStale ? 0.55 : 1)
+            .grayscale(isStale ? 0.85 : 0)
+            .animation(.easeInOut(duration: 0.4), value: isStale)
+            .overlay(alignment: .top) {
+                if isStale {
+                    staleBanner
+                }
+            }
+    }
+
+    private var staleBanner: some View {
+        HStack(spacing: 6) {
+            ProgressView()
+                .controlSize(.small)
+                .tint(.secondary)
+            Text("Showing cached data · refreshing")
+                .font(.firaCode(.caption2, weight: .semibold))
+                .foregroundStyle(.secondary)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 5)
+        .background(.ultraThinMaterial, in: Capsule())
+        .padding(.top, 6)
+    }
+
+    private var listBody: some View {
         List {
             if !brief.weatherAlerts.isEmpty {
                 Section {

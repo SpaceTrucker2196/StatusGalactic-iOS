@@ -6,7 +6,10 @@ final class BriefViewModel {
     enum LoadState {
         case idle
         case loading
-        case loaded(Brief, fetchedAt: Date)
+        /// `isStale` is true when the rendered data is a cached snapshot
+        /// from a previous run / refresh and a fresh fetch hasn't yet
+        /// landed. The UI renders stale data in muted gray.
+        case loaded(Brief, fetchedAt: Date, isStale: Bool)
         case error(String)
     }
 
@@ -18,14 +21,24 @@ final class BriefViewModel {
     var marineZone: String = ""
     var selectedCallsign: String?
 
+    init() {
+        // Surface the most recent cached brief immediately as stale. If
+        // there is none, stay in .idle until first load completes.
+        if let cached = BriefCache.load() {
+            state = .loaded(cached.brief, fetchedAt: cached.fetchedAt, isStale: true)
+        }
+    }
+
     func load(
         config: ClientConfig,
         location: CLLocation?,
         tz: String,
         notifications: NotificationManager? = nil
     ) async {
-        if case .loaded = state {
-            // Keep the existing brief visible while we refresh.
+        if case .loaded(let existing, let fetchedAt, _) = state {
+            // Keep the existing brief visible while we refresh, but flag it
+            // as stale so the view dims/grays the content.
+            state = .loaded(existing, fetchedAt: fetchedAt, isStale: true)
             isRefreshing = true
         } else {
             state = .loading
@@ -67,7 +80,9 @@ final class BriefViewModel {
             marineZone: marineZone.isEmpty ? nil : marineZone,
             timezone: tz
         )
-        state = .loaded(brief, fetchedAt: Date())
+        let now = Date()
+        state = .loaded(brief, fetchedAt: now, isStale: false)
+        BriefCache.save(brief: brief, fetchedAt: now)
         if let notifications {
             await notifications.evaluateSpaceWeather(brief: brief)
         }
