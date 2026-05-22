@@ -54,6 +54,18 @@ struct RiverGaugeClient {
 
         let serverName = (payload["name"] as? String).flatMap { $0.isEmpty ? nil : $0 }
 
+        let action = stage("action")
+        let minor = stage("minor")
+        let moderate = stage("moderate")
+        let major = stage("major")
+
+        // If we have neither a reading nor any flood thresholds, the
+        // gauge card would just show "LID • km away" with no data. Skip
+        // surfacing a hollow card.
+        guard currentStage != nil || forecastPeak != nil
+              || action != nil || minor != nil || moderate != nil || major != nil
+        else { return nil }
+
         return RiverGauge(
             lid: station.lid,
             name: serverName ?? station.name,
@@ -62,10 +74,10 @@ struct RiverGaugeClient {
             distanceKm: distanceKm,
             currentStageFt: currentStage,
             observedAt: observedAt,
-            actionStageFt: stage("action"),
-            minorFloodStageFt: stage("minor"),
-            moderateFloodStageFt: stage("moderate"),
-            majorFloodStageFt: stage("major"),
+            actionStageFt: action,
+            minorFloodStageFt: minor,
+            moderateFloodStageFt: moderate,
+            majorFloodStageFt: major,
             forecastPeakFt: forecastPeak,
             forecastPeakAt: forecastPeakAt
         )

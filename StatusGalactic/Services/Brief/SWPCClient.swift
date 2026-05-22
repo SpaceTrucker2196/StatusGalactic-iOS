@@ -19,6 +19,16 @@ struct SWPCClient {
         let (kpAndTime, flux) = try await (kpTask, fluxTask)
         let (kp, observedAt) = kpAndTime
 
+        // Treat a fully-empty result the same as a failed fetch — surfacing
+        // a hollow SpaceWeather card with every number missing is worse
+        // than hiding the section entirely.
+        guard kp != nil || flux != nil else {
+            throw HTTPError.decoding(NSError(
+                domain: "swpc", code: -1,
+                userInfo: [NSLocalizedDescriptionKey: "no SWPC data"]
+            ))
+        }
+
         return SpaceWeather(
             solarFlux: flux,
             kpIndex: kp,

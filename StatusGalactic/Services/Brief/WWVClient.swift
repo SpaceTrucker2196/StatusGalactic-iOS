@@ -28,7 +28,18 @@ struct WWVClient {
     func fetch() async throws -> WWVBulletin {
         let data = try await session.getData(from: Self.url, userAgent: userAgent, timeout: 8)
         let text = String(data: data, encoding: .utf8) ?? ""
-        return Self.parse(text)
+        let bulletin = Self.parse(text)
+        // Bare text with no indices + no summary lines means we got a
+        // failure page or a stub — don't surface an empty WWV panel.
+        guard bulletin.solarFlux != nil || bulletin.aIndex != nil || bulletin.kIndex != nil
+                || bulletin.geomagSummary != nil || bulletin.propagationSummary != nil
+        else {
+            throw HTTPError.decoding(NSError(
+                domain: "wwv", code: -1,
+                userInfo: [NSLocalizedDescriptionKey: "no WWV indices in payload"]
+            ))
+        }
+        return bulletin
     }
 
     /// Visible for tests.

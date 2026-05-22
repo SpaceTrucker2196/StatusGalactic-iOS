@@ -38,7 +38,7 @@ struct OVATIONClient {
 
     /// Visible for tests.
     static func parse(payload: [String: Any], lat: Double, lng: Double) -> AuroraForecast? {
-        guard let coords = payload["coordinates"] as? [[Any]] else { return nil }
+        guard let coords = payload["coordinates"] as? [[Any]], !coords.isEmpty else { return nil }
         // OVATION longitudes are 0..360°E; viewer is -180..180. Normalize.
         let viewerLon = lng < 0 ? lng + 360 : lng
 

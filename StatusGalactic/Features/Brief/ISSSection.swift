@@ -36,7 +36,7 @@ struct ISSCard: View {
 
     private var header: some View {
         HStack(spacing: 8) {
-            Image(systemName: "satellite.fill")
+            Image(systemName: "dot.radiowaves.up.forward")
                 .foregroundStyle(GalacticPalette.neonCyan)
                 .neonGlow(GalacticPalette.neonCyan, intensity: 5)
             Text(iss.name)
@@ -77,7 +77,7 @@ struct ISSCard: View {
             span: .init(latitudeDelta: span, longitudeDelta: span)
         )
         return Map(initialPosition: .region(region)) {
-            Marker(iss.name, systemImage: "satellite.fill", coordinate: issCoord)
+            Marker(iss.name, systemImage: "dot.radiowaves.up.forward", coordinate: issCoord)
                 .tint(GalacticPalette.neonCyan)
             Marker("Me", systemImage: "location.fill", coordinate: observerCoord)
                 .tint(GalacticPalette.hotPink)
