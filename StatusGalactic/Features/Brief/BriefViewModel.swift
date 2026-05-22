@@ -35,10 +35,12 @@ final class BriefViewModel {
         tz: String,
         notifications: NotificationManager? = nil
     ) async {
-        if case .loaded(let existing, let fetchedAt, _) = state {
-            // Keep the existing brief visible while we refresh, but flag it
-            // as stale so the view dims/grays the content.
-            state = .loaded(existing, fetchedAt: fetchedAt, isStale: true)
+        if case .loaded = state {
+            // Keep the brief visible at its current freshness while we
+            // refresh. The gray "stale" treatment only ever fires from
+            // BriefViewModel.init when the cache is being shown before
+            // the very first fetch lands — refreshes after that don't
+            // gray the screen.
             isRefreshing = true
         } else {
             state = .loading
@@ -83,7 +85,14 @@ final class BriefViewModel {
         let now = Date()
         state = .loaded(brief, fetchedAt: now, isStale: false)
         BriefCache.save(brief: brief, fetchedAt: now)
+
+        // Mirror to App Group + reschedule golden/astro reminders against
+        // the freshest known coordinates. Both used to live in BriefView's
+        // refresh() — pulled in here so ContentView's scene-phase trigger
+        // gets the same effect without re-implementing.
+        SharedDefaults.writeLocation(lat: brief.lat, lng: brief.lng)
         if let notifications {
+            await notifications.reschedule(latitude: brief.lat, longitude: brief.lng)
             await notifications.evaluateSpaceWeather(brief: brief)
         }
     }

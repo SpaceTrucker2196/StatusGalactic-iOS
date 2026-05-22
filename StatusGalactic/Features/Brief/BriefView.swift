@@ -32,11 +32,12 @@ struct BriefView: View {
                         .disabled(vm.isRefreshing)
                     }
                 }
-                .task {
-                    location.requestPermissionIfNeeded()
-                    await refresh()
-                }
+                // Intentionally no `.task { refresh() }` here — refresh
+                // is driven by ContentView's app-launch + scenePhase
+                // observers so tab switches and navigation pops don't
+                // re-fire the network fan-out.
                 .refreshable { await refresh() }
+                .onAppear { location.requestPermissionIfNeeded() }
         }
     }
 
@@ -147,17 +148,10 @@ struct BriefView: View {
             tz: TimeZone.current.identifier,
             notifications: notifications
         )
-        // Refresh local notification schedule from the freshest known location.
-        if case .loaded(let brief, _, _) = vm.state {
-            await notifications.reschedule(latitude: brief.lat, longitude: brief.lng)
-            // Share the resolved location with the widget + watch complications
-            // via the App Group suite (when entitled). Silently a no-op when
-            // the App Group isn't active.
-            SharedDefaults.writeLocation(lat: brief.lat, lng: brief.lng)
-            loadCount &+= 1
-        }
-        if case .error = vm.state {
-            errorCount &+= 1
-        }
+        // Notification reschedule + App Group mirror now happen inside
+        // vm.load so any caller (here, pull-to-refresh, or ContentView's
+        // scenePhase observer) gets the same housekeeping.
+        if case .loaded = vm.state { loadCount &+= 1 }
+        if case .error = vm.state { errorCount &+= 1 }
     }
 }

@@ -6,6 +6,22 @@ struct ContentView: View {
     /// ham-radio subset.
     @State private var brief = BriefViewModel()
 
+    /// Track first-mount + last successful load so we can:
+    ///   - kick off a refresh exactly once on app launch
+    ///   - only re-fetch on background→foreground when the data is
+    ///     actually old (avoiding "open the app, gray flash, color" loops)
+    @State private var didInitialLoad = false
+    @State private var lastLoadAt: Date = .distantPast
+
+    @Environment(\.scenePhase) private var scenePhase
+    @Environment(LocationManager.self) private var location
+    @Environment(ClientConfig.self) private var config
+    @Environment(NotificationManager.self) private var notifications
+
+    /// Skip the foreground refresh entirely when we already loaded within
+    /// this window. 5 minutes lines up with NWS/SWPC publish cadence.
+    private let foregroundFreshness: TimeInterval = 5 * 60
+
     var body: some View {
         TabView {
             BriefView()
@@ -26,6 +42,45 @@ struct ContentView: View {
         }
         .tint(GalacticPalette.neonCyan)
         .environment(brief)
+        .task {
+            if !didInitialLoad {
+                didInitialLoad = true
+                location.requestPermissionIfNeeded()
+                await briefLoad()
+            }
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            // Returning from background — refresh only if the data is
+            // older than `foregroundFreshness`. Tab switches and sheet
+            // dismissals stay in the same scene phase and don't trigger.
+            if newPhase == .active {
+                Task { await briefLoadIfStale() }
+            }
+        }
+    }
+
+    private func briefLoad() async {
+        if brief.marineZone.isEmpty {
+            brief.marineZone = config.defaultMarineZone
+        }
+        await brief.load(
+            config: config,
+            location: location.lastLocation,
+            tz: TimeZone.current.identifier,
+            notifications: notifications
+        )
+        lastLoadAt = Date()
+    }
+
+    private func briefLoadIfStale() async {
+        if Date().timeIntervalSince(lastLoadAt) < foregroundFreshness {
+            return
+        }
+        if case .loaded(_, let fetchedAt, _) = brief.state,
+           Date().timeIntervalSince(fetchedAt) < foregroundFreshness {
+            return
+        }
+        await briefLoad()
     }
 }
 
