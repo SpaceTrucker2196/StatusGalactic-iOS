@@ -6,6 +6,8 @@ struct SettingsView: View {
     @Environment(LocationManager.self) private var location
     @Environment(NotificationManager.self) private var notifications
 
+    @State private var showFeedback = false
+
     var body: some View {
         @Bindable var config = config
         @Bindable var notifications = notifications
@@ -106,8 +108,14 @@ struct SettingsView: View {
                     LabeledContent("App version") {
                         Text(Bundle.main.shortVersion)
                     }
+                    Button {
+                        showFeedback = true
+                    } label: {
+                        Label("Report a bug or request a feature", systemImage: "ladybug.fill")
+                            .foregroundStyle(GalacticPalette.hotPink)
+                    }
                     Link(
-                        "iOS repo",
+                        "iOS repo on GitHub",
                         destination: URL(string: "https://github.com/SpaceTrucker2196/StatusGalactic-iOS")!
                     )
                 } header: {
@@ -118,6 +126,10 @@ struct SettingsView: View {
                 }
             }
             .navigationTitle("Settings")
+            .sheet(isPresented: $showFeedback) {
+                FeedbackView()
+                    .environment(config)
+            }
         }
     }
 

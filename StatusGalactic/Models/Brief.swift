@@ -15,6 +15,7 @@ struct Brief: Codable {
     let moon: Moon?
     let planets: [Planet]
     let launches: [Launch]
+    let crewedLaunches: [CrewedLaunch]
     let apod: APOD?
     let mars: MarsWeather?
     let crewed: [CrewedObject]
@@ -49,6 +50,7 @@ struct Brief: Codable {
         case when, lat, lng, timezone
         case locationName = "location_name"
         case earth, marine, space, sun, moon, planets, launches, apod, mars, crewed
+        case crewedLaunches = "crewed_launches"
         case repeaters, tides, river, neos, interstellar, constellations, earthquakes
         case activeRegions = "active_regions"
         case flareProbability = "flare_probability"
@@ -82,6 +84,7 @@ struct Brief: Codable {
         moon: Moon?,
         planets: [Planet],
         launches: [Launch],
+        crewedLaunches: [CrewedLaunch] = [],
         apod: APOD? = nil,
         mars: MarsWeather? = nil,
         crewed: [CrewedObject] = [],
@@ -124,6 +127,7 @@ struct Brief: Codable {
         self.moon = moon
         self.planets = planets
         self.launches = launches
+        self.crewedLaunches = crewedLaunches
         self.apod = apod
         self.mars = mars
         self.crewed = crewed
@@ -648,6 +652,33 @@ struct Planet: Codable, Identifiable {
     }
 }
 
+/// Upcoming launch that's carrying humans — Soyuz crew rotations, Crew
+/// Dragon flights, Shenzhou, Starliner missions, etc. Same shape as
+/// `Launch` but enriched with rocket + destination so the crewed card
+/// can render the full "Falcon 9 → Crew-12 → ISS" story.
+struct CrewedLaunch: Codable, Identifiable, Hashable {
+    var id: String { name + whenUtc.ISO8601Format() }
+    let name: String
+    let whenUtc: Date
+    let pad: String?
+    let provider: String?
+    let status: String?
+    let missionName: String?
+    let missionDescription: String?
+    let rocketName: String?
+    let destination: String?   // orbit / destination ("LEO", "ISS", "Moon")
+
+    enum CodingKeys: String, CodingKey {
+        case name
+        case whenUtc = "when_utc"
+        case pad, provider, status
+        case missionName = "mission_name"
+        case missionDescription = "mission_description"
+        case rocketName = "rocket_name"
+        case destination
+    }
+}
+
 struct Launch: Codable, Identifiable {
     var id: String { name + whenUtc.ISO8601Format() }
     let name: String
@@ -702,6 +733,63 @@ struct MarsWeather: Codable, Hashable {
     let atmoOpacity: String?
     let sunrise: String?
     let sunset: String?
+    /// Mission the reading came from — "Perseverance" or "Curiosity".
+    /// Default Perseverance for backward compatibility with older payloads.
+    let source: String
+
+    enum CodingKeys: String, CodingKey {
+        case sol, season
+        case terrestrialDate = "terrestrial_date"
+        case minTempC = "min_temp_c"
+        case maxTempC = "max_temp_c"
+        case pressurePa = "pressure_pa"
+        case atmoOpacity = "atmo_opacity"
+        case sunrise, sunset, source
+    }
+
+    init(sol: Int, season: String?, terrestrialDate: String?,
+         minTempC: Double?, maxTempC: Double?, pressurePa: Double?,
+         atmoOpacity: String?, sunrise: String?, sunset: String?,
+         source: String = "Perseverance") {
+        self.sol = sol
+        self.season = season
+        self.terrestrialDate = terrestrialDate
+        self.minTempC = minTempC
+        self.maxTempC = maxTempC
+        self.pressurePa = pressurePa
+        self.atmoOpacity = atmoOpacity
+        self.sunrise = sunrise
+        self.sunset = sunset
+        self.source = source
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        sol = try c.decode(Int.self, forKey: .sol)
+        season = try c.decodeIfPresent(String.self, forKey: .season)
+        terrestrialDate = try c.decodeIfPresent(String.self, forKey: .terrestrialDate)
+        minTempC = try c.decodeIfPresent(Double.self, forKey: .minTempC)
+        maxTempC = try c.decodeIfPresent(Double.self, forKey: .maxTempC)
+        pressurePa = try c.decodeIfPresent(Double.self, forKey: .pressurePa)
+        atmoOpacity = try c.decodeIfPresent(String.self, forKey: .atmoOpacity)
+        sunrise = try c.decodeIfPresent(String.self, forKey: .sunrise)
+        sunset = try c.decodeIfPresent(String.self, forKey: .sunset)
+        source = try c.decodeIfPresent(String.self, forKey: .source) ?? "Perseverance"
+    }
+
+    /// Number of days between the terrestrial date the reading was taken
+    /// and `now`. NASA's MEDA / REMS feeds typically lag by days to weeks
+    /// because the data has to be downlinked, calibrated, and published.
+    func ageDays(now: Date = Date()) -> Int? {
+        guard let t = terrestrialDate else { return nil }
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd"
+        f.timeZone = TimeZone(identifier: "UTC")
+        f.locale = Locale(identifier: "en_US_POSIX")
+        guard let date = f.date(from: t) else { return nil }
+        return Calendar(identifier: .gregorian)
+            .dateComponents([.day], from: date, to: now).day
+    }
 }
 
 /// A live position snapshot for a crewed orbital spacecraft. `passes` is only

@@ -123,7 +123,10 @@ private struct APODDetail: View {
     }
 }
 
-/// Mars weather card (Curiosity REMS via MAAS2).
+/// Mars weather card. NASA's downlink+calibration pipeline means even the
+/// freshest reading is days to weeks behind real time — we surface that
+/// explicitly with a "X days ago" badge so the user doesn't think the
+/// feed is broken.
 struct MarsWeatherCard: View {
     let mars: MarsWeather
 
@@ -136,12 +139,36 @@ struct MarsWeatherCard: View {
                 Text("Sol \(mars.sol)")
                     .font(.firaCode(.headline, weight: .bold))
                     .foregroundStyle(GalacticPalette.mars)
+                Text("· \(mars.source)")
+                    .font(.firaCode(.caption2, weight: .semibold))
+                    .foregroundStyle(GalacticPalette.peach)
                 Spacer()
                 if let season = mars.season {
                     Text(season)
                         .font(.firaCode(.caption))
                         .foregroundStyle(GalacticPalette.peach)
                 }
+            }
+            if let age = mars.ageDays() {
+                let label: String = {
+                    if age <= 1 { return "Latest reading" }
+                    if age < 14 { return "\(age) days ago" }
+                    let weeks = age / 7
+                    return "\(weeks) week\(weeks == 1 ? "" : "s") ago"
+                }()
+                let stale = age >= 14
+                HStack(spacing: 4) {
+                    Image(systemName: stale ? "clock.badge.exclamationmark" : "clock")
+                        .font(.caption2)
+                    Text(label)
+                        .font(.firaCode(.caption2, weight: .semibold))
+                }
+                .foregroundStyle(stale ? GalacticPalette.storm : GalacticPalette.peach.opacity(0.85))
+                .padding(.horizontal, 6)
+                .padding(.vertical, 2)
+                .background(Capsule().fill(
+                    (stale ? GalacticPalette.storm : GalacticPalette.peach).opacity(0.15)
+                ))
             }
 
             HStack(spacing: 12) {
@@ -178,6 +205,9 @@ struct MarsWeatherCard: View {
                     .font(.firaCode(.caption2))
                     .foregroundStyle(.secondary)
             }
+            Text("No real-time Mars weather feed exists publicly; values are post-downlink.")
+                .font(.firaCode(.caption2))
+                .foregroundStyle(.secondary)
         }
     }
 

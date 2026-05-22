@@ -12,6 +12,13 @@ struct LaunchesClient {
 
     static let url = URL(string: "https://ll.thespacedevs.com/2.2.0/launch/upcoming/?limit=5&mode=list")!
 
+    /// Same upcoming endpoint as the generic list but requesting the
+    /// detailed mode so we can read `mission.type` (needed to filter for
+    /// crewed flights). Limit is bumped because crewed launches are sparse.
+    static let crewedURL = URL(string:
+        "https://ll.thespacedevs.com/2.2.0/launch/upcoming/?limit=20&mode=detailed"
+    )!
+
     func fetchUpcomingLaunches() async throws -> [Launch] {
         let data = try await session.getData(from: Self.url, userAgent: userAgent)
         let resp = try decoder.decode(LLResponse.self, from: data)
@@ -26,6 +33,40 @@ struct LaunchesClient {
                 status: item.status?.name
             )
         }
+    }
+
+    /// Pulls the broader upcoming list in detailed mode and keeps launches
+    /// whose mission is a human-spaceflight type — Soyuz crew rotations,
+    /// Crew Dragon, Shenzhou, future Starliner/Starship-HLS missions, etc.
+    func fetchUpcomingCrewedLaunches(limit: Int = 6) async throws -> [CrewedLaunch] {
+        let data = try await session.getData(from: Self.crewedURL, userAgent: userAgent)
+        let resp = try decoder.decode(LLDetailedResponse.self, from: data)
+        let crewed = resp.results.compactMap { item -> CrewedLaunch? in
+            guard let net = item.net, let date = Self.parseISO(net) else { return nil }
+            let missionType = item.mission?.type?.lowercased() ?? ""
+            let missionName = item.mission?.name?.lowercased() ?? ""
+            let isCrewed =
+                missionType.contains("human") ||
+                missionType.contains("crew") ||
+                missionName.contains("crew") ||
+                missionName.contains("soyuz") ||
+                missionName.contains("shenzhou") ||
+                missionName.contains("starliner") ||
+                missionName.contains("dragon")
+            guard isCrewed else { return nil }
+            return CrewedLaunch(
+                name: item.name,
+                whenUtc: date,
+                pad: item.pad?.name,
+                provider: item.launch_service_provider?.name,
+                status: item.status?.name,
+                missionName: item.mission?.name,
+                missionDescription: item.mission?.description,
+                rocketName: item.rocket?.configuration?.name,
+                destination: item.mission?.orbit?.name
+            )
+        }
+        return Array(crewed.prefix(limit))
     }
 
     private let decoder: JSONDecoder = {
@@ -63,4 +104,34 @@ struct LaunchesClient {
     private struct LLPad: Codable { let name: String? }
     private struct LLProvider: Codable { let name: String? }
     private struct LLStatus: Codable { let name: String? }
+
+    // MARK: - Detailed response (used by fetchUpcomingCrewedLaunches)
+
+    private struct LLDetailedResponse: Codable {
+        let results: [LLDetailedItem]
+    }
+    private struct LLDetailedItem: Codable {
+        let name: String
+        let net: String?
+        let pad: LLPad?
+        let launch_service_provider: LLProvider?
+        let status: LLStatus?
+        let rocket: LLRocket?
+        let mission: LLMission?
+    }
+    private struct LLRocket: Codable {
+        let configuration: LLRocketConfiguration?
+    }
+    private struct LLRocketConfiguration: Codable {
+        let name: String?
+    }
+    private struct LLMission: Codable {
+        let name: String?
+        let description: String?
+        let type: String?
+        let orbit: LLOrbit?
+    }
+    private struct LLOrbit: Codable {
+        let name: String?
+    }
 }

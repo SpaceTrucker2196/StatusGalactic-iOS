@@ -121,6 +121,18 @@ struct BriefDetailView: View {
                     }
                 }
             }
+            if !brief.crewedLaunches.isEmpty {
+                Section {
+                    ForEach(brief.crewedLaunches) { launch in
+                        CrewedLaunchRow(launch: launch)
+                    }
+                } header: {
+                    Text("Upcoming Crewed Launches")
+                } footer: {
+                    Text("Human-spaceflight missions only · Launch Library 2.")
+                        .font(.firaCode(.caption2))
+                }
+            }
             if !brief.launches.isEmpty {
                 Section("Upcoming Launches") {
                     ForEach(brief.launches) { launch in
@@ -167,7 +179,7 @@ struct BriefDetailView: View {
                 } header: {
                     Text("Mars Weather")
                 } footer: {
-                    Text("Perseverance MEDA via mars.nasa.gov.")
+                    Text("Perseverance MEDA + Curiosity REMS via mars.nasa.gov; freshest source wins.")
                         .font(.firaCode(.caption2))
                 }
             }

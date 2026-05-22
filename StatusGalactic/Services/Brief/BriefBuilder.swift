@@ -99,6 +99,7 @@ struct BriefBuilder {
         async let earthTask: EarthWeather? = try? nws.fetchEarthWeather(lat: lat, lng: lng, periods: 4)
         async let spaceTask: SpaceWeather? = try? swpc.fetchSpaceWeather()
         async let launchTask: [Launch] = (try? await launches.fetchUpcomingLaunches()) ?? []
+        async let crewedLaunchTask: [CrewedLaunch] = (try? await launches.fetchUpcomingCrewedLaunches()) ?? []
         async let apodTask: APOD? = try? apodClient.fetchToday()
         async let marsTask: MarsWeather? = try? marsClient.fetchLatest()
         async let crewedTask: [CrewedObject] = issClient.fetchAllCrewedObjects()
@@ -165,6 +166,7 @@ struct BriefBuilder {
         if space == nil { errors["swpc"] = "Space weather unavailable" }
 
         let launchList = await launchTask
+        let crewedLaunchList = await crewedLaunchTask
         let apod = await apodTask
         let mars = await marsTask
         var crewed = await crewedTask
@@ -229,6 +231,7 @@ struct BriefBuilder {
             moon: moon,
             planets: planets,
             launches: launchList,
+            crewedLaunches: crewedLaunchList,
             apod: apod,
             mars: mars,
             crewed: crewed,
