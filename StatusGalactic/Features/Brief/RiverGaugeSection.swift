@@ -7,9 +7,80 @@ struct RiverGaugeCard: View {
         VStack(alignment: .leading, spacing: 10) {
             header
             currentAndForecast
+            floodRiskGauge
             thresholdsRow
             footer
         }
+    }
+
+    /// Horizontal gauge showing where the current stage sits between
+    /// Action and Major flood. Action, Minor, and Moderate are drawn as
+    /// tick marks; the fill reflects `floodRiskScore`.
+    @ViewBuilder
+    private var floodRiskGauge: some View {
+        if gauge.actionStageFt != nil && gauge.majorFloodStageFt != nil {
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(alignment: .firstTextBaseline) {
+                    Text("Flood risk")
+                        .font(.firaCode(.caption2))
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Text("\(gauge.floodRiskScore)%")
+                        .font(.firaCode(.caption, weight: .bold))
+                        .foregroundStyle(statusColor)
+                        .monospacedDigit()
+                }
+                GeometryReader { geo in
+                    ZStack(alignment: .leading) {
+                        // Background gradient from mint → severe.
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(LinearGradient(
+                                colors: [
+                                    GalacticPalette.mint.opacity(0.25),
+                                    GalacticPalette.active.opacity(0.35),
+                                    GalacticPalette.storm.opacity(0.45),
+                                    GalacticPalette.severe.opacity(0.55)
+                                ],
+                                startPoint: .leading, endPoint: .trailing
+                            ))
+                        // Fill up to the risk score.
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(statusColor)
+                            .frame(width: geo.size.width * CGFloat(gauge.floodRiskScore) / 100)
+                            .neonGlow(statusColor, intensity: 4)
+                        // Threshold ticks (Minor + Moderate sit between Action and Major).
+                        ForEach(thresholdTickFractions(), id: \.0) { (_, frac) in
+                            Rectangle()
+                                .fill(.white.opacity(0.6))
+                                .frame(width: 1, height: 12)
+                                .offset(x: geo.size.width * CGFloat(frac))
+                        }
+                    }
+                }
+                .frame(height: 12)
+                Text(gauge.riskNarrative)
+                    .font(.firaCode(.caption2))
+                    .foregroundStyle(GalacticPalette.peach.opacity(0.85))
+            }
+        }
+    }
+
+    /// Where Minor + Moderate thresholds fall as fractions in [0, 1] of
+    /// the Action→Major span. Used to draw tick marks on the gauge.
+    private func thresholdTickFractions() -> [(String, Double)] {
+        guard let action = gauge.actionStageFt,
+              let major = gauge.majorFloodStageFt,
+              action < major
+        else { return [] }
+        let span = major - action
+        var out: [(String, Double)] = []
+        if let minor = gauge.minorFloodStageFt {
+            out.append(("Minor", min(1, max(0, (minor - action) / span))))
+        }
+        if let mod = gauge.moderateFloodStageFt {
+            out.append(("Moderate", min(1, max(0, (mod - action) / span))))
+        }
+        return out
     }
 
     private var statusColor: Color {

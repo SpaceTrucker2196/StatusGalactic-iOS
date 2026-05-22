@@ -7,7 +7,7 @@ struct StormScaleRow: View {
     let brief: Brief
 
     var body: some View {
-        HStack(spacing: 8) {
+        HStack(alignment: .top, spacing: 8) {
             scale(
                 letter: "R",
                 level: brief.xRay?.rScale ?? "R0",
@@ -27,6 +27,7 @@ struct StormScaleRow: View {
                 tag: "Geomag"
             )
         }
+        .fixedSize(horizontal: false, vertical: true)
     }
 
     private var gScale: String {
@@ -55,7 +56,7 @@ struct StormScaleRow: View {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background(
             RoundedRectangle(cornerRadius: 8)
                 .fill(accent.opacity(0.12))

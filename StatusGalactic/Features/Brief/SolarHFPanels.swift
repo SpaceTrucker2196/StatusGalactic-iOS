@@ -10,7 +10,7 @@ struct SolarWindPanel: View {
             Text("Solar wind (L1)")
                 .font(.firaCode(.subheadline, weight: .semibold))
                 .foregroundStyle(GalacticPalette.peach)
-            HStack(spacing: 10) {
+            HStack(alignment: .top, spacing: 10) {
                 tile(
                     label: "Speed",
                     value: wind.speedKmS.map { String(format: "%.0f", $0) } ?? "—",
@@ -36,6 +36,7 @@ struct SolarWindPanel: View {
                     accent: GalacticPalette.mint
                 )
             }
+            .fixedSize(horizontal: false, vertical: true)
             Text("DSCOVR/ACE · \(wind.observedAt.formatted(.dateTime.hour().minute().timeZone()))")
                 .font(.firaCode(.caption2))
                 .foregroundStyle(.secondary)
@@ -62,7 +63,7 @@ struct SolarWindPanel: View {
                 .font(.firaCode(.caption2))
                 .foregroundStyle(GalacticPalette.peach.opacity(0.8))
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
     private func speedColor(_ v: Double?) -> Color {

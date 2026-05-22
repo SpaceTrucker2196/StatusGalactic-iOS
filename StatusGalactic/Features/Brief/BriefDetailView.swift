@@ -24,7 +24,7 @@ struct BriefDetailView: View {
                 .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
             }
             Section {
-                AIASunPanel()
+                AnimatedSunPanel()
             }
             .listRowBackground(Color.clear)
             .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
@@ -56,8 +56,16 @@ struct BriefDetailView: View {
             }
             if let river = brief.river {
                 Section("River Stage") {
-                    RiverGaugeCard(gauge: river)
-                        .padding(.vertical, 4)
+                    NavigationLink {
+                        RiverStageAlmanacView(
+                            gauge: river,
+                            viewerLat: brief.lat,
+                            viewerLng: brief.lng
+                        )
+                    } label: {
+                        RiverGaugeCard(gauge: river)
+                            .padding(.vertical, 4)
+                    }
                 }
             }
             if let marine = brief.marine, !marine.periods.isEmpty {
@@ -174,8 +182,12 @@ struct BriefDetailView: View {
             }
             if let mars = brief.mars {
                 Section {
-                    MarsWeatherCard(mars: mars)
-                        .padding(.vertical, 4)
+                    NavigationLink {
+                        MarsAlmanacView(mars: mars, when: brief.when)
+                    } label: {
+                        MarsWeatherCard(mars: mars)
+                            .padding(.vertical, 4)
+                    }
                 } header: {
                     Text("Mars Weather")
                 } footer: {

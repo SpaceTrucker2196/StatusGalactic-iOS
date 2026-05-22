@@ -930,6 +930,83 @@ struct RiverGauge: Codable, Hashable {
         if let act   = actionStageFt,        stage >= act   { return .action }
         return .belowAction
     }
+
+    /// Signed feet between current stage and the next threshold above it.
+    /// Negative = how far above the highest reached threshold.
+    var feetToNextThreshold: Double? {
+        guard let stage = currentStageFt else { return nil }
+        let thresholds: [Double] = [
+            actionStageFt, minorFloodStageFt, moderateFloodStageFt, majorFloodStageFt
+        ].compactMap { $0 }.sorted()
+        if let next = thresholds.first(where: { $0 > stage }) {
+            return next - stage          // headroom
+        }
+        if let highest = thresholds.last {
+            return highest - stage       // negative — above all thresholds
+        }
+        return nil
+    }
+
+    /// 0..100 normalized risk score that combines current stage and the
+    /// forecast peak. 0 = well below action, 100 = at or above major flood.
+    /// Useful as a single-number gauge fill.
+    var floodRiskScore: Int {
+        guard let major = majorFloodStageFt,
+              let action = actionStageFt,
+              action < major
+        else {
+            // No usable thresholds — fall back to discrete status mapping.
+            return statusScoreFallback
+        }
+        let topStage = max(currentStageFt ?? 0, forecastPeakFt ?? 0)
+        let span = major - action
+        let raw = (topStage - action) / span
+        let pct = Int((raw * 100).rounded())
+        return min(100, max(0, pct))
+    }
+
+    private var statusScoreFallback: Int {
+        switch floodStatus {
+        case .noData, .belowAction: return 0
+        case .action:               return 25
+        case .minor:                return 50
+        case .moderate:             return 75
+        case .major:                return 100
+        }
+    }
+
+    /// Plain-English risk summary that incorporates the forecast trend.
+    var riskNarrative: String {
+        guard let stage = currentStageFt else { return "Stage unavailable." }
+        var pieces: [String] = []
+        if let action = actionStageFt {
+            let delta = stage - action
+            if delta < 0 {
+                pieces.append(String(format: "%.1f ft below action stage", -delta))
+            } else if let minor = minorFloodStageFt, stage < minor {
+                pieces.append("at action stage")
+            }
+        }
+        if let peak = forecastPeakFt, peak > stage + 0.1 {
+            let rise = peak - stage
+            pieces.append(String(format: "forecast +%.1f ft", rise))
+        } else if let peak = forecastPeakFt, peak < stage - 0.1 {
+            let fall = stage - peak
+            pieces.append(String(format: "forecast −%.1f ft", fall))
+        }
+        return pieces.isEmpty ? statusLabel : pieces.joined(separator: " · ")
+    }
+
+    private var statusLabel: String {
+        switch floodStatus {
+        case .noData:      return "no data"
+        case .belowAction: return "Normal flow"
+        case .action:      return "Action stage"
+        case .minor:       return "Minor flood"
+        case .moderate:    return "Moderate flood"
+        case .major:       return "Major flood"
+        }
+    }
 }
 
 enum FloodStatus: String, Codable, Hashable {
