@@ -5,8 +5,7 @@ struct BriefView: View {
     @Environment(ClientConfig.self) private var config
     @Environment(CallsignStore.self) private var callsigns
     @Environment(NotificationManager.self) private var notifications
-
-    @State private var vm = BriefViewModel()
+    @Environment(BriefViewModel.self) private var vm
     @State private var loadCount: Int = 0
     @State private var errorCount: Int = 0
 

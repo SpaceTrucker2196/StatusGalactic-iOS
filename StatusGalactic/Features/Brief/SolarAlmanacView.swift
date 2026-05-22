@@ -21,9 +21,7 @@ struct SolarAlmanacView: View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 16) {
                 headlineRow
-                if !brief.bandConditions.isEmpty {
-                    BandConditionsPanel(bands: brief.bandConditions)
-                }
+                // HF Band Conditions lives in the RF tab now.
                 if let aurora = brief.aurora {
                     AuroraForecastPanel(forecast: aurora)
                 }
@@ -49,9 +47,7 @@ struct SolarAlmanacView: View {
                 if !brief.solarOutlook.isEmpty {
                     SolarOutlookPanel(days: brief.solarOutlook)
                 }
-                if !brief.ionosondes.isEmpty {
-                    IonosondePanel(stations: brief.ionosondes)
-                }
+                // Ionosondes (foF2 / MUF) moved to the RF tab.
                 if !brief.solarCycle.isEmpty {
                     SolarCyclePanel(points: brief.solarCycle)
                 }
@@ -72,9 +68,7 @@ struct SolarAlmanacView: View {
                             .foregroundStyle(.secondary)
                     }
                 }
-                if let wwv = brief.wwvBulletin {
-                    WWVBulletinPanel(bulletin: wwv)
-                }
+                // WWV propagation bulletin moved to the RF tab.
                 if let hf = space.hfSummary, !hf.isEmpty {
                     hfPanel(hf)
                 }

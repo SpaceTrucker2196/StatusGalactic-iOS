@@ -266,54 +266,8 @@ struct BriefDetailView: View {
                         .font(.firaCode(.caption2))
                 }
             }
-            if !brief.potaSpots.isEmpty {
-                Section {
-                    ForEach(brief.potaSpots) { spot in
-                        POTASpotRow(spot: spot)
-                    }
-                } header: {
-                    Text("Parks On The Air")
-                } footer: {
-                    Text("Active POTA spots, sorted by distance.")
-                        .font(.firaCode(.caption2))
-                }
-            }
-            if !brief.sotaSpots.isEmpty {
-                Section {
-                    ForEach(brief.sotaSpots) { spot in
-                        SOTASpotRow(spot: spot)
-                    }
-                } header: {
-                    Text("Summits On The Air")
-                } footer: {
-                    Text("Most recent SOTA spots worldwide.")
-                        .font(.firaCode(.caption2))
-                }
-            }
-            if !brief.dxSpots.isEmpty {
-                Section {
-                    ForEach(brief.dxSpots) { spot in
-                        DXSpotRow(spot: spot)
-                    }
-                } header: {
-                    Text("DX Cluster")
-                } footer: {
-                    Text("Recent DX spots via dxsummit.fi.")
-                        .font(.firaCode(.caption2))
-                }
-            }
-            if !brief.repeaters.isEmpty {
-                Section {
-                    ForEach(brief.repeaters) { repeater in
-                        RepeaterRow(repeater: repeater)
-                    }
-                } header: {
-                    Text("Nearby Repeaters")
-                } footer: {
-                    Text("RepeaterBook — ham repeaters near \(brief.earth?.locationName ?? "your location").")
-                        .font(.firaCode(.caption2))
-                }
-            }
+            // POTA, SOTA, DX cluster, and nearby repeaters now live in the
+            // RF tab. See RFView.rfBriefSections.
             Section {
                 SiderealFooter(
                     when: brief.when,

@@ -1,10 +1,11 @@
 import SwiftUI
 
-struct APRSView: View {
+struct RFView: View {
     @Environment(ClientConfig.self) private var config
     @Environment(APRSMessageStore.self) private var store
     @Environment(LocationManager.self) private var location
     @Environment(APRSStationLogStore.self) private var log
+    @Environment(BriefViewModel.self) private var brief
 
     @State private var showCompose = false
     @State private var isRefreshing = false
@@ -12,10 +13,22 @@ struct APRSView: View {
     @State private var dxStats = APRSDXStats(today: nil, month: nil, year: nil)
     @State private var myFix: APRSFix?
 
+    /// The latest brief snapshot, when one is available. Used to populate
+    /// the RF Propagation + RF Activity sections at the top.
+    private var loadedBrief: Brief? {
+        if case .loaded(let b, _, _) = brief.state { return b }
+        return nil
+    }
+
+    private var isStale: Bool {
+        if case .loaded(_, _, let stale) = brief.state { return stale }
+        return false
+    }
+
     var body: some View {
         NavigationStack {
             content
-                .navigationTitle("APRS")
+                .navigationTitle("RF")
                 .background(GalacticPalette.cosmicSky.ignoresSafeArea())
                 .scrollContentBackground(.hidden)
                 .toolbar {
@@ -59,6 +72,13 @@ struct APRSView: View {
         } else {
             let threads = store.threads(myCallsign: config.myCallsign)
             List {
+                // RF propagation / activity sections sourced from the
+                // shared brief. Rendered grey when the brief itself is
+                // showing cached data.
+                rfBriefSections
+                    .opacity(isStale ? 0.55 : 1)
+                    .grayscale(isStale ? 0.85 : 0)
+
                 Section {
                     StationHeader(callsign: config.myCallsign, isRefreshing: isRefreshing)
                     if let fix = myFix {
@@ -177,6 +197,94 @@ struct APRSView: View {
             )
         }
         dxStats = store.dxStats(myCallsign: config.myCallsign)
+    }
+
+    // MARK: - RF brief sections
+
+    /// Sections pulled in from the shared Brief: HF propagation conditions,
+    /// ionosonde readings, WWV bulletin, magnetic declination, then the
+    /// activity feeds (POTA, SOTA, DX, repeaters).
+    @ViewBuilder
+    private var rfBriefSections: some View {
+        if let brief = loadedBrief {
+            if !brief.bandConditions.isEmpty {
+                Section {
+                    BandConditionsPanel(bands: brief.bandConditions)
+                } header: {
+                    Text("HF Band Conditions")
+                }
+                .listRowBackground(Color.clear)
+            }
+            if !brief.ionosondes.isEmpty {
+                Section {
+                    IonosondePanel(stations: brief.ionosondes)
+                } header: {
+                    Text("Ionosondes")
+                }
+                .listRowBackground(Color.clear)
+            }
+            if let wwv = brief.wwvBulletin {
+                Section {
+                    WWVBulletinPanel(bulletin: wwv)
+                } header: {
+                    Text("WWV propagation bulletin")
+                }
+                .listRowBackground(Color.clear)
+            }
+            if let mag = brief.magneticDeclination {
+                Section("Magnetic declination") {
+                    HStack {
+                        Image(systemName: "location.north.fill")
+                            .foregroundStyle(GalacticPalette.mint)
+                        Text(mag.formatted)
+                            .font(.firaCode(.headline, weight: .bold))
+                            .foregroundStyle(GalacticPalette.neonCyan)
+                        Spacer()
+                        Text("Point antennas \(mag.formatted) off true north")
+                            .font(.firaCode(.caption2))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .listRowBackground(GalacticPalette.deepPurple.opacity(0.25))
+            }
+            if !brief.potaSpots.isEmpty {
+                Section("Parks On The Air") {
+                    ForEach(brief.potaSpots) { spot in
+                        POTASpotRow(spot: spot)
+                    }
+                }
+                .listRowBackground(GalacticPalette.deepPurple.opacity(0.25))
+            }
+            if !brief.sotaSpots.isEmpty {
+                Section("Summits On The Air") {
+                    ForEach(brief.sotaSpots) { spot in
+                        SOTASpotRow(spot: spot)
+                    }
+                }
+                .listRowBackground(GalacticPalette.deepPurple.opacity(0.25))
+            }
+            if !brief.dxSpots.isEmpty {
+                Section("DX Cluster") {
+                    ForEach(brief.dxSpots) { spot in
+                        DXSpotRow(spot: spot)
+                    }
+                }
+                .listRowBackground(GalacticPalette.deepPurple.opacity(0.25))
+            }
+            if !brief.repeaters.isEmpty {
+                Section {
+                    ForEach(brief.repeaters) { repeater in
+                        RepeaterRow(repeater: repeater)
+                    }
+                } header: {
+                    Text("Nearby Repeaters")
+                } footer: {
+                    Text("RepeaterBook · ham repeaters near \(brief.earth?.locationName ?? "your location").")
+                        .font(.firaCode(.caption2))
+                }
+                .listRowBackground(GalacticPalette.deepPurple.opacity(0.25))
+            }
+        }
     }
 }
 

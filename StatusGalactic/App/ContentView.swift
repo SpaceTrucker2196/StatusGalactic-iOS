@@ -1,14 +1,19 @@
 import SwiftUI
 
 struct ContentView: View {
+    /// Lifted to ContentView so both the Brief and RF tabs read from the
+    /// same model. The Brief tab drives refresh; RF reads + projects the
+    /// ham-radio subset.
+    @State private var brief = BriefViewModel()
+
     var body: some View {
         TabView {
             BriefView()
                 .tabItem { Label("Brief", systemImage: "globe.americas.fill") }
 
-            APRSView()
+            RFView()
                 .tabItem {
-                    Label("APRS", systemImage: "antenna.radiowaves.left.and.right.circle.fill")
+                    Label("RF", systemImage: "antenna.radiowaves.left.and.right.circle.fill")
                 }
 
             CallsignsView()
@@ -20,6 +25,7 @@ struct ContentView: View {
                 .tabItem { Label("Settings", systemImage: "gearshape.fill") }
         }
         .tint(GalacticPalette.neonCyan)
+        .environment(brief)
     }
 }
 
