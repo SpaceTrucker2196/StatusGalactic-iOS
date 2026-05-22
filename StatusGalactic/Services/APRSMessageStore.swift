@@ -7,6 +7,11 @@ final class APRSMessageStore {
     static let limit = 200
 
     private(set) var messages: [APRSMessage]
+    /// Path-derived sightings: for each digi/igate in the user's own
+    /// station path, look up its location via aprs.fi and record a
+    /// distance. These contribute to DX stats alongside conversation
+    /// partners.
+    private(set) var pathDX: [APRSDXEntry] = []
     private let defaults: UserDefaults
 
     init(defaults: UserDefaults = .standard) {
@@ -127,6 +132,42 @@ final class APRSMessageStore {
         return msg.from.uppercased()
     }
 
+    /// Resolve every ham callsign in `path` via aprs.fi, compute its
+    /// great-circle distance from `observer`, and record the sighting
+    /// in `pathDX` so dxStats picks it up. Generic digi aliases
+    /// (WIDE, TRACE, qAR, etc.) are filtered out by APRSPathParser.
+    func enrichPathDX(
+        path: String?,
+        observedAt: Date,
+        observerLat: Double,
+        observerLng: Double,
+        client: APRSClient
+    ) async {
+        guard let path else { return }
+        let calls = APRSPathParser.realCallsigns(in: path)
+        guard !calls.isEmpty else { return }
+        // Skip ones we've already credited recently.
+        let existing = Set(pathDX.map { $0.callsign.uppercased() })
+        let needed = calls.filter { !existing.contains($0.uppercased()) }
+        guard !needed.isEmpty else { return }
+        let fixes = (try? await client.locate(callsigns: needed)) ?? []
+        for fix in fixes {
+            let km = haversineKm(
+                lat1: observerLat, lng1: observerLng,
+                lat2: fix.lat, lng2: fix.lng
+            )
+            pathDX.append(APRSDXEntry(
+                callsign: fix.call.uppercased(),
+                distanceKm: km,
+                receivedAt: observedAt
+            ))
+        }
+        // Cap the pathDX history at 200 to keep dxStats fast.
+        if pathDX.count > 200 {
+            pathDX.removeFirst(pathDX.count - 200)
+        }
+    }
+
     /// DX records: longest distance to the other party (in or out) today,
     /// this month, this year. Computed from cached `distanceKm`; pass
     /// through `enrichDistances(...)` first to populate them.
@@ -152,20 +193,27 @@ final class APRSMessageStore {
         var maxYear: APRSDXEntry?
 
         let me = myCallsign.uppercased()
+        func consider(_ entry: APRSDXEntry, at time: Date) {
+            if time >= yearStart,
+               (maxYear?.distanceKm ?? -.infinity) < entry.distanceKm { maxYear = entry }
+            if time >= monthStart,
+               (maxMonth?.distanceKm ?? -.infinity) < entry.distanceKm { maxMonth = entry }
+            if time >= todayStart,
+               (maxToday?.distanceKm ?? -.infinity) < entry.distanceKm { maxToday = entry }
+        }
+
         for msg in messages where !msg.isBulletin {
             guard let km = msg.distanceKm, msg.sentAt <= reference else { continue }
             let other = Self.otherParty(in: msg, me: me)
-            let entry = APRSDXEntry(
-                callsign: other,
-                distanceKm: km,
-                receivedAt: msg.sentAt
+            consider(
+                APRSDXEntry(callsign: other, distanceKm: km, receivedAt: msg.sentAt),
+                at: msg.sentAt
             )
-            if msg.sentAt >= yearStart,
-               (maxYear?.distanceKm ?? -.infinity) < km { maxYear = entry }
-            if msg.sentAt >= monthStart,
-               (maxMonth?.distanceKm ?? -.infinity) < km { maxMonth = entry }
-            if msg.sentAt >= todayStart,
-               (maxToday?.distanceKm ?? -.infinity) < km { maxToday = entry }
+        }
+        // Path-derived sightings (digi + igate stations from the user's
+        // own packet path) contribute the same way.
+        for entry in pathDX where entry.receivedAt <= reference {
+            consider(entry, at: entry.receivedAt)
         }
         return APRSDXStats(today: maxToday, month: maxMonth, year: maxYear)
     }

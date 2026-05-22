@@ -72,15 +72,12 @@ struct RFView: View {
         } else {
             let threads = store.threads(myCallsign: config.myCallsign)
             List {
-                // RF propagation / activity sections sourced from the
-                // shared brief. Rendered grey when the brief itself is
-                // showing cached data.
-                rfBriefSections
-                    .opacity(isStale ? 0.55 : 1)
-                    .grayscale(isStale ? 0.85 : 0)
-
                 Section {
-                    StationHeader(callsign: config.myCallsign, isRefreshing: isRefreshing)
+                    StationHeader(
+                        callsign: config.myCallsign,
+                        isRefreshing: isRefreshing,
+                        aprsSymbol: myFix?.symbol
+                    )
                     if let fix = myFix {
                         MyStationFixRows(fix: fix)
                     }
@@ -88,6 +85,13 @@ struct RFView: View {
                     Text("Your station")
                 }
                 .listRowBackground(GalacticPalette.deepPurple.opacity(0.4))
+
+                // RF propagation / activity sections sourced from the
+                // shared brief. Rendered grey when the brief itself is
+                // showing cached data.
+                rfBriefSections
+                    .opacity(isStale ? 0.55 : 1)
+                    .grayscale(isStale ? 0.85 : 0)
 
                 if !log.entries.isEmpty {
                     Section("Station log") {
@@ -186,8 +190,9 @@ struct RFView: View {
         }
 
         // After messages settle, enrich every conversation's "other party"
-        // with position + distance, then recompute the DX stats panel.
-        // Bidirectional: outgoing messages now contribute to DX too.
+        // with position + distance, plus credit every digi/igate in the
+        // user's own packet path with a great-circle distance entry.
+        // Both feed dxStats below.
         if let here = location.lastLocation {
             await store.enrichDistances(
                 observerLat: here.coordinate.latitude,
@@ -195,6 +200,15 @@ struct RFView: View {
                 myCallsign: config.myCallsign,
                 client: aprs
             )
+            if let myFix {
+                await store.enrichPathDX(
+                    path: myFix.path,
+                    observedAt: myFix.lastTime ?? Date(),
+                    observerLat: here.coordinate.latitude,
+                    observerLng: here.coordinate.longitude,
+                    client: aprs
+                )
+            }
         }
         dxStats = store.dxStats(myCallsign: config.myCallsign)
     }
@@ -319,10 +333,19 @@ private struct BulletinRow: View {
 private struct StationHeader: View {
     let callsign: String
     let isRefreshing: Bool
+    /// APRS symbol code (e.g. "/k") from the station's latest fix.
+    /// When nil we keep the generic antenna glyph.
+    let aprsSymbol: String?
+
+    init(callsign: String, isRefreshing: Bool, aprsSymbol: String? = nil) {
+        self.callsign = callsign
+        self.isRefreshing = isRefreshing
+        self.aprsSymbol = aprsSymbol
+    }
 
     var body: some View {
         HStack(spacing: 10) {
-            Image(systemName: "antenna.radiowaves.left.and.right")
+            Image(systemName: APRSSymbolIcon.sfSymbol(for: aprsSymbol))
                 .font(.title)
                 .foregroundStyle(GalacticPalette.neonMagenta)
                 .neonGlow(GalacticPalette.neonMagenta, intensity: 6)
@@ -331,9 +354,16 @@ private struct StationHeader: View {
                     .font(.firaCode(.title3, weight: .bold))
                     .foregroundStyle(GalacticPalette.neonCyan)
                     .neonGlow(GalacticPalette.neonCyan, intensity: 6)
-                Text("Passcode \(APRSMessaging.passcode(for: callsign))")
-                    .font(.firaCode(.caption2))
-                    .foregroundStyle(GalacticPalette.peach)
+                HStack(spacing: 6) {
+                    Text("Passcode \(APRSMessaging.passcode(for: callsign))")
+                        .font(.firaCode(.caption2))
+                        .foregroundStyle(GalacticPalette.peach)
+                    if let label = APRSSymbolIcon.label(for: aprsSymbol) {
+                        Text("· \(label)")
+                            .font(.firaCode(.caption2))
+                            .foregroundStyle(GalacticPalette.peach.opacity(0.7))
+                    }
+                }
             }
             Spacer()
             if isRefreshing {
