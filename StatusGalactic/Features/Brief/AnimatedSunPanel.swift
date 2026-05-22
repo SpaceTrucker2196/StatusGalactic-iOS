@@ -11,9 +11,40 @@ import UIKit
 /// the movie crossfades in once enough has buffered to start playback.
 /// A thin progress bar in the footer reports buffering progress.
 struct AnimatedSunPanel: View {
-    static let movieURL = URL(string:
-        "https://sdo.gsfc.nasa.gov/assets/img/latest/mpeg/SDO_AIA_304_v1.mp4"
-    )!
+    /// SDO publishes a 1024px daily movie per AIA channel at
+    /// `/assets/img/dailymov/YYYY/MM/DD/YYYYMMDD_1024_0304.mp4`. The
+    /// movie for *today* may not exist until end-of-day UT, so we try
+    /// candidates in this order:
+    ///   1. yesterday (UTC) — almost always present
+    ///   2. two days ago — fallback if yesterday hasn't been archived yet
+    /// The host stays the same; only the date path changes.
+    static let movieCandidates: [URL] = AnimatedSunPanel.buildMovieCandidates(now: Date())
+
+    /// Visible for tests.
+    static func buildMovieCandidates(now: Date) -> [URL] {
+        let fmt = DateFormatter()
+        fmt.timeZone = TimeZone(identifier: "UTC")
+        fmt.locale = Locale(identifier: "en_US_POSIX")
+        fmt.dateFormat = "yyyy/MM/dd"
+        let fileFmt = DateFormatter()
+        fileFmt.timeZone = TimeZone(identifier: "UTC")
+        fileFmt.locale = Locale(identifier: "en_US_POSIX")
+        fileFmt.dateFormat = "yyyyMMdd"
+
+        let cal = Calendar(identifier: .gregorian)
+        return (1...2).compactMap { daysAgo -> URL? in
+            guard let d = cal.date(byAdding: .day, value: -daysAgo, to: now) else { return nil }
+            let path = fmt.string(from: d)
+            let file = fileFmt.string(from: d)
+            return URL(string:
+                "https://sdo.gsfc.nasa.gov/assets/img/dailymov/\(path)/\(file)_1024_0304.mp4"
+            )
+        }
+    }
+
+    private var movieURL: URL {
+        Self.movieCandidates.first ?? URL(string: "https://sdo.gsfc.nasa.gov")!
+    }
 
     /// Fallback still for the "tap-to-zoom" detail sheet and for the
     /// placeholder layer behind the player.
@@ -53,7 +84,7 @@ struct AnimatedSunPanel: View {
                     .opacity(playerReady ? 0 : 1)
 
                     LoopingPlayerView(
-                        url: Self.movieURL,
+                        url: movieURL,
                         onProgress: { loadProgress = $0 },
                         onReady: {
                             withAnimation(.easeInOut(duration: 0.4)) {
@@ -93,7 +124,7 @@ struct AnimatedSunPanel: View {
             }
         }
         .sheet(isPresented: $showDetail) {
-            AnimatedSunDetail(still: stillSource, movieURL: Self.movieURL)
+            AnimatedSunDetail(still: stillSource, movieURL: movieURL)
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Solar imagery: AIA 304 Ångströms 48-hour animation from \(stillSource.provider).")

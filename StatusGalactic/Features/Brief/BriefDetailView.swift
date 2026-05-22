@@ -142,17 +142,13 @@ struct BriefDetailView: View {
             } footer: {
                 Text("NOAA SWPC OVATION 30-min forecast, both hemispheres.")
             }
-            Section {
-                DeepSkyImageryView()
-                    .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
-                    .listRowBackground(Color.clear)
-            } header: {
-                Text("Deep Sky")
-            } footer: {
-                Text("Curated stills from Hubble + JWST press releases. New APOD picks may appear under Astronomy Picture of the Day below.")
-            }
+            // Deep Sky strip removed — APOD section below already
+            // surfaces new Hubble / JWST picks.
             if let moon = brief.moon {
                 Section("Moon") {
+                    MoonImageHero(moon: moon)
+                        .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
+                        .listRowBackground(Color.clear)
                     MoonSectionView(moon: moon)
                 }
             }
