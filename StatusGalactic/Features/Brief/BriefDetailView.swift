@@ -21,8 +21,36 @@ struct BriefDetailView: View {
             .overlay(alignment: .top) {
                 if isStale {
                     staleBanner
+                } else if isOfflineLike {
+                    offlineBanner
                 }
             }
+    }
+
+    /// The pure-compute fields (planets, sun, moon, ephemeris) always
+    /// populate, so we judge "offline" by whether every network-sourced
+    /// field came back empty.
+    private var isOfflineLike: Bool {
+        brief.earth == nil &&
+        brief.space == nil &&
+        brief.weatherAlerts.isEmpty &&
+        brief.activeRegions.isEmpty &&
+        brief.launches.isEmpty &&
+        brief.crewed.isEmpty &&
+        brief.earthquakes.isEmpty
+    }
+
+    private var offlineBanner: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "wifi.exclamationmark")
+            Text("No data — check your network")
+                .font(.firaCode(.caption2, weight: .semibold))
+        }
+        .foregroundStyle(GalacticPalette.peach)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 5)
+        .background(.ultraThinMaterial, in: Capsule())
+        .padding(.top, 6)
     }
 
     private var staleBanner: some View {

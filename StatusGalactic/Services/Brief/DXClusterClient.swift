@@ -17,7 +17,10 @@ struct DXClusterClient {
     static let url = URL(string: "https://www.dxsummit.fi/api/v1/spots")!
 
     func fetchRecent(limit: Int = 10) async throws -> [DXSpot] {
-        let data = try await session.getData(from: Self.url, userAgent: userAgent, timeout: 8)
+        // dxsummit.fi is known to be flaky — short timeout lets the brief
+        // refresh fall through to "no DX cluster" quickly rather than
+        // dragging the whole fan-out out to 8 seconds every time.
+        let data = try await session.getData(from: Self.url, userAgent: userAgent, timeout: 4)
         // dxsummit returns either a bare array or {"spots":[...]} depending
         // on path. Tolerate both.
         let payload = try JSONSerialization.jsonObject(with: data)
