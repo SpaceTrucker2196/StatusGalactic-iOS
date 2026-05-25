@@ -17,13 +17,16 @@ struct AddCallsignView: View {
                         .textInputAutocapitalization(.characters)
                         .autocorrectionDisabled()
                         .font(.title3.monospaced())
+                        .accessibilityIdentifier(A11yID.Callsigns.AddForm.call)
                 }
                 Section("Label (optional)") {
                     TextField("e.g. Jeff's rig", text: $label)
+                        .accessibilityIdentifier(A11yID.Callsigns.AddForm.label)
                 }
                 Section("Notes (optional)") {
                     TextField("e.g. La Crosse base", text: $notes, axis: .vertical)
                         .lineLimit(2...4)
+                        .accessibilityIdentifier(A11yID.Callsigns.AddForm.notes)
                 }
                 if let error {
                     Section {
@@ -37,10 +40,12 @@ struct AddCallsignView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }
+                        .accessibilityIdentifier(A11yID.Callsigns.AddForm.cancel)
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save", action: save)
                         .disabled(CallsignStore.normalize(call).isEmpty)
+                        .accessibilityIdentifier(A11yID.Callsigns.AddForm.save)
                 }
             }
         }

@@ -15,6 +15,7 @@ struct CallsignsView: View {
                     } actions: {
                         Button("Add a Callsign") { showAdd = true }
                             .buttonStyle(.borderedProminent)
+                            .accessibilityIdentifier(A11yID.Callsigns.addEmpty)
                     }
                 } else {
                     List {
@@ -22,12 +23,14 @@ struct CallsignsView: View {
                             NavigationLink(value: entry) {
                                 CallsignRow(entry: entry)
                             }
+                            .accessibilityIdentifier("callsigns.row.\(entry.call)")
                         }
                         .onDelete { offsets in
                             store.remove(at: offsets)
                         }
                     }
                     .listStyle(.insetGrouped)
+                    .accessibilityIdentifier(A11yID.Callsigns.list)
                     .navigationDestination(for: Callsign.self) { entry in
                         CallsignDetailView(callsign: entry)
                     }
@@ -41,10 +44,13 @@ struct CallsignsView: View {
                     } label: {
                         Image(systemName: "plus")
                     }
+                    .accessibilityIdentifier(A11yID.Callsigns.addToolbar)
+                    .accessibilityLabel("Add callsign")
                 }
                 if !store.callsigns.isEmpty {
                     ToolbarItem(placement: .topBarLeading) {
                         EditButton()
+                            .accessibilityIdentifier(A11yID.Callsigns.edit)
                     }
                 }
             }

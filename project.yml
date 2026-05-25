@@ -169,6 +169,9 @@ targets:
     deploymentTarget: "17.0"
     sources:
       - path: StatusGalacticUITests
+      # Shared with the main app so UI tests reference the same
+      # accessibility-identifier constants the views set.
+      - path: StatusGalactic/Support/AccessibilityIdentifiers.swift
     dependencies:
       - target: StatusGalactic
     settings:

@@ -56,6 +56,8 @@ struct RFView: View {
                             Image(systemName: "square.and.pencil")
                         }
                         .disabled(config.myCallsign.isEmpty)
+                        .accessibilityIdentifier(A11yID.RF.compose)
+                        .accessibilityLabel("Compose APRS message")
                     }
                     ToolbarItem(placement: .topBarLeading) {
                         Button {
@@ -68,6 +70,8 @@ struct RFView: View {
                             }
                         }
                         .disabled(config.myCallsign.isEmpty || isRefreshing)
+                        .accessibilityIdentifier(A11yID.RF.refresh)
+                        .accessibilityLabel(isRefreshing ? "Refreshing RF" : "Refresh RF")
                     }
                 }
                 .task {
@@ -75,11 +79,14 @@ struct RFView: View {
                     // tab switches don't keep re-firing the APRS API.
                     if !didInitialRefresh {
                         didInitialRefresh = true
+                        if ScreenshotMode.isActive { return }
                         await refresh()
                     }
                 }
                 .onChange(of: scenePhase) { _, phase in
-                    if phase == .active { Task { await refreshIfStale() } }
+                    if phase == .active && !ScreenshotMode.isActive {
+                        Task { await refreshIfStale() }
+                    }
                 }
                 .refreshable { await refresh() }
                 .sheet(isPresented: $showCompose) {

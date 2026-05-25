@@ -30,6 +30,8 @@ struct BriefView: View {
                             }
                         }
                         .disabled(vm.isRefreshing)
+                        .accessibilityIdentifier(A11yID.Brief.refresh)
+                        .accessibilityLabel(vm.isRefreshing ? "Refreshing brief" : "Refresh brief")
                     }
                 }
                 // Intentionally no `.task { refresh() }` here — refresh
@@ -70,6 +72,7 @@ struct BriefView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .padding(.bottom, 32)
+                .accessibilityIdentifier(A11yID.Brief.retry)
             }
         }
     }
@@ -94,6 +97,7 @@ struct BriefView: View {
                         location.requestPermissionIfNeeded()
                     }
                     .buttonStyle(.borderedProminent)
+                    .accessibilityIdentifier(A11yID.Brief.locationAllow)
                 } else {
                     Button("Open iOS Settings") {
                         if let url = URL(string: UIApplication.openSettingsURLString) {
@@ -101,6 +105,7 @@ struct BriefView: View {
                         }
                     }
                     .buttonStyle(.borderedProminent)
+                    .accessibilityIdentifier(A11yID.Brief.locationOpenSettings)
                 }
             }
         }
@@ -136,6 +141,8 @@ struct BriefView: View {
                     .font(.footnote.weight(.medium))
             }
         }
+        .accessibilityIdentifier(A11yID.Brief.sourcePicker)
+        .accessibilityLabel("Brief source. Currently \(vm.selectedCallsign ?? "my location").")
     }
 
     private func refresh() async {

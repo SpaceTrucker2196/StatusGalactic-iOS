@@ -22,6 +22,7 @@ struct SettingsView: View {
                         .autocorrectionDisabled()
                         .font(.firaCode(.body, weight: .semibold))
                         .foregroundStyle(GalacticPalette.neonCyan)
+                        .accessibilityIdentifier(A11yID.Settings.callsign)
                     if !config.myCallsign.isEmpty {
                         LabeledContent("APRS-IS passcode") {
                             Text("\(APRSMessaging.passcode(for: config.myCallsign))")
@@ -34,6 +35,7 @@ struct SettingsView: View {
                         SecureField("aprs.fi API key", text: $config.aprsAPIKey)
                             .textInputAutocapitalization(.never)
                             .autocorrectionDisabled()
+                            .accessibilityIdentifier(A11yID.Settings.aprsKey)
                         APIKeyHelpButton(info: .aprsFi)
                     }
                     Text("Callsign is required for APRS send/receive. The aprs.fi key is required for lookups and receiving messages.")
@@ -48,6 +50,7 @@ struct SettingsView: View {
                         SecureField("api.nasa.gov key (optional)", text: $config.nasaAPIKey)
                             .textInputAutocapitalization(.never)
                             .autocorrectionDisabled()
+                            .accessibilityIdentifier(A11yID.Settings.nasaKey)
                         APIKeyHelpButton(info: .nasa)
                     }
                     Text("Used for APOD, NEO close approaches, and DONKI CMEs. DEMO_KEY works for a few requests/hour.")
@@ -62,6 +65,7 @@ struct SettingsView: View {
                         SecureField("n2yo.com API key (optional)", text: $config.n2yoAPIKey)
                             .textInputAutocapitalization(.never)
                             .autocorrectionDisabled()
+                            .accessibilityIdentifier(A11yID.Settings.n2yoKey)
                         APIKeyHelpButton(info: .n2yo)
                     }
                     Text("Adds upcoming visible ISS passes for your location.")
@@ -77,6 +81,7 @@ struct SettingsView: View {
                     } label: {
                         marineZoneRow
                     }
+                    .accessibilityIdentifier(A11yID.Settings.marineZone)
                     Text("Sets the marine forecast for coastal & boating use. Leave as None if inland.")
                         .font(.firaCode(.caption2))
                         .foregroundStyle(.secondary)
@@ -84,10 +89,12 @@ struct SettingsView: View {
 
                 Section {
                     Toggle("APOD as brief background", isOn: $config.useAPODBackground)
+                        .accessibilityIdentifier(A11yID.Settings.apodToggle)
                     Button("Clear image cache") {
                         Task { await ImageCache.shared.clear() }
                     }
                     .foregroundStyle(GalacticPalette.hotPink)
+                    .accessibilityIdentifier(A11yID.Settings.clearCache)
                 } header: {
                     Text("Imagery")
                 } footer: {
@@ -100,6 +107,7 @@ struct SettingsView: View {
                         TextField("User-Agent", text: $config.userAgent)
                             .textInputAutocapitalization(.never)
                             .autocorrectionDisabled()
+                            .accessibilityIdentifier(A11yID.Settings.userAgent)
                         APIKeyHelpButton(info: .userAgent)
                     }
                     Text("NWS requires a contact-shaped User-Agent. Default is fine.")
@@ -122,6 +130,7 @@ struct SettingsView: View {
                     Button("Refresh location") {
                         location.requestLocation()
                     }
+                    .accessibilityIdentifier(A11yID.Settings.refreshLocation)
                 }
 
                 Section {
@@ -134,10 +143,12 @@ struct SettingsView: View {
                         Label("Report a bug or request a feature", systemImage: "ladybug.fill")
                             .foregroundStyle(GalacticPalette.hotPink)
                     }
+                    .accessibilityIdentifier(A11yID.Settings.feedback)
                     Link(
                         "iOS repo on GitHub",
                         destination: URL(string: "https://github.com/SpaceTrucker2196/StatusGalactic-iOS")!
                     )
+                    .accessibilityIdentifier(A11yID.Settings.githubLink)
                 } header: {
                     Text("About")
                 } footer: {
@@ -194,10 +205,13 @@ struct SettingsView: View {
         Section {
             Toggle("Golden hour reminders", isOn: $notifications.goldenHourEnabled)
                 .onChange(of: notifications.goldenHourEnabled) { handleNotifChange() }
+                .accessibilityIdentifier(A11yID.Settings.Notif.goldenHour)
             Toggle("Astronomical dusk reminders", isOn: $notifications.astronomicalDuskEnabled)
                 .onChange(of: notifications.astronomicalDuskEnabled) { handleNotifChange() }
+                .accessibilityIdentifier(A11yID.Settings.Notif.astroDusk)
             Toggle("Aurora alert at my location", isOn: $notifications.auroraAlertsEnabled)
                 .onChange(of: notifications.auroraAlertsEnabled) { handleNotifChange() }
+                .accessibilityIdentifier(A11yID.Settings.Notif.aurora)
             if notifications.auroraAlertsEnabled {
                 Stepper(
                     "Fire when ≥ \(notifications.auroraThresholdPct)%",
@@ -206,9 +220,11 @@ struct SettingsView: View {
                     step: 5
                 )
                 .font(.firaCode(.caption))
+                .accessibilityIdentifier(A11yID.Settings.Notif.auroraThreshold)
             }
             Toggle("R / S / G storm alerts", isOn: $notifications.stormAlertsEnabled)
                 .onChange(of: notifications.stormAlertsEnabled) { handleNotifChange() }
+                .accessibilityIdentifier(A11yID.Settings.Notif.storm)
             if notifications.stormAlertsEnabled {
                 Stepper(
                     "Fire when scale ≥ \(notifications.stormMinLevel)",
@@ -216,6 +232,7 @@ struct SettingsView: View {
                     in: 1...5
                 )
                 .font(.firaCode(.caption))
+                .accessibilityIdentifier(A11yID.Settings.Notif.stormLevel)
             }
             if let next = notifications.nextGoldenHour, notifications.goldenHourEnabled {
                 LabeledContent("Next golden hour") {
