@@ -3,8 +3,9 @@ import SwiftUI
 struct ContentView: View {
     /// Lifted to ContentView so both the Brief and RF tabs read from the
     /// same model. The Brief tab drives refresh; RF reads + projects the
-    /// ham-radio subset.
-    @State private var brief = BriefViewModel()
+    /// ham-radio subset. Injected by the App so screenshot-mode seeding
+    /// in `StatusGalacticApp.init` survives all the way through.
+    @State var brief: BriefViewModel
 
     /// Track first-mount + last successful load so we can:
     ///   - kick off a refresh exactly once on app launch
@@ -45,6 +46,7 @@ struct ContentView: View {
         .task {
             if !didInitialLoad {
                 didInitialLoad = true
+                if ScreenshotMode.isActive { return }
                 location.requestPermissionIfNeeded()
                 await briefLoad()
             }
@@ -53,7 +55,7 @@ struct ContentView: View {
             // Returning from background — refresh only if the data is
             // older than `foregroundFreshness`. Tab switches and sheet
             // dismissals stay in the same scene phase and don't trigger.
-            if newPhase == .active {
+            if newPhase == .active && !ScreenshotMode.isActive {
                 Task { await briefLoadIfStale() }
             }
         }
@@ -85,7 +87,7 @@ struct ContentView: View {
 }
 
 #Preview {
-    ContentView()
+    ContentView(brief: BriefViewModel())
         .environment(LocationManager())
         .environment(CallsignStore())
         .environment(ClientConfig())

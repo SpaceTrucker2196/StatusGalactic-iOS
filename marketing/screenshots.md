@@ -56,57 +56,82 @@ xcrun simctl io <watch-udid> screenshot marketing/screenshots/watch-01-home.png
 
 ## Capture procedure
 
-The repo ships an interactive driver:
+The repo ships an XCUITest-driven pipeline. **No manual sim driving.**
 
 ```bash
-tools/capture-screenshots.sh [output-dir]   # default: marketing/screenshots
+scripts/screenshots.sh           # runs both 6.9" and 6.1"
+scripts/screenshots.sh --6.9     # 6.9" only (iPhone 17 Pro Max)
+scripts/screenshots.sh --6.1     # 6.1" only (iPhone 17 Pro)
 ```
 
-It picks the first booted simulator, overrides the status bar to
-**9:41 / full battery / full bars / no notifications** (Apple's
-marketing convention), then walks through the 12 screens above —
-press Enter at each prompt to capture the current frame, `s` to skip.
-PNGs land as `01-rf-hero.png`, `02-aurora-kp.png`, etc.
+How it works:
 
-To capture a second device size, boot a different simulator and re-run
-with a different output dir:
+1. `StatusGalacticUITests/ScreenshotTests.swift` launches the app with
+   `-UITEST_SCREENSHOT_MODE`. `StatusGalactic/Screenshots/ScreenshotMode.swift`
+   detects the flag and seeds a deterministic hero brief + APRS state,
+   so no network / API key / location prompt is required.
+2. Each `test_NN_<name>` function navigates to one surface and attaches
+   `XCUIScreen.main.screenshot()` as an `XCTAttachment` named to match
+   the marketing slot (`01-rf-hero`, `02-aurora-kp`, …).
+3. `scripts/screenshots.sh` orchestrates: boot the right sim, override
+   the status bar to **9:41 / full battery / full bars** (Apple's
+   marketing convention), `xcodebuild test`, extract attachments from
+   the xcresult bundle, rename to clean names, resample to the App
+   Store target size.
+4. PNGs land in `marketing/screenshots/<device>/<name>.png`. The
+   directory is gitignored — App Store uploads only.
+
+The orchestrator is **idempotent**: it nukes the prior output for each
+device before re-running, so stale PNGs never make it into the upload.
+
+If the suite hits the Xcode 26 / iOS 26 SIGKILL flake on a launch, the
+script auto-retries the failed tests in isolation (single-test
+invocations are stable). The happy path stays a single suite run.
+
+### Shot 11 — widget
+
+Home-screen widget captures (`11-widget`) aren't covered by XCUITest —
+the test runner can't drive SpringBoard. Capture manually with a
+simulator booted to a clean home screen + the medium widget placed:
 
 ```bash
-xcrun simctl boot "iPhone 17 Pro"          # 6.1" class
-tools/capture-screenshots.sh marketing/screenshots/iphone-17-pro
+xcrun simctl io booted screenshot marketing/screenshots/iphone-6.9/11-widget.png
 ```
 
-Manual fallback for one-off captures, with a simulator booted to the
-right surface:
+### Manual fallback
+
+For one-off captures with a simulator already on the right surface:
 
 ```bash
 xcrun simctl io booted screenshot marketing/screenshots/manual.png
 ```
 
+### Legacy interactive script
+
+`tools/capture-screenshots.sh` is the older interactive driver —
+useful when you want to capture a *real* network-loaded brief instead
+of the seeded fixture. Pass `DEVICE_UDID=...` to pin a specific sim.
+
 ## Setup before capture
 
-1. **Boot the right simulator.** iPhone 17 Pro Max (1320 × 2868) is
-   the required size for App Store submission.
-2. **Build + install + launch the app:**
-   ```bash
-   xcodebuild -project StatusGalactic.xcodeproj -scheme StatusGalactic \
-     -destination 'platform=iOS Simulator,name=iPhone 17 Pro Max' build
-   APP_PATH=$(find ~/Library/Developer/Xcode/DerivedData -name 'StatusGalactic.app' \
-     -path '*Debug-iphonesimulator*' | head -1)
-   xcrun simctl install booted "$APP_PATH"
-   xcrun simctl launch booted com.spacetrucker.statusgalactic
-   ```
-3. **Configure once for the gallery:**
-   - Settings → APRS.fi API key: paste your read key.
-   - Settings → Default marine zone: `GMZ033` (Key West) so shot 10
-     has data.
-   - Callsigns tab: add at least 3 callsigns with real APRS activity
-     so shots 5–6 look populated.
-4. **Pin the simulator location** for shots 7–9 (Valley of the Gods)
-   then again for shot 10 (Key West).
-5. **Light vs Dark mode:** capture the canonical gallery in **dark
-   mode** (matches the in-app neonCyan accent palette better). Re-run
-   in light mode if you want an optional alternate gallery.
+The automated pipeline handles boot, install, launch, status-bar
+override, and hero-data seeding. Prerequisites:
+
+1. An available **iPhone 17 Pro Max** simulator instance (6.9" slot)
+   and an **iPhone 17 Pro** simulator instance (6.1" slot). Both
+   already ship with Xcode 26.
+2. Xcode command-line tools on `PATH` (`xcrun simctl`, `xcodebuild`,
+   `xcrun xcresulttool`, `sips`, `python3`).
+
+No keys, no callsigns, no location pinning — `ScreenshotMode` (only
+active when launched with `-UITEST_SCREENSHOT_MODE`) seeds:
+
+- `K8RVR` as the user callsign, demo APRS key, marine zone `GMZ033`
+- `CLLocation(45.68, -111.04)` — Bozeman, MT — as `lastLocation`
+- A hero `Brief` covering every section the shots target (HF band
+  conditions, POTA / SOTA / DX, Earth + Marine + Sun + Moon + Planets
+  + Launches, aurora forecast, magnetic declination, …)
+- Three saved callsigns and a small APRS thread+bulletin set
 
 ## Output paths
 

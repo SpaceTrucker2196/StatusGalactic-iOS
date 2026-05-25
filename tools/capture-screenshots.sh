@@ -36,8 +36,15 @@ OUT_DIR="${1:-marketing/screenshots}"
 mkdir -p "$OUT_DIR"
 
 # ---- Find a booted simulator ----
+# Honor $DEVICE_UDID if set so you can target a specific device when
+# multiple sims are booted (e.g. picking the 6.9" Pro Max for the
+# required App Store slot rather than whichever sim booted first).
 echo "Looking for a booted iOS simulator…"
-BOOTED=$(xcrun simctl list devices booted | awk -F '[()]' '/Booted/ {print $2; exit}')
+if [[ -n "${DEVICE_UDID:-}" ]]; then
+    BOOTED="$DEVICE_UDID"
+else
+    BOOTED=$(xcrun simctl list devices booted | awk -F '[()]' '/Booted/ {print $2; exit}')
+fi
 
 if [[ -z "$BOOTED" ]]; then
     echo
@@ -54,7 +61,8 @@ if [[ -z "$BOOTED" ]]; then
 fi
 
 DEVICE_ID="$BOOTED"
-DEVICE_NAME=$(xcrun simctl list devices booted | awk '/Booted/ {sub(/ *\(Booted\).*/, ""); sub(/^ */, ""); print; exit}')
+DEVICE_NAME=$(xcrun simctl list devices booted \
+    | awk -v id="$DEVICE_ID" '$0 ~ id { sub(/ *\(.*/, ""); sub(/^ */, ""); print; exit }')
 echo "Device: $DEVICE_NAME ($DEVICE_ID)"
 
 # ---- Status bar override ----

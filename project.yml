@@ -26,7 +26,7 @@ targets:
       path: StatusGalactic/App/Info.plist
       properties:
         CFBundleDisplayName: Spacetrucker Galactic
-        CFBundleShortVersionString: "0.1.0"
+        CFBundleShortVersionString: "0.2.0"
         CFBundleVersion: "1"
         UILaunchScreen:
           UIColorName: AccentColor
@@ -77,7 +77,7 @@ targets:
       path: StatusGalacticWidget/Info.plist
       properties:
         CFBundleDisplayName: Spacetrucker Galactic
-        CFBundleShortVersionString: "0.1.0"
+        CFBundleShortVersionString: "0.2.0"
         CFBundleVersion: "1"
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
