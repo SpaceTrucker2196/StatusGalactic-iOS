@@ -1,13 +1,15 @@
 import SwiftUI
 
-/// Compact R/S/G pill row at the very top of the brief — NOAA's three
+/// R/S/G storm-scale pills near the top of the brief — NOAA's three
 /// space-weather storm scales, mirroring the badges SolarHam shows. Each
-/// pill collapses to "—" if its underlying feed missed.
+/// pill collapses to "—" if its underlying feed missed. Stacked
+/// vertically so each row gets its full pill width for the radio /
+/// solar / geomagnetic context plus value.
 struct StormScaleRow: View {
     let brief: Brief
 
     var body: some View {
-        HStack(alignment: .top, spacing: 8) {
+        VStack(alignment: .leading, spacing: 8) {
             scale(
                 letter: "R",
                 level: brief.xRay?.rScale ?? "R0",
