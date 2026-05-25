@@ -18,6 +18,9 @@ enum GalacticPalette {
     static let hotPink      = Color(red: 1.00, green: 0.40, blue: 0.80)
     static let neonCyan     = Color(red: 0.00, green: 0.94, blue: 1.00)
     static let electricBlue = Color(red: 0.30, green: 0.36, blue: 1.00)
+    /// Blue-green CRT phosphor (P2-ish) used for section headers. Reads
+    /// as a glowing oscilloscope trace.
+    static let phosphorGreen = Color(red: 0.25, green: 1.00, blue: 0.78)
     /// Bright Prussian-blue accent. Name kept as `neonPurple` for legacy
     /// callsites; the actual color is now a saturated cobalt/Prussian.
     static let neonPurple   = Color(red: 0.18, green: 0.42, blue: 0.78)
@@ -133,5 +136,43 @@ extension View {
     /// Apply a soft neon glow in the given color.
     func neonGlow(_ color: Color = GalacticPalette.neonCyan, intensity: CGFloat = 6) -> some View {
         modifier(NeonGlow(color: color, intensity: intensity))
+    }
+}
+
+// MARK: - Phosphor header
+
+extension Text {
+    /// Section-header styling — uppercased, slightly tracked, phosphor-green
+    /// with a neon-glow blur to match the rest of the title chrome.
+    func phosphorHeader() -> some View {
+        self
+            .font(.firaCode(.subheadline, weight: .bold))
+            .textCase(.uppercase)
+            .tracking(1.5)
+            .foregroundStyle(GalacticPalette.phosphorGreen)
+            .neonGlow(GalacticPalette.phosphorGreen, intensity: 5)
+    }
+}
+
+/// Drop-in replacement for `Section(_ title:) { … }` that styles the
+/// header with the phosphor-green glow used elsewhere in the brief
+/// chrome. The result is a real `Section` so List / Form keep their
+/// grouping semantics — wrapping in `some View` was tempting but loses
+/// section grouping inside generated `_VariadicView_Children`.
+struct PhosphorSection<Content: View>: View {
+    let title: String
+    @ViewBuilder var content: () -> Content
+
+    init(_ title: String, @ViewBuilder content: @escaping () -> Content) {
+        self.title = title
+        self.content = content
+    }
+
+    var body: some View {
+        Section {
+            content()
+        } header: {
+            Text(title).phosphorHeader()
+        }
     }
 }

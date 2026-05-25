@@ -27,6 +27,18 @@ struct MoonImageHero: View {
                 .padding(28)
                 .foregroundStyle(Color(white: 0.95))
                 .shadow(color: .white.opacity(0.35), radius: 12)
+                .overlay(
+                    // Procedural maria — the dark basaltic plains that give
+                    // the moon its "face." Drawn on top of the SF Symbol
+                    // glyph, then masked to the moon disc so they only show
+                    // where the symbol is lit. Fades to invisible when the
+                    // phase is mostly dark (crescent) so we don't paint
+                    // floating dark blobs on the sky.
+                    MoonSurface()
+                        .padding(28)
+                        .opacity(mariaOpacity)
+                        .allowsHitTesting(false)
+                )
 
             VStack {
                 Spacer()
@@ -58,6 +70,15 @@ struct MoonImageHero: View {
         )
     }
 
+    /// Maria are most visible near full / gibbous and fade out toward
+    /// new — there's not enough lit moon surface for them to read.
+    private var mariaOpacity: Double {
+        let lit = max(0, min(1, moon.illuminationPct / 100))
+        // Below ~40% illumination, the phase shape is mostly terminator
+        // and the dark patches would float on the sky.
+        return lit < 0.4 ? 0 : (lit - 0.4) / 0.6 * 0.85
+    }
+
     /// Maps our phase-name strings to SF Symbols. The system glyphs match
     /// the real terminator geometry for each phase, so picking by name is
     /// faithful.
@@ -72,6 +93,72 @@ struct MoonImageHero: View {
         if n.contains("last quarter")     { return "moonphase.last.quarter" }
         if n.contains("waning crescent")  { return "moonphase.waning.crescent" }
         return "moon"
+    }
+}
+
+/// Procedural lunar maria — the dark patches that make the full moon
+/// look like a face. Positions are taken from the real selenographic
+/// chart projected to a unit disc; sizes are visually tuned, not exact.
+private struct MoonSurface: View {
+    /// (offset.x, offset.y, radius) — all in unit-disc coordinates where
+    /// (0, 0) is moon center and 1.0 is the limb. Y is positive down to
+    /// match SwiftUI's coordinate system; the maria appear on the
+    /// near-side face of a full moon roughly as observers see them.
+    private let maria: [(CGFloat, CGFloat, CGFloat)] = [
+        (-0.28, -0.42, 0.22),   // Mare Imbrium (upper left)
+        ( 0.05, -0.28, 0.16),   // Mare Serenitatis
+        ( 0.30, -0.10, 0.18),   // Mare Tranquillitatis
+        ( 0.58, -0.18, 0.10),   // Mare Crisium
+        ( 0.38,  0.12, 0.13),   // Mare Fecunditatis
+        ( 0.22,  0.30, 0.10),   // Mare Nectaris
+        (-0.46,  0.04, 0.22),   // Oceanus Procellarum (large, left)
+        (-0.30,  0.38, 0.12),   // Mare Humorum
+        ( 0.02,  0.42, 0.10),   // Mare Nubium
+    ]
+
+    /// Bright impact rays from Tycho — small bright crater near the
+    /// south pole. Rendered as a tiny highlight so the lower half
+    /// doesn't read as featureless.
+    private let highlights: [(CGFloat, CGFloat, CGFloat)] = [
+        ( 0.00,  0.55, 0.05),   // Tycho crater
+        (-0.10, -0.05, 0.04),   // Copernicus
+    ]
+
+    var body: some View {
+        GeometryReader { geo in
+            let r = min(geo.size.width, geo.size.height) / 2
+            let center = CGPoint(x: geo.size.width / 2, y: geo.size.height / 2)
+            ZStack {
+                ForEach(0..<maria.count, id: \.self) { i in
+                    let m = maria[i]
+                    Circle()
+                        .fill(Color(white: 0.35).opacity(0.55))
+                        .frame(width: m.2 * r * 2, height: m.2 * r * 2)
+                        .blur(radius: 1.5)
+                        .position(
+                            x: center.x + m.0 * r,
+                            y: center.y + m.1 * r
+                        )
+                }
+                ForEach(0..<highlights.count, id: \.self) { i in
+                    let h = highlights[i]
+                    Circle()
+                        .fill(Color(white: 1.0).opacity(0.45))
+                        .frame(width: h.2 * r * 2, height: h.2 * r * 2)
+                        .blur(radius: 0.8)
+                        .position(
+                            x: center.x + h.0 * r,
+                            y: center.y + h.1 * r
+                        )
+                }
+            }
+            // Clip to the moon disc so maria can't bleed past the limb.
+            .mask(
+                Circle()
+                    .frame(width: r * 2, height: r * 2)
+                    .position(center)
+            )
+        }
     }
 }
 

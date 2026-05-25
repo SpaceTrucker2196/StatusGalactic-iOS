@@ -17,10 +17,18 @@ struct POTASpotRow: View {
                     .foregroundStyle(GalacticPalette.peach)
                 Spacer()
                 if let d = spot.distanceKm {
-                    Text(String(format: "%.0f km", d))
-                        .font(.firaCode(.caption2))
-                        .foregroundStyle(GalacticPalette.hotPink)
-                        .monospacedDigit()
+                    HStack(spacing: 4) {
+                        Text(String(format: "%.0f km", d))
+                            .foregroundStyle(GalacticPalette.hotPink)
+                        if let az = spot.azimuthDeg {
+                            Text("·")
+                                .foregroundStyle(.secondary)
+                            Text("\(compassPoint(forBearing: az)) \(Int(az.rounded()))°")
+                                .foregroundStyle(GalacticPalette.mint)
+                        }
+                    }
+                    .font(.firaCode(.caption2))
+                    .monospacedDigit()
                 }
             }
             HStack(spacing: 8) {

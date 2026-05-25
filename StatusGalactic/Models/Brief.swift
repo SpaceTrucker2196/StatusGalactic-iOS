@@ -471,6 +471,10 @@ struct POTASpot: Codable, Identifiable, Hashable {
     let locationDesc: String?     // "US-WI"
     let comments: String?
     var distanceKm: Double?
+    /// Initial great-circle bearing from the viewer to the park (0 = N,
+    /// 90 = E). Filled when the viewer has a location fix and the spot
+    /// itself has coordinates.
+    var azimuthDeg: Double?
 }
 
 /// One month in the long-running NOAA observed solar-cycle indices table.

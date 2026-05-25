@@ -344,19 +344,20 @@ enum ScreenshotMode {
     private static func heroPOTA(now: Date) -> [POTASpot] {
         func spot(_ id: Int, _ act: String, _ ref: String, _ name: String,
                   _ freq: Double, _ mode: String, _ ago: TimeInterval,
-                  _ loc: String, _ dist: Double?) -> POTASpot {
+                  _ loc: String, _ dist: Double?, _ az: Double?) -> POTASpot {
             POTASpot(spotId: id, activator: act, parkRef: ref, parkName: name,
                      frequencyKHz: freq, mode: mode,
                      spotTime: now.addingTimeInterval(-ago),
                      latitude: nil, longitude: nil,
-                     locationDesc: loc, comments: nil, distanceKm: dist)
+                     locationDesc: loc, comments: nil,
+                     distanceKm: dist, azimuthDeg: az)
         }
         return [
-            spot(101, "W4ABC", "K-0567", "Great Smoky Mountains NP",     14_252.0, "SSB",  4 * 60,  "US-TN", 2_350),
-            spot(102, "VE3DEF", "VE-0123", "Algonquin Provincial Park",  18_158.0, "CW",   8 * 60,  "CA-ON", 2_010),
-            spot(103, "K9GHI", "K-0033", "Yellowstone NP",                 7_044.0, "FT8", 11 * 60,  "US-WY",   180),
-            spot(104, "N5JKL", "K-2233", "Big Bend NP",                  14_074.0, "FT8", 18 * 60,  "US-TX", 1_780),
-            spot(105, "WA7MNO", "K-0044", "Olympic NP",                  21_310.0, "SSB", 26 * 60,  "US-WA",   880),
+            spot(101, "W4ABC", "K-0567", "Great Smoky Mountains NP",     14_252.0, "SSB",  4 * 60,  "US-TN", 2_350, 108),
+            spot(102, "VE3DEF", "VE-0123", "Algonquin Provincial Park",  18_158.0, "CW",   8 * 60,  "CA-ON", 2_010,  78),
+            spot(103, "K9GHI", "K-0033", "Yellowstone NP",                 7_044.0, "FT8", 11 * 60,  "US-WY",   180, 215),
+            spot(104, "N5JKL", "K-2233", "Big Bend NP",                  14_074.0, "FT8", 18 * 60,  "US-TX", 1_780, 168),
+            spot(105, "WA7MNO", "K-0044", "Olympic NP",                  21_310.0, "SSB", 26 * 60,  "US-WA",   880, 268),
         ]
     }
 

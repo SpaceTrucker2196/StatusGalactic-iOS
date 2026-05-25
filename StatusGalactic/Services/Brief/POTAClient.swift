@@ -32,6 +32,7 @@ struct POTAClient {
                 var s = spot
                 if let sl = s.latitude, let slo = s.longitude {
                     s.distanceKm = haversineKm(lat1: lat, lng1: lng, lat2: sl, lng2: slo)
+                    s.azimuthDeg = bearingDeg(lat1: lat, lng1: lng, lat2: sl, lng2: slo)
                 }
                 return s
             }
@@ -88,7 +89,8 @@ struct POTAClient {
             longitude: lng,
             locationDesc: location,
             comments: comments,
-            distanceKm: nil
+            distanceKm: nil,
+            azimuthDeg: nil
         )
     }
 

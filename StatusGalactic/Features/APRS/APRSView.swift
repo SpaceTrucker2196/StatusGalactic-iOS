@@ -95,6 +95,12 @@ struct RFView: View {
                 .navigationDestination(for: APRSThread.self) { thread in
                     APRSThreadView(thread: thread)
                 }
+                .navigationDestination(for: POTASpot.self) { spot in
+                    POTASpotDetailView(spot: spot)
+                }
+                .navigationDestination(for: SOTASpot.self) { spot in
+                    SOTASpotDetailView(spot: spot)
+                }
         }
     }
 
@@ -120,7 +126,7 @@ struct RFView: View {
                         MyStationFixRows(fix: fix)
                     }
                 } header: {
-                    Text("Your station")
+                    Text("Your station").phosphorHeader()
                 }
                 .listRowBackground(GalacticPalette.deepPurple.opacity(0.4))
 
@@ -129,7 +135,7 @@ struct RFView: View {
                 // there's nothing yet so a fresh callsign doesn't get a row
                 // of dashes.
                 if hasAnyDX {
-                    Section("DX Stats") {
+                    PhosphorSection("DX Stats") {
                         APRSDXStatsView(stats: dxStats)
                     }
                     .listRowBackground(GalacticPalette.deepPurple.opacity(0.35))
@@ -138,7 +144,7 @@ struct RFView: View {
                 let bulletins = store.bulletins
 
                 if !threads.isEmpty {
-                    Section("Conversations") {
+                    PhosphorSection("Conversations") {
                         ForEach(threads) { thread in
                             NavigationLink(value: thread) {
                                 APRSThreadRow(thread: thread, myCallsign: config.myCallsign)
@@ -149,7 +155,7 @@ struct RFView: View {
                 }
 
                 if !bulletins.isEmpty {
-                    Section("Bulletins") {
+                    PhosphorSection("Bulletins") {
                         ForEach(bulletins.prefix(10)) { msg in
                             BulletinRow(message: msg)
                         }
@@ -158,7 +164,7 @@ struct RFView: View {
                 }
 
                 if !log.entries.isEmpty {
-                    Section("Station log") {
+                    PhosphorSection("Station log") {
                         ForEach(log.entries.prefix(5)) { entry in
                             StationLogRow(entry: entry)
                         }
@@ -273,7 +279,7 @@ struct RFView: View {
                 Section {
                     BandConditionsPanel(bands: brief.bandConditions)
                 } header: {
-                    Text("HF Band Conditions")
+                    Text("HF Band Conditions").phosphorHeader()
                 }
                 .listRowBackground(Color.clear)
             }
@@ -281,7 +287,7 @@ struct RFView: View {
                 Section {
                     IonosondePanel(stations: brief.ionosondes)
                 } header: {
-                    Text("Ionosondes")
+                    Text("Ionosondes").phosphorHeader()
                 }
                 .listRowBackground(Color.clear)
             }
@@ -289,12 +295,12 @@ struct RFView: View {
                 Section {
                     WWVBulletinPanel(bulletin: wwv)
                 } header: {
-                    Text("WWV propagation bulletin")
+                    Text("WWV propagation bulletin").phosphorHeader()
                 }
                 .listRowBackground(Color.clear)
             }
             if let mag = brief.magneticDeclination {
-                Section("Magnetic declination") {
+                PhosphorSection("Magnetic declination") {
                     HStack {
                         Image(systemName: "location.north.fill")
                             .foregroundStyle(GalacticPalette.mint)
@@ -310,23 +316,27 @@ struct RFView: View {
                 .listRowBackground(GalacticPalette.deepPurple.opacity(0.25))
             }
             if !brief.potaSpots.isEmpty {
-                Section("Parks On The Air") {
+                PhosphorSection("Parks On The Air") {
                     ForEach(brief.potaSpots) { spot in
-                        POTASpotRow(spot: spot)
+                        NavigationLink(value: spot) {
+                            POTASpotRow(spot: spot)
+                        }
                     }
                 }
                 .listRowBackground(GalacticPalette.deepPurple.opacity(0.25))
             }
             if !brief.sotaSpots.isEmpty {
-                Section("Summits On The Air") {
+                PhosphorSection("Summits On The Air") {
                     ForEach(brief.sotaSpots) { spot in
-                        SOTASpotRow(spot: spot)
+                        NavigationLink(value: spot) {
+                            SOTASpotRow(spot: spot)
+                        }
                     }
                 }
                 .listRowBackground(GalacticPalette.deepPurple.opacity(0.25))
             }
             if !brief.dxSpots.isEmpty {
-                Section("DX Cluster") {
+                PhosphorSection("DX Cluster") {
                     ForEach(brief.dxSpots) { spot in
                         DXSpotRow(spot: spot)
                     }
@@ -339,7 +349,7 @@ struct RFView: View {
                         RepeaterRow(repeater: repeater)
                     }
                 } header: {
-                    Text("Nearby Repeaters")
+                    Text("Nearby Repeaters").phosphorHeader()
                 } footer: {
                     Text("RepeaterBook · ham repeaters near \(brief.earth?.locationName ?? "your location").")
                         .font(.firaCode(.caption2))

@@ -77,7 +77,7 @@ struct BriefDetailView: View {
                             .padding(.vertical, 4)
                     }
                 } header: {
-                    Text("Active Alerts")
+                    Text("Active Alerts").phosphorHeader()
                 } footer: {
                     Text("NWS · CAP feed for your coordinates.")
                         .font(.firaCode(.caption2))
@@ -96,7 +96,7 @@ struct BriefDetailView: View {
             .listRowBackground(Color.clear)
             .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 4, trailing: 16))
             if let sun = brief.sun {
-                Section("Sun") {
+                PhosphorSection("Sun") {
                     SunStrip(sun: sun, now: fetchedAt)
                         .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
                     SunSectionView(sun: sun)
@@ -107,7 +107,7 @@ struct BriefDetailView: View {
             }
             .listRowBackground(Color.clear)
             if let earth = brief.earth, let summary = earth.periods.first {
-                Section("Earth Weather") {
+                PhosphorSection("Earth Weather") {
                     NavigationLink {
                         WeatherAlmanacView(earth: earth, timezoneName: brief.timezone)
                     } label: {
@@ -117,7 +117,7 @@ struct BriefDetailView: View {
                 }
             }
             if let river = brief.river {
-                Section("River Stage") {
+                PhosphorSection("River Stage") {
                     NavigationLink {
                         RiverStageAlmanacView(
                             gauge: river,
@@ -131,20 +131,20 @@ struct BriefDetailView: View {
                 }
             }
             if let marine = brief.marine, !marine.periods.isEmpty {
-                Section("Marine Weather \(marine.zoneId)") {
+                PhosphorSection("Marine Weather \(marine.zoneId)") {
                     ForEach(marine.periods) { period in
                         WeatherPeriodRow(period: period, isMarine: true)
                     }
                 }
             }
             if let tides = brief.tides {
-                Section("Tides") {
+                PhosphorSection("Tides") {
                     TidesCard(tides: tides, timezoneName: brief.timezone)
                         .padding(.vertical, 4)
                 }
             }
             if let space = brief.space {
-                Section("Space Weather") {
+                PhosphorSection("Space Weather") {
                     NavigationLink {
                         SolarAlmanacView(brief: brief)
                     } label: {
@@ -157,7 +157,7 @@ struct BriefDetailView: View {
                     .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
                     .listRowBackground(Color.clear)
             } header: {
-                Text("Sun Imagery")
+                Text("Sun Imagery").phosphorHeader()
             } footer: {
                 Text("Latest frames from NASA SDO, NOAA SWPC GOES SUVI, and SOHO LASCO. Tap any image to zoom.")
             }
@@ -166,14 +166,14 @@ struct BriefDetailView: View {
                     .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
                     .listRowBackground(Color.clear)
             } header: {
-                Text("Aurora Forecast")
+                Text("Aurora Forecast").phosphorHeader()
             } footer: {
                 Text("NOAA SWPC OVATION 30-min forecast, both hemispheres.")
             }
             // Deep Sky strip removed — APOD section below already
             // surfaces new Hubble / JWST picks.
             if let moon = brief.moon {
-                Section("Moon") {
+                PhosphorSection("Moon") {
                     MoonImageHero(moon: moon)
                         .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
                         .listRowBackground(Color.clear)
@@ -181,7 +181,7 @@ struct BriefDetailView: View {
                 }
             }
             if !brief.planets.isEmpty {
-                Section("Planetary Positions") {
+                PhosphorSection("Planetary Positions") {
                     ForEach(brief.planets) { planet in
                         PlanetRow(planet: planet, timezone: brief.timezone)
                     }
@@ -193,14 +193,14 @@ struct BriefDetailView: View {
                         CrewedLaunchRow(launch: launch)
                     }
                 } header: {
-                    Text("Upcoming Crewed Launches")
+                    Text("Upcoming Crewed Launches").phosphorHeader()
                 } footer: {
                     Text("Human-spaceflight missions only · Launch Library 2.")
                         .font(.firaCode(.caption2))
                 }
             }
             if !brief.launches.isEmpty {
-                Section("Upcoming Launches") {
+                PhosphorSection("Upcoming Launches") {
                     ForEach(brief.launches) { launch in
                         LaunchRow(launch: launch)
                     }
@@ -213,7 +213,7 @@ struct BriefDetailView: View {
                             .padding(.vertical, 4)
                     }
                 } header: {
-                    Text("International Space Station")
+                    Text("International Space Station").phosphorHeader()
                 } footer: {
                     Text("Live position from wheretheiss.at.")
                         .font(.firaCode(.caption2))
@@ -226,14 +226,14 @@ struct BriefDetailView: View {
                             .padding(.vertical, 2)
                     }
                 } header: {
-                    Text("Satellite Constellations")
+                    Text("Satellite Constellations").phosphorHeader()
                 } footer: {
                     Text("Object counts from Celestrak GP element sets.")
                         .font(.firaCode(.caption2))
                 }
             }
             if let apod = brief.apod {
-                Section("Astronomy Picture of the Day") {
+                PhosphorSection("Astronomy Picture of the Day") {
                     APODCard(apod: apod)
                         .padding(.vertical, 4)
                 }
@@ -247,7 +247,7 @@ struct BriefDetailView: View {
                             .padding(.vertical, 4)
                     }
                 } header: {
-                    Text("Mars Weather")
+                    Text("Mars Weather").phosphorHeader()
                 } footer: {
                     Text("Perseverance MEDA + Curiosity REMS via mars.nasa.gov; freshest source wins.")
                         .font(.firaCode(.caption2))
@@ -259,7 +259,7 @@ struct BriefDetailView: View {
                         NEORow(neo: neo)
                     }
                 } header: {
-                    Text("Near-Earth Objects")
+                    Text("Near-Earth Objects").phosphorHeader()
                 } footer: {
                     Text("Close approaches in the next week · NASA NEO.")
                         .font(.firaCode(.caption2))
@@ -271,7 +271,7 @@ struct BriefDetailView: View {
                         InterstellarRow(obj: obj)
                     }
                 } header: {
-                    Text("Interstellar Visitors")
+                    Text("Interstellar Visitors").phosphorHeader()
                 } footer: {
                     Text("Confirmed hyperbolic trajectory · curated.")
                         .font(.firaCode(.caption2))
@@ -284,7 +284,7 @@ struct BriefDetailView: View {
                         EarthquakeRow(quake: q)
                     }
                 } header: {
-                    Text("Recent Earthquakes")
+                    Text("Recent Earthquakes").phosphorHeader()
                 } footer: {
                     Text("USGS · global significant + nearby past 7 days.")
                         .font(.firaCode(.caption2))
@@ -315,7 +315,7 @@ struct BriefDetailView: View {
                         }
                     }
                 } header: {
-                    Text("Source errors")
+                    Text("Source errors").phosphorHeader()
                 }
             }
         }
