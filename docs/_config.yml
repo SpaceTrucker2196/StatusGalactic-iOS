@@ -1,0 +1,23 @@
+# GitHub Pages — Spacetrucker Galactic (iOS) landing + support + privacy.
+#
+# Enable by:
+#   1. Repo Settings → Pages
+#   2. Source: Deploy from a branch
+#   3. Branch: main · Folder: /docs
+#   4. Save
+#
+# Site will be served at:
+#   https://spacetrucker2196.github.io/StatusGalactic-iOS/
+
+title: Spacetrucker Galactic — iOS
+description: Earth weather, marine forecasts, space weather, sun/moon/planets, and launches — one on-device brief for wherever you are.
+url: "https://spacetrucker2196.github.io"
+baseurl: "/StatusGalactic-iOS"
+
+theme: jekyll-theme-cayman
+
+include:
+  - support.md
+  - privacy.md
+
+safe: true
