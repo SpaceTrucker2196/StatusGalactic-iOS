@@ -51,8 +51,8 @@ final class ScreenshotTests: XCTestCase {
     //
     //   0 — Your station, Conversations, Bulletins
     //   1 — Bulletins tail + HF Band Conditions panel ("aurora-kp" story)
-    //   3 — Parks On The Air + Summits On The Air
-    //   4 — DX Cluster
+    //   2 — Parks On The Air + Summits On The Air
+    //   3 — DX Cluster
     //
     // The seed data in `ScreenshotMode` is the contract: as long as RF
     // sections render in the order APRSView lays them out, these depths
@@ -71,13 +71,13 @@ final class ScreenshotTests: XCTestCase {
 
     func test_03_pota_sota() {
         tap(tab: "RF")
-        swipeMain(count: 3)
+        swipeMain(count: 2)
         snapshot("03-pota-sota")
     }
 
     func test_04_dx_cluster() {
         tap(tab: "RF")
-        swipeMain(count: 4)
+        swipeMain(count: 3)
         snapshot("04-dx-cluster")
     }
 

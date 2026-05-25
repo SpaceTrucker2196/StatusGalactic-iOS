@@ -142,12 +142,17 @@ extension View {
 // MARK: - Phosphor header
 
 extension Text {
-    /// Section-header styling — uppercased, slightly tracked, phosphor-green
+    /// Section-header styling — bold, slightly tracked, phosphor-green
     /// with a neon-glow blur to match the rest of the title chrome.
+    ///
+    /// Visually uppercase (Form/List default), but we apply that via
+    /// SwiftUI's automatic header upper-casing rather than
+    /// `.textCase(.uppercase)` — the latter rewrites the accessibility
+    /// label, which breaks XCUI section lookups via
+    /// `app.staticTexts["HF Band Conditions"]`.
     func phosphorHeader() -> some View {
         self
             .font(.firaCode(.subheadline, weight: .bold))
-            .textCase(.uppercase)
             .tracking(1.5)
             .foregroundStyle(GalacticPalette.phosphorGreen)
             .neonGlow(GalacticPalette.phosphorGreen, intensity: 5)

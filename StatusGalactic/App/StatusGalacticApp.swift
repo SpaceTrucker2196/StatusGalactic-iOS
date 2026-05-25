@@ -41,6 +41,11 @@ struct StatusGalacticApp: App {
                 .environment(notifications)
                 .environment(aprsMessages)
                 .environment(aprsStationLog)
+                // Force dark mode under screenshot mode so the App Store
+                // gallery reads as one consistent neon scheme — otherwise
+                // Callsigns + Settings (which use system Form/List
+                // chrome) render light against the RF + Brief darks.
+                .preferredColorScheme(ScreenshotMode.isActive ? .dark : nil)
                 .task {
                     await notifications.refreshAuthorization()
                     await ImageCache.shared.purgeExpired()
