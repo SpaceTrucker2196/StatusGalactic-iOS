@@ -90,7 +90,7 @@ Phases follow the CareTime convention: iOS ships first, Android mirrors. **As of
 - Shared sources: `Models/Brief.swift` + `Services/BriefAPIClient.swift` compiled into both the app and the widget
 - Small: location, current temp, current condition, next sun event with relative time
 - Medium: + sunrise / sunset / next golden hour + moon phase + Kp index
-**Known limit:** widget uses hardcoded fallback URL and location (`WidgetConfig`) until App Groups are wired up; requires a DEVELOPMENT_TEAM to do that.
+**Implementation:** App Groups (`group.com.spacetrucker.statusgalactic`) wired across all four targets via `Services/Brief/SharedDefaults.swift`. The main app writes lat/lng + User-Agent on every successful brief load; the widget reads them at timeline time. `WidgetConfig` remains as a defensive fallback for the (now uncommon) case where the App Group entitlement isn't resolvable at runtime.
 **Status:** ✅
 
 ### M15: watchOS companion
@@ -100,8 +100,8 @@ Phases follow the CareTime convention: iOS ships first, Android mirrors. **As of
 - New `StatusGalacticWatchComplications` extension target with `BriefComplication` supporting `accessoryCircular`, `accessoryCorner`, `accessoryInline`, `accessoryRectangular`
 - Watch app: location header, current weather card, space weather card, sun card with next event countdown, moon card
 - Shares `Models/Brief.swift`, `Services/ClientConfig.swift`, `Services/LocationManager.swift`, `Services/Brief/`, `Services/Astronomy/` with the iOS target (no separate framework)
-**Note:** Source verified compile-clean via XcodeGen; runtime build requires watchOS platform install (Xcode > Settings > Components > watchOS).
-**Status:** ✅ (source); ⏳ (verified-on-device, blocked on local watchOS SDK install)
+**Note:** Source verified compile-clean via XcodeGen. watchOS 26.5 SDK is installed locally as of 2026-05; the scheme builds and runs end-to-end on the paired watch simulator. Real-hardware verification still pending.
+**Status:** ✅ (source + simulator); ⏳ (real Apple Watch hardware run)
 
 ### M16: Apple Maps integration
 **Goal:** Open callsign last-known position or brief location in Apple Maps for navigation or pin display.

@@ -1,10 +1,14 @@
 import Foundation
 
-/// Hard-coded fallbacks for the widget extension.
+/// Defensive fallback for the widget extension.
 ///
-/// Without an App Group entitlement, the widget cannot read the main app's
-/// `UserDefaults.standard`. Until DEVELOPMENT_TEAM is configured and App
-/// Groups are wired up, edit these defaults to match your home location.
+/// The widget normally reads the user's last known coordinates + User-Agent
+/// from the `group.com.spacetrucker.statusgalactic` App Group suite, which
+/// the main app populates on every successful brief load (see
+/// `Services/Brief/SharedDefaults.swift`). When the suite isn't resolvable
+/// — e.g. a fresh install before the first brief lands, or an unusual
+/// entitlement-provisioning quirk — `BriefWidgetProvider` falls back to
+/// these constants so the widget still renders meaningful content.
 enum WidgetConfig {
     static let defaultLatitude: Double = 43.80
     static let defaultLongitude: Double = -91.20
