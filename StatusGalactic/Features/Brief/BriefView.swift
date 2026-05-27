@@ -9,10 +9,19 @@ struct BriefView: View {
     @State private var loadCount: Int = 0
     @State private var errorCount: Int = 0
 
+    /// Brief tab title — "<CALL> Galactic" once the operator has set
+    /// their callsign in Settings, "Spacetrucker Galactic" otherwise.
+    /// Personalizes the brief and mirrors the way ham operators sign
+    /// off their own kit.
+    private var navTitle: String {
+        let call = config.myCallsign.trimmingCharacters(in: .whitespacesAndNewlines)
+        return call.isEmpty ? "Spacetrucker Galactic" : "\(call.uppercased()) Galactic"
+    }
+
     var body: some View {
         NavigationStack {
             content
-                .navigationTitle("Spacetrucker Galactic")
+                .navigationTitle(navTitle)
                 .sensoryFeedback(.success, trigger: loadCount)
                 .sensoryFeedback(.error, trigger: errorCount)
                 .toolbar {
