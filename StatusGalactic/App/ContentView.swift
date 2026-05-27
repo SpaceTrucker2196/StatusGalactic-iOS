@@ -47,7 +47,12 @@ struct ContentView: View {
             if !didInitialLoad {
                 didInitialLoad = true
                 if ScreenshotMode.isActive { return }
-                location.requestPermissionIfNeeded()
+                // MockNetworkMode pre-seeds `location.lastLocation` and
+                // a fake auth status, so skip the real permission
+                // request that would block the UI test on a dialog.
+                if !MockNetworkMode.isActive {
+                    location.requestPermissionIfNeeded()
+                }
                 await briefLoad()
             }
         }

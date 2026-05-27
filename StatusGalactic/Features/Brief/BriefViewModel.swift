@@ -56,7 +56,11 @@ final class BriefViewModel {
                 state = .error("Set your aprs.fi API key in Settings to look up callsigns.")
                 return
             }
-            let aprs = APRSClient(userAgent: config.userAgent, apiKey: config.aprsAPIKey)
+            let aprs = APRSClient(
+                session: MockNetworkMode.sessionForClients,
+                userAgent: config.userAgent,
+                apiKey: config.aprsAPIKey
+            )
             do {
                 let fix = try await aprs.locate(call)
                 lat = fix.lat
@@ -75,7 +79,10 @@ final class BriefViewModel {
             return
         }
 
-        let builder = BriefBuilder(config: config)
+        let builder = BriefBuilder(
+            config: config,
+            session: MockNetworkMode.sessionForClients
+        )
         let brief = await builder.build(
             lat: lat,
             lng: lng,

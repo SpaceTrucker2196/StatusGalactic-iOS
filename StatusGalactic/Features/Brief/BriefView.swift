@@ -13,18 +13,55 @@ struct BriefView: View {
     /// their callsign in Settings, "Spacetrucker Galactic" otherwise.
     /// Personalizes the brief and mirrors the way ham operators sign
     /// off their own kit.
-    private var navTitle: String {
-        let call = config.myCallsign.trimmingCharacters(in: .whitespacesAndNewlines)
-        return call.isEmpty ? "Spacetrucker Galactic" : "\(call.uppercased()) Galactic"
+    private var navCallsign: String {
+        config.myCallsign.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+    }
+
+    /// Vaporwave nav title — callsign in neon-cyan (with phosphor
+    /// glow), "Galactic" in phosphor green. Falls back to
+    /// "Spacetrucker Galactic" before a callsign is set so the
+    /// pre-onboarding launch still reads like the brand.
+    @ViewBuilder
+    private var navTitleView: some View {
+        if navCallsign.isEmpty {
+            HStack(spacing: 6) {
+                Text("Spacetrucker")
+                    .font(.firaCode(.subheadline, weight: .semibold))
+                    .foregroundStyle(GalacticPalette.peach)
+                Text("Galactic")
+                    .font(.firaCode(.subheadline, weight: .bold))
+                    .foregroundStyle(GalacticPalette.phosphorGreen)
+                    .neonGlow(GalacticPalette.phosphorGreen, intensity: 4)
+            }
+        } else {
+            HStack(spacing: 6) {
+                Text(navCallsign)
+                    .font(.firaCode(.subheadline, weight: .bold))
+                    .foregroundStyle(GalacticPalette.neonCyan)
+                    .neonGlow(GalacticPalette.neonCyan, intensity: 4)
+                Text("Galactic")
+                    .font(.firaCode(.subheadline, weight: .bold))
+                    .foregroundStyle(GalacticPalette.phosphorGreen)
+                    .neonGlow(GalacticPalette.phosphorGreen, intensity: 4)
+            }
+        }
     }
 
     var body: some View {
         NavigationStack {
             content
-                .navigationTitle(navTitle)
+                // Hide the system nav title and substitute a
+                // vaporwave-styled principal toolbar item — phosphor
+                // green with neon-cyan callsign, glowing to match the
+                // rest of the chrome.
+                .navigationTitle("")
+                .navigationBarTitleDisplayMode(.inline)
                 .sensoryFeedback(.success, trigger: loadCount)
                 .sensoryFeedback(.error, trigger: errorCount)
                 .toolbar {
+                    ToolbarItem(placement: .principal) {
+                        navTitleView
+                    }
                     ToolbarItem(placement: .topBarLeading) {
                         sourcePicker
                     }

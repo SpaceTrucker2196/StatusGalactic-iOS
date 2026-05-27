@@ -10,33 +10,43 @@ struct CallsignsView: View {
                 if store.callsigns.isEmpty {
                     ContentUnavailableView {
                         Label("No callsigns yet", systemImage: "antenna.radiowaves.left.and.right")
+                            .foregroundStyle(GalacticPalette.neonCyan)
                     } description: {
                         Text("Add APRS callsigns to track positions and load briefs at those locations.")
+                            .foregroundStyle(GalacticPalette.peach.opacity(0.85))
                     } actions: {
                         Button("Add a Callsign") { showAdd = true }
                             .buttonStyle(.borderedProminent)
+                            .tint(GalacticPalette.neonMagenta)
                             .accessibilityIdentifier(A11yID.Callsigns.addEmpty)
                     }
                 } else {
                     List {
-                        ForEach(store.callsigns) { entry in
-                            NavigationLink(value: entry) {
-                                CallsignRow(entry: entry)
+                        PhosphorSection("Saved callsigns") {
+                            ForEach(store.callsigns) { entry in
+                                NavigationLink(value: entry) {
+                                    CallsignRow(entry: entry)
+                                }
+                                .accessibilityIdentifier("callsigns.row.\(entry.call)")
                             }
-                            .accessibilityIdentifier("callsigns.row.\(entry.call)")
+                            .onDelete { offsets in
+                                store.remove(at: offsets)
+                            }
                         }
-                        .onDelete { offsets in
-                            store.remove(at: offsets)
-                        }
+                        .listRowBackground(GalacticPalette.deepPurple.opacity(0.35))
                     }
                     .listStyle(.insetGrouped)
+                    .scrollContentBackground(.hidden)
                     .accessibilityIdentifier(A11yID.Callsigns.list)
                     .navigationDestination(for: Callsign.self) { entry in
                         CallsignDetailView(callsign: entry)
                     }
                 }
             }
+            .background(GalacticPalette.cosmicSky.ignoresSafeArea())
             .navigationTitle("Callsigns")
+            .toolbarBackground(GalacticPalette.cosmicBlack.opacity(0.85), for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
@@ -67,23 +77,29 @@ private struct CallsignRow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            HStack {
+            HStack(spacing: 8) {
+                Image(systemName: "antenna.radiowaves.left.and.right")
+                    .foregroundStyle(GalacticPalette.neonMagenta)
+                    .neonGlow(GalacticPalette.neonMagenta, intensity: 4)
                 Text(entry.call)
-                    .font(.headline.monospaced())
+                    .font(.firaCode(.headline, weight: .bold))
+                    .foregroundStyle(GalacticPalette.neonCyan)
+                    .neonGlow(GalacticPalette.neonCyan, intensity: 4)
                 if !entry.label.isEmpty {
                     Text(entry.label)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .font(.firaCode(.subheadline))
+                        .foregroundStyle(GalacticPalette.peach)
                 }
                 Spacer()
                 Text(entry.addedAt, style: .date)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    .font(.firaCode(.caption2))
+                    .foregroundStyle(GalacticPalette.mint.opacity(0.75))
+                    .monospacedDigit()
             }
             if !entry.notes.isEmpty {
                 Text(entry.notes)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .font(.firaCode(.caption))
+                    .foregroundStyle(GalacticPalette.peach.opacity(0.8))
                     .lineLimit(2)
             }
         }

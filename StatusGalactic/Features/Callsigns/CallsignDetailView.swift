@@ -18,23 +18,26 @@ struct CallsignDetailView: View {
             Section {
                 HStack(alignment: .firstTextBaseline) {
                     Text(callsign.call)
-                        .font(.largeTitle.monospaced().weight(.bold))
+                        .font(.firaCode(.largeTitle, weight: .bold))
+                        .foregroundStyle(GalacticPalette.neonCyan)
+                        .neonGlow(GalacticPalette.neonCyan, intensity: 6)
                     Spacer()
                     if !callsign.label.isEmpty {
                         Text(callsign.label)
-                            .font(.title3)
-                            .foregroundStyle(.secondary)
+                            .font(.firaCode(.title3))
+                            .foregroundStyle(GalacticPalette.peach)
                     }
                 }
                 if !callsign.notes.isEmpty {
                     Text(callsign.notes)
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
+                        .font(.firaCode(.callout))
+                        .foregroundStyle(GalacticPalette.peach.opacity(0.85))
                 }
             }
             .listRowSeparator(.hidden)
+            .listRowBackground(GalacticPalette.deepPurple.opacity(0.35))
 
-            Section("Last known position") {
+            PhosphorSection("Last known position") {
                 mapContent
                     .frame(height: 220)
                     .listRowInsets(EdgeInsets())
@@ -143,11 +146,18 @@ struct CallsignDetailView: View {
                     dismiss()
                 } label: {
                     Label("Remove from list", systemImage: "trash")
+                        .foregroundStyle(GalacticPalette.storm)
                 }
             }
+            .listRowBackground(GalacticPalette.deepPurple.opacity(0.35))
         }
+        .listRowBackground(GalacticPalette.deepPurple.opacity(0.35))
+        .scrollContentBackground(.hidden)
+        .background(GalacticPalette.cosmicSky.ignoresSafeArea())
         .navigationTitle(callsign.call)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(GalacticPalette.cosmicBlack.opacity(0.85), for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
         .task { await refresh() }
     }
 

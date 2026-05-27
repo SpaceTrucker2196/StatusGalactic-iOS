@@ -12,31 +12,42 @@ struct AddCallsignView: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("Callsign") {
+                PhosphorSection("Callsign") {
                     TextField("e.g. W9FJC", text: $call)
                         .textInputAutocapitalization(.characters)
                         .autocorrectionDisabled()
-                        .font(.title3.monospaced())
+                        .font(.firaCode(.title3, weight: .bold))
+                        .foregroundStyle(GalacticPalette.neonCyan)
                         .accessibilityIdentifier(A11yID.Callsigns.AddForm.call)
                 }
-                Section("Label (optional)") {
+                .listRowBackground(GalacticPalette.deepPurple.opacity(0.30))
+                PhosphorSection("Label (optional)") {
                     TextField("e.g. Jeff's rig", text: $label)
+                        .font(.firaCode(.body))
                         .accessibilityIdentifier(A11yID.Callsigns.AddForm.label)
                 }
-                Section("Notes (optional)") {
+                .listRowBackground(GalacticPalette.deepPurple.opacity(0.30))
+                PhosphorSection("Notes (optional)") {
                     TextField("e.g. La Crosse base", text: $notes, axis: .vertical)
                         .lineLimit(2...4)
+                        .font(.firaCode(.body))
                         .accessibilityIdentifier(A11yID.Callsigns.AddForm.notes)
                 }
+                .listRowBackground(GalacticPalette.deepPurple.opacity(0.30))
                 if let error {
                     Section {
                         Label(error, systemImage: "exclamationmark.triangle")
-                            .foregroundStyle(.red)
+                            .foregroundStyle(GalacticPalette.storm)
                     }
+                    .listRowBackground(GalacticPalette.deepPurple.opacity(0.30))
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(GalacticPalette.cosmicSky.ignoresSafeArea())
             .navigationTitle("Add Callsign")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(GalacticPalette.cosmicBlack.opacity(0.85), for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }

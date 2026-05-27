@@ -24,6 +24,12 @@ struct StatusGalacticApp: App {
                 config: cfg, location: loc, brief: bvm,
                 callsigns: cs, aprsMessages: msgs
             )
+            // Sibling test mode — when active, registers MockURLProtocol
+            // and pre-seeds three fixture callsigns + a default
+            // location. No-op without `-UITEST_MOCK_NETWORK`.
+            MockNetworkMode.applyIfActive(
+                location: loc, callsigns: cs, config: cfg
+            )
         }
         _location = State(wrappedValue: loc)
         _config = State(wrappedValue: cfg)
