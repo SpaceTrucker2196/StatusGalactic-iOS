@@ -1,11 +1,12 @@
 import SwiftUI
 import UIKit
+import MessageUI
 
-/// Compose a bug report or feature request and ship it straight into the
-/// project's GitHub issue tracker. Authoring lives in-app; we URL-encode
-/// the title and body onto a `github.com/.../issues/new` deep link so the
-/// user lands on a pre-filled issue form and just hits "Submit new issue"
-/// once GitHub auth is satisfied in Safari.
+/// Compose a bug report or feature request and ship it straight to
+/// support@river.io via the iOS system mail composer. No GitHub
+/// account, no third-party sign-in — the user's already-authenticated
+/// Mail.app handles delivery. A `mailto:` fallback covers devices
+/// without Mail configured.
 struct FeedbackView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(ClientConfig.self) private var config
@@ -16,11 +17,11 @@ struct FeedbackView: View {
         case question = "Question"
         var id: String { rawValue }
 
-        var labelTag: String {
+        var subjectTag: String {
             switch self {
-            case .bug:      return "bug"
-            case .feature:  return "enhancement"
-            case .question: return "question"
+            case .bug:      return "Bug"
+            case .feature:  return "Feature request"
+            case .question: return "Question"
             }
         }
 
@@ -36,8 +37,10 @@ struct FeedbackView: View {
     @State private var kind: Kind = .bug
     @State private var title: String = ""
     @State private var bodyText: String = ""
+    @State private var showComposer = false
+    @State private var mailFallbackError: String?
 
-    private static let repoBase = "https://github.com/SpaceTrucker2196/StatusGalactic-iOS"
+    private static let supportEmail = "support@river.io"
 
     private var canSend: Bool {
         !title.trimmingCharacters(in: .whitespaces).isEmpty
@@ -54,73 +57,161 @@ struct FeedbackView: View {
                     }
                     .pickerStyle(.segmented)
                 }
+                .listRowBackground(GalacticPalette.deepPurple.opacity(0.30))
 
-                Section("Title") {
+                PhosphorSection("Title") {
                     TextField("Short summary", text: $title)
                         .font(.firaCode(.body))
                         .textInputAutocapitalization(.sentences)
                 }
+                .listRowBackground(GalacticPalette.deepPurple.opacity(0.30))
 
                 Section {
                     TextEditor(text: $bodyText)
                         .font(.firaCode(.body))
                         .frame(minHeight: 180)
+                        .scrollContentBackground(.hidden)
                 } header: {
-                    Text("Details")
+                    Text("Details").phosphorHeader()
                 } footer: {
-                    Text("Markdown is supported. Steps to reproduce, expected vs actual behavior, screenshots — paste any of it.")
-                        .font(.caption)
+                    Text("Steps to reproduce, what you expected, what actually happened. Device + app version are appended automatically.")
+                        .font(.firaCode(.caption2))
+                        .foregroundStyle(GalacticPalette.peach.opacity(0.75))
                 }
+                .listRowBackground(GalacticPalette.deepPurple.opacity(0.30))
 
                 Section {
                     Button {
                         send()
                     } label: {
-                        Label("Open in GitHub", systemImage: "paperplane.fill")
+                        Label("Send email", systemImage: "paperplane.fill")
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.borderedProminent)
+                    .tint(GalacticPalette.neonMagenta)
                     .disabled(!canSend)
+
+                    if let mailFallbackError {
+                        Label(mailFallbackError, systemImage: "exclamationmark.triangle")
+                            .font(.firaCode(.caption))
+                            .foregroundStyle(GalacticPalette.storm)
+                    }
                 } footer: {
-                    Text("Opens a pre-filled new-issue form on github.com. You'll sign in to GitHub there and submit.")
-                        .font(.caption)
+                    Text("Goes straight to support@river.io from your phone's Mail. No GitHub sign-in, no accounts.")
+                        .font(.firaCode(.caption2))
+                        .foregroundStyle(GalacticPalette.peach.opacity(0.75))
                 }
+                .listRowBackground(GalacticPalette.deepPurple.opacity(0.30))
             }
+            .scrollContentBackground(.hidden)
+            .background(GalacticPalette.cosmicSky.ignoresSafeArea())
             .navigationTitle("Feedback")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(GalacticPalette.cosmicBlack.opacity(0.85), for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("Cancel") { dismiss() }
                 }
             }
+            .sheet(isPresented: $showComposer) {
+                MailComposer(
+                    recipient: Self.supportEmail,
+                    subject: composedSubject,
+                    body: composedBody
+                ) { _ in
+                    showComposer = false
+                    dismiss()
+                }
+                .ignoresSafeArea()
+            }
         }
     }
 
     private func send() {
-        guard let url = makeIssueURL() else { return }
-        UIApplication.shared.open(url)
-        dismiss()
+        if MFMailComposeViewController.canSendMail() {
+            mailFallbackError = nil
+            showComposer = true
+        } else if let url = mailtoFallbackURL() {
+            // No Mail account configured — hand the system the
+            // mailto: URL and let the user pick whichever client is
+            // set as default (or follow Apple's prompt to set one up).
+            UIApplication.shared.open(url) { opened in
+                if !opened {
+                    mailFallbackError = "Couldn't open Mail. Email \(Self.supportEmail) directly."
+                } else {
+                    dismiss()
+                }
+            }
+        } else {
+            mailFallbackError = "No mail client available. Email \(Self.supportEmail) directly."
+        }
     }
 
-    /// Composes the GitHub new-issue URL with title, body, and the kind's
-    /// label tag baked into the query string. Includes a small auto-appended
-    /// device-context footer so we don't have to ask the user to type it.
-    private func makeIssueURL() -> URL? {
-        var components = URLComponents(string: "\(Self.repoBase)/issues/new")!
-        let composedBody = """
+    private var composedSubject: String {
+        "[Galactic \(kind.subjectTag)] \(title)"
+    }
+
+    private var composedBody: String {
+        """
         \(bodyText)
 
         ---
-        _Submitted from Spacetrucker Galactic v\(Bundle.main.shortVersion) (\(Bundle.main.buildNumber))_
-        _iOS \(UIDevice.current.systemVersion) · \(UIDevice.current.model)_
-        _User-Agent: \(config.userAgent)_
+        Submitted from Galactic v\(Bundle.main.shortVersion) (\(Bundle.main.buildNumber))
+        iOS \(UIDevice.current.systemVersion) · \(UIDevice.current.model)
+        Callsign: \(config.myCallsign.isEmpty ? "—" : config.myCallsign)
+        User-Agent: \(config.userAgent)
         """
-        components.queryItems = [
-            URLQueryItem(name: "title", value: title),
+    }
+
+    private func mailtoFallbackURL() -> URL? {
+        var c = URLComponents()
+        c.scheme = "mailto"
+        c.path = Self.supportEmail
+        c.queryItems = [
+            URLQueryItem(name: "subject", value: composedSubject),
             URLQueryItem(name: "body", value: composedBody),
-            URLQueryItem(name: "labels", value: kind.labelTag),
         ]
-        return components.url
+        return c.url
+    }
+}
+
+// MARK: - Mail composer bridge
+
+/// Thin UIViewControllerRepresentable wrapper over MFMailComposeViewController.
+/// Pre-fills recipient + subject + body and dismisses on send / cancel.
+private struct MailComposer: UIViewControllerRepresentable {
+    let recipient: String
+    let subject: String
+    let body: String
+    let onFinish: (MFMailComposeResult) -> Void
+
+    func makeUIViewController(context: Context) -> MFMailComposeViewController {
+        let vc = MFMailComposeViewController()
+        vc.setToRecipients([recipient])
+        vc.setSubject(subject)
+        vc.setMessageBody(body, isHTML: false)
+        vc.mailComposeDelegate = context.coordinator
+        return vc
+    }
+
+    func updateUIViewController(_ vc: MFMailComposeViewController, context: Context) {}
+
+    func makeCoordinator() -> Coordinator { Coordinator(onFinish: onFinish) }
+
+    final class Coordinator: NSObject, MFMailComposeViewControllerDelegate {
+        let onFinish: (MFMailComposeResult) -> Void
+        init(onFinish: @escaping (MFMailComposeResult) -> Void) { self.onFinish = onFinish }
+
+        func mailComposeController(
+            _ controller: MFMailComposeViewController,
+            didFinishWith result: MFMailComposeResult,
+            error: Error?
+        ) {
+            controller.dismiss(animated: true) { [onFinish] in
+                onFinish(result)
+            }
+        }
     }
 }
 
