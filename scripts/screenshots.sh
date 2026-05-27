@@ -25,23 +25,26 @@ OUTPUT_ROOT="marketing/screenshots"
 
 # Device matrix — (sim name | folder name | target W | target H).
 #
-# App Store Connect currently requires the **6.9"** slot (iPhone 17 Pro
-# Max, native 1320 × 2868) and accepts the older **6.7"** size (1290 × 2796)
-# as a fallback in that slot. We render natively and resample with `sips`
-# to the 6.7" target size for broadest compatibility — the aspect ratio
-# diff is ~3% and visually imperceptible.
+# This listing's App Store Connect screenshot slots accept ONLY the
+# older 6.7" (1284 × 2778) and 6.5" (1242 × 2688) sizes. The native
+# iPhone 17 Pro Max sim shoots at 1320 × 2868, which is the newer 6.9"
+# size and gets rejected — so we resample down to 1284 × 2778. Same
+# pattern for the smaller slot: iPhone 17 Pro is 1206 × 2622 native,
+# resample to 1242 × 2688.
 #
-# The optional **6.1"** slot fills with iPhone 17 Pro at 1206 × 2622.
+# Folder names stayed `iphone-6.9` / `iphone-6.1` for back-compat with
+# external tooling; the App Store cares about pixel dimensions, not
+# folder names.
 DEVICES=(
-  "iPhone 17 Pro Max|iphone-6.9|1290|2796"
-  "iPhone 17 Pro|iphone-6.1|1206|2622"
+  "iPhone 17 Pro Max|iphone-6.9|1284|2778"
+  "iPhone 17 Pro|iphone-6.1|1242|2688"
 )
 
 case "${1:-}" in
-  --6.9)  DEVICES=("${DEVICES[0]}") ;;
-  --6.1)  DEVICES=("${DEVICES[1]}") ;;
-  "" )    ;;
-  *)      echo "Unknown flag: $1" >&2; exit 64 ;;
+  --6.9|--6.7)  DEVICES=("${DEVICES[0]}") ;;
+  --6.1|--6.5)  DEVICES=("${DEVICES[1]}") ;;
+  "" )          ;;
+  *)            echo "Unknown flag: $1" >&2; exit 64 ;;
 esac
 
 echo "==> Workspace: $REPO_ROOT"
