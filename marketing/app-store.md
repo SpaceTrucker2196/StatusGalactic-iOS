@@ -1,104 +1,183 @@
-# Spacetrucker Galactic — App Store Metadata
+# Galactic — App Store Metadata
 
-Drop-in copy for the App Store Connect listing.
+Drop-in copy for the App Store Connect listing. Lines are length-tuned
+to Apple's enforced limits.
 
 ---
 
 ## Name (30 char max)
 
-**Spacetrucker Galactic**
+**Galactic**
 
 ## Subtitle (30 char max)
 
-**The sky and the road, briefed.**
+**Space weather. RF. The brief.**
 
-## Promotional Text (170 char max, can be updated without resubmission)
+## Promotional Text (170 char max — can be updated without resubmission)
 
-Earth weather, marine forecasts, space weather, sunrise to astronomical dusk, moon phase, planetary positions, and live launches. One brief, your location.
+Live Kp, SFI, aurora flag, POTA & SOTA spots, DX cluster, magnetic declination, APRS — plus sun, moon, marine, and weather. One brief, your location. On-device.
+
+### Alternates (170 char) for A/B copy
+
+- Your space-weather and RF brief, wherever you set up the rig. Live propagation, POTA & SOTA, APRS callsigns, sun events, marine, moon. No backend.
+- Built for radio operators. HF propagation, aurora warning, POTA, SOTA, DX cluster, declination, APRS. All on-device — no accounts, no analytics, no servers.
 
 ## Category
 
 Primary: **Weather**
-Secondary: **Travel**
+Secondary: **Reference**
 
-## Keywords (100 char comma-separated)
+## Keywords (100 chars total, comma-separated)
 
 ```
-weather,marine,nws,aprs,space weather,sunrise,sunset,twilight,moon,planets,kp,launches,almanac,ham
+aprs,ham,radio,propagation,space weather,kp,sfi,pota,sota,dx,nws,marine,sun,moon,almanac
 ```
+
+(Exactly 99 chars including commas.)
 
 ---
 
 ## Description (4000 char max)
 
-**One brief. Everything above and below the horizon.**
+**Your space-weather and RF brief, wherever you set up the rig.**
 
-Spacetrucker Galactic is a daily almanac for travelers, photographers, and anyone who likes to know what the sky is doing. It pulls together the forecasts and ephemerides that normally live in eight separate tabs, and gives them to you in one quiet view, tuned to where you are.
+Galactic is a daily almanac for amateur radio operators, space-weather
+watchers, and anyone who keeps an antenna outside. It pulls the
+forecasts and ephemerides that normally live in eight separate tabs
+into one quiet view, tuned to your location.
 
-**Earth weather.** Pulled straight from the National Weather Service's forecast grid for your coordinates. Six periods, temperature, wind, conditions.
+**For radio operators:**
 
-**Marine forecasts.** For coastal users and sailors: the NWS coastal-zone bulletins (GMZ, AMZ, PZZ, AN, and others), parsed and presented as readable periods with seas, wind, and weather.
+· HF propagation summary. Live planetary Kp, A index, and 10.7 cm
+solar flux (SFI) from NOAA SWPC, plus a plain-English read on band
+conditions and noise floor.
 
-**Space weather.** Planetary Kp index and 10.7 cm solar flux from NOAA SWPC. Includes an HF propagation summary and an aurora-likelihood flag.
+· Aurora-likelihood flag. Kp-driven heads-up when the auroral oval is
+pushing south and HF is about to get interesting.
 
-**Sun.** Sunrise, sunset, golden-hour windows, and the three twilight transitions (civil, nautical, astronomical), shown as a colored 24-hour strip and individual times in your local zone.
+· DX cluster. Recent DX spots so you can see what's audible without
+firing up a separate client.
 
-**Moon.** Phase, illumination percentage, and the right SF Symbol glyph.
+· Parks On The Air & Summits On The Air. Live spots sorted by
+distance. Tap a row for the detail page — distance, bearing from your
+QTH, frequency, mode, and a map pin where the spot carries
+coordinates.
 
-**Planetary positions.** Ten bodies (Sun, Moon, Mercury through Pluto) in zodiac signs at their current degree, computed from Meeus's formulas right on your device.
+· Magnetic declination at your location, computed on-device against
+the World Magnetic Model — for beam headings, portable directional
+antennas, and azimuth math.
 
-**Upcoming launches.** Next five orbital launches from The Space Devs Launch Library, with provider, pad, and status.
+· APRS callsign tracking. Save your friends' callsigns; one tap pulls
+their last-known APRS position from aprs.fi (your read key, your
+account), with an APRS-symbol icon and path-derived DX stats.
 
-**APRS-friendly.** Add your friends' ham radio callsigns and load a brief at their last-known position. Lookup uses the aprs.fi read API (your key, your account).
+**Space weather, sun, and sky:**
 
-**Designed to disappear into the day.**
+· Sunrise, sunset, golden-hour windows, and the three twilight
+transitions (civil, nautical, astronomical) on a 24-hour color strip.
 
-- **Local notifications** for golden hour and astronomical dusk, scheduled fourteen days ahead.
-- **Home-screen widget** in small and medium sizes with the headline brief.
-- **Watch app and complications** for the four accessory families on Apple Watch.
-- **Open in Maps** for navigation to a callsign's coordinates.
-- **No tracking, no analytics, no accounts.** The app talks directly to public weather and APRS services. Nothing is sent to a Spacetrucker Galactic server because there isn't one.
+· Moon phase, illumination percentage, and surface features rendered
+on a starfield — Mare Imbrium, Mare Tranquillitatis, Tycho, the rest
+of the near-side face.
 
-**Built for the road.**
+· Ten planetary positions (Sun, Moon, Mercury through Pluto) in
+zodiac signs at their current degree, computed locally with Meeus's
+formulas.
 
-Originally written for a 2025 Coachmen Remote pulled by a 4Runner across the Southwest. Designed to be useful on a campground picnic table at dusk, in a marina at dawn, and from a watch face on the trail.
+· Upcoming launches. Next five orbital launches from The Space Devs.
+
+**Weather, for the rest of the kit:**
+
+· Earth weather. Six-period NWS forecast for your coordinates.
+
+· Marine forecasts. NWS coastal-zone bulletins (GMZ, AMZ, PZZ, AN, …)
+parsed as readable periods with seas, wind, and weather.
+
+**Where the brief lives:**
+
+· Home-screen widget — small and medium sizes with current
+temperature, sun events, Kp, and moon phase at a glance.
+
+· Apple Watch app with five glance cards and four complication
+families (circular, corner, inline, rectangular).
+
+· Local notifications for golden hour and astronomical dusk,
+scheduled fourteen days ahead.
+
+**Built for the field:**
+
+Galactic runs entirely on your device. No backend, no accounts, no
+analytics, no third-party SDKs. Outbound requests go only to NOAA,
+NWS, aprs.fi, The Space Devs, POTA, SOTA, and the DX cluster — the
+public services that produce the data. Your aprs.fi API key is yours,
+stored in iOS UserDefaults on this device only.
+
+73 — de SpaceTrucker.
 
 ---
 
-## What's New in this Version (4000 char)
+## What's New in this Version (4000 char max)
 
 ### v0.2 — Standalone
 
-- Spacetrucker Galactic now runs entirely on your device. Every data source is fetched directly from its public origin; nothing is routed through a Spacetrucker Galactic server.
-- All astronomy math (sun, moon, planets, twilight) computed locally with Meeus and NOAA formulas. No ephemeris file required.
-- New Apple Watch app with five glance cards and four complication families.
-- Apple Maps deep linking: drop a pin or get driving directions from a callsign's last-known position.
-- Accessibility: the Sun day strip now reads sunrise, sunset, and the current twilight phase to VoiceOver.
-- Haptic feedback on refresh, success and error.
-- Clearer error messaging when the aprs.fi API key is missing.
+· Galactic now runs entirely on your device. Every data source is
+fetched directly from its public origin; nothing is routed through a
+Galactic server.
+
+· Brand-new RF tab leading with the radio-operator story: HF
+propagation, aurora flag, POTA, SOTA, DX cluster, magnetic
+declination, APRS callsign tracking and receive-only messaging.
+
+· POTA & SOTA detail pages — distance, bearing from your QTH,
+frequency, mode, comments, and a map pin where coordinates are
+available.
+
+· Moon surface features rendered on the moon hero — Mare Imbrium,
+Tranquillitatis, Procellarum, Tycho, and the rest of the near-side
+face.
+
+· Apple Watch app with five glance cards and four complication
+families.
+
+· Apple Maps deep linking from any callsign's last-known position.
+
+· Local notifications for golden hour and astronomical dusk,
+scheduled fourteen days ahead.
+
+· Accessibility: the Sun day strip reads sunrise, sunset, and the
+current twilight phase to VoiceOver. Every tab's interactive surface
+now has stable identifiers and labels.
+
+· Haptic feedback on refresh, success, and error.
+
+· Offline banner when the network round-trip fails — sun, moon,
+planet, and declination math keep working.
 
 ---
 
 ## Privacy
 
-See `marketing/privacy.md`.
+See `marketing/privacy.md` (and the live policy at
+[spacetrucker2196.github.io/StatusGalactic-iOS/privacy](https://spacetrucker2196.github.io/StatusGalactic-iOS/privacy)).
 
 ---
 
-## Support URL
-
-Recommend a GitHub Issues link:
-
-```
-https://github.com/SpaceTrucker2196/StatusGalactic-iOS/issues
-```
-
 ## Marketing URL
 
-The repo URL works:
+```
+https://spacetrucker2196.github.io/StatusGalactic-iOS/
+```
+
+## Support URL
 
 ```
-https://github.com/SpaceTrucker2196/StatusGalactic-iOS
+https://spacetrucker2196.github.io/StatusGalactic-iOS/support
+```
+
+## Privacy Policy URL
+
+```
+https://spacetrucker2196.github.io/StatusGalactic-iOS/privacy
 ```
 
 ## Copyright
@@ -110,7 +189,7 @@ https://github.com/SpaceTrucker2196/StatusGalactic-iOS
 ## Age Rating
 
 - **4+** — no objectionable content
-- No tracking, no user-generated content, no purchases.
+- No tracking, no user-generated content, no purchases
 
 ## Sign-in Required
 
@@ -118,4 +197,18 @@ No.
 
 ## App Tracking Transparency
 
-Not required — the app does not perform tracking as defined by Apple's framework.
+Not required — the app does not perform tracking as defined by Apple's
+framework.
+
+---
+
+## Promotional artwork notes
+
+Screenshots live in `marketing/screenshots/`:
+
+- `iphone-6.9/` — 1284 × 2778, twelve shots (RF hero, aurora/Kp, POTA
+  & SOTA, DX cluster, callsigns list, callsign detail, Brief hero,
+  sun & twilight, launches, marine, widget, settings)
+- `iphone-6.1/` — 1242 × 2688, same set
+
+Both are gitignored; regenerate via `scripts/screenshots.sh`.

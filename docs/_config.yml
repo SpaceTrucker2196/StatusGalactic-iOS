@@ -1,4 +1,4 @@
-# GitHub Pages — Spacetrucker Galactic (iOS) landing + support + privacy.
+# GitHub Pages — Galactic landing + privacy + support, vaporwave chrome.
 #
 # Enable by:
 #   1. Repo Settings → Pages
@@ -6,15 +6,16 @@
 #   3. Branch: main · Folder: /docs
 #   4. Save
 #
-# Site will be served at:
+# Served at:
 #   https://spacetrucker2196.github.io/StatusGalactic-iOS/
+#
+# No external Jekyll theme — `_layouts/default.html` is fully custom so
+# the chrome matches the app's neon / phosphor / cosmic-sky palette.
 
-title: Spacetrucker Galactic — iOS
-description: Earth weather, marine forecasts, space weather, sun/moon/planets, and launches — one on-device brief for wherever you are.
+title: Galactic
+description: A daily almanac for radio operators, space-weather watchers, and anyone who keeps an antenna outside.
 url: "https://spacetrucker2196.github.io"
 baseurl: "/StatusGalactic-iOS"
-
-theme: jekyll-theme-cayman
 
 include:
   - support.md
