@@ -53,7 +53,6 @@ enum A11yID {
         static let clearCache     = "settings.imagery.clearCache"
         static let refreshLocation = "settings.location.refresh"
         static let feedback       = "settings.about.feedback"
-        static let githubLink     = "settings.about.github"
 
         enum Notif {
             static let goldenHour       = "settings.notif.goldenHour"

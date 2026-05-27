@@ -144,11 +144,6 @@ struct SettingsView: View {
                             .foregroundStyle(GalacticPalette.hotPink)
                     }
                     .accessibilityIdentifier(A11yID.Settings.feedback)
-                    Link(
-                        "iOS repo on GitHub",
-                        destination: URL(string: "https://github.com/SpaceTrucker2196/StatusGalactic-iOS")!
-                    )
-                    .accessibilityIdentifier(A11yID.Settings.githubLink)
                 } header: {
                     Text("About")
                 } footer: {
