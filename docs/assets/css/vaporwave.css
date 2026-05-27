@@ -472,6 +472,329 @@ th {
   color: rgba(216, 228, 240, 0.45);
 }
 
+/* --------------------- phone-frame mockup --------------------------- */
+/* Wraps a screenshot in a CRT-glassy bezel with neon edge glow. Used to
+ * embed the captured App Store screenshots inline on the landing. */
+
+.phone {
+  display: inline-block;
+  padding: 12px 12px 16px;
+  border: 1px solid rgba(0, 240, 255, 0.45);
+  border-radius: 38px;
+  background:
+    linear-gradient(135deg,
+      rgba(0, 240, 255, 0.06),
+      rgba(255, 41, 199, 0.05) 60%,
+      transparent),
+    rgba(2, 5, 15, 0.65);
+  box-shadow:
+    0 0 22px rgba(0, 240, 255, 0.18),
+    inset 0 0 14px rgba(0, 240, 255, 0.08),
+    0 18px 40px rgba(0, 0, 0, 0.6);
+  position: relative;
+}
+
+.phone::before {
+  content: '';
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90px;
+  height: 22px;
+  background: rgba(0, 0, 0, 0.85);
+  border: 1px solid rgba(0, 240, 255, 0.35);
+  border-radius: 12px;
+}
+
+.phone img {
+  width: 220px;
+  max-width: 100%;
+  border-radius: 28px;
+  display: block;
+}
+
+.phone-row {
+  display: flex;
+  justify-content: center;
+  gap: 28px;
+  flex-wrap: wrap;
+  margin: 28px 0 36px;
+}
+
+/* Side-by-side hero — copy on the left, phone on the right. */
+.hero-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 36px;
+  align-items: center;
+  margin: 8px 0 24px;
+}
+
+@media (max-width: 760px) {
+  .hero-grid { grid-template-columns: 1fr; }
+  .hero-grid .phone { justify-self: center; }
+}
+
+/* --------------------------- stat row ------------------------------- */
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 14px;
+  margin: 12px 0 36px;
+}
+
+.stat {
+  border: 1px solid rgba(64, 255, 199, 0.32);
+  border-radius: 6px;
+  padding: 18px 16px 14px;
+  background: rgba(2, 5, 15, 0.55);
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.stat::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 0%,
+    rgba(64, 255, 199, 0.18), transparent 70%);
+  pointer-events: none;
+}
+
+.stat-value {
+  font-family: var(--font-mono);
+  font-size: 30px;
+  font-weight: 700;
+  color: var(--phosphor);
+  text-shadow: 0 0 10px rgba(64, 255, 199, 0.5);
+  letter-spacing: -0.01em;
+}
+
+.stat-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--peach);
+  margin-top: 4px;
+}
+
+/* --------------------------- marquee -------------------------------- */
+/* Slow-scrolling phosphor strip of feature tags. CSS-only animation. */
+
+.marquee {
+  position: relative;
+  margin: 18px 0 32px;
+  border-top: 1px solid rgba(64, 255, 199, 0.25);
+  border-bottom: 1px solid rgba(64, 255, 199, 0.25);
+  overflow: hidden;
+  background: rgba(2, 5, 15, 0.6);
+  white-space: nowrap;
+  height: 44px;
+}
+
+.marquee-track {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  animation: marquee-scroll 48s linear infinite;
+}
+
+.marquee-track span {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--mint);
+  padding: 0 22px;
+  text-shadow: 0 0 5px rgba(64, 255, 199, 0.45);
+}
+
+.marquee-track .sep {
+  color: var(--neon-magenta);
+  text-shadow: 0 0 5px var(--neon-magenta);
+}
+
+@keyframes marquee-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+/* -------------------------- use-case cards -------------------------- */
+/* Terminal-style headers (`> FIELD DAY`). */
+
+.use-case-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  margin: 18px 0 30px;
+}
+
+.use-case {
+  border: 1px solid rgba(255, 41, 199, 0.28);
+  background: rgba(2, 5, 15, 0.55);
+  border-radius: 6px;
+  padding: 18px 18px 16px;
+  position: relative;
+}
+
+.use-case-tag {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--hot-pink);
+  margin: 0 0 6px;
+}
+
+.use-case-tag::before {
+  content: '> ';
+  color: var(--neon-magenta);
+  text-shadow: 0 0 6px var(--neon-magenta);
+}
+
+.use-case h3 {
+  margin: 0 0 8px;
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--neon-cyan);
+  letter-spacing: 0.01em;
+}
+
+.use-case p {
+  margin: 0;
+  color: #c8d2dc;
+  font-size: 0.94em;
+  line-height: 1.55;
+}
+
+/* --------------------------- compare table -------------------------- */
+/* Side-by-side "What Galactic is / is NOT" lists. */
+
+.compare {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin: 18px 0 28px;
+}
+
+@media (max-width: 600px) {
+  .compare { grid-template-columns: 1fr; }
+}
+
+.compare-col {
+  border: 1px solid rgba(0, 240, 255, 0.24);
+  border-radius: 6px;
+  padding: 16px 18px;
+  background: rgba(2, 5, 15, 0.55);
+}
+
+.compare-col.no {
+  border-color: rgba(255, 41, 199, 0.28);
+}
+
+.compare-col h4 {
+  margin: 0 0 10px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.compare-col.yes h4 { color: var(--phosphor); text-shadow: 0 0 5px var(--phosphor); }
+.compare-col.no  h4 { color: var(--hot-pink); text-shadow: 0 0 5px var(--hot-pink); }
+
+.compare-col ul {
+  margin: 0;
+  padding-left: 0;
+  list-style: none;
+}
+
+.compare-col li {
+  position: relative;
+  padding: 4px 0 4px 22px;
+  font-size: 0.94em;
+  color: #cdd6e0;
+}
+
+.compare-col.yes li::before {
+  content: '◉';
+  position: absolute;
+  left: 0;
+  top: 4px;
+  color: var(--phosphor);
+  text-shadow: 0 0 4px var(--phosphor);
+}
+
+.compare-col.no li::before {
+  content: '✕';
+  position: absolute;
+  left: 0;
+  top: 4px;
+  color: var(--neon-magenta);
+  text-shadow: 0 0 4px var(--neon-magenta);
+}
+
+/* ------------------------- terminal block --------------------------- */
+
+.terminal {
+  border: 1px solid rgba(64, 255, 199, 0.32);
+  border-radius: 6px;
+  background: #000a0f;
+  padding: 0;
+  margin: 16px 0 26px;
+  font-family: var(--font-mono);
+  box-shadow:
+    0 0 26px rgba(64, 255, 199, 0.10),
+    inset 0 0 30px rgba(64, 255, 199, 0.05);
+  overflow: hidden;
+}
+
+.terminal-bar {
+  background: rgba(64, 255, 199, 0.10);
+  padding: 7px 14px;
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--phosphor);
+  border-bottom: 1px solid rgba(64, 255, 199, 0.22);
+}
+
+.terminal-body {
+  padding: 16px 18px;
+  font-size: 13px;
+  color: var(--mint);
+  line-height: 1.7;
+}
+
+.terminal-body .prompt { color: var(--neon-magenta); }
+.terminal-body .host  { color: var(--peach); }
+.terminal-body .arg   { color: var(--neon-cyan); }
+.terminal-body .ok    { color: var(--phosphor); }
+
+/* -------------------------- divider gem ----------------------------- */
+
+.gem {
+  display: block;
+  text-align: center;
+  font-size: 22px;
+  color: var(--neon-magenta);
+  margin: 36px 0;
+  text-shadow:
+    0 0 8px var(--neon-magenta),
+    0 0 24px rgba(255, 41, 199, 0.4);
+  letter-spacing: 0.6em;
+  padding-left: 0.6em;
+}
+
 /* ---------------------------- responsive ---------------------------- */
 
 @media (max-width: 640px) {
