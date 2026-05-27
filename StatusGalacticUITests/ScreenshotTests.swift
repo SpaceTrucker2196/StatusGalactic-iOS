@@ -134,9 +134,33 @@ final class ScreenshotTests: XCTestCase {
         snapshot("10-marine")
     }
 
-    // Shot 11 (`11-widget`) is a home-screen widget capture — XCUITest
-    // can't drive the Home screen, so the marketing flow takes that one
-    // manually with `xcrun simctl io booted screenshot`.
+    // MARK: - Widget (faux home screen)
+
+    /// Shot 11. XCUITest can't drive SpringBoard, so we launch the app
+    /// with an extra flag that swaps the root view for
+    /// `WidgetHomeScreenPreview` — a SwiftUI render of the medium
+    /// widget on a dark home-screen background. The end result reads
+    /// as "home screen with widget" in the gallery.
+    func test_11_widget() {
+        // Fresh launch with the widget-preview flag.
+        let widgetApp = XCUIApplication()
+        widgetApp.launchArguments += [
+            "-UITEST_SCREENSHOT_MODE",
+            "-UITEST_WIDGET_PREVIEW",
+            "-AppleLanguages", "(en-US)",
+            "-AppleLocale", "en_US",
+        ]
+        widgetApp.terminate()
+        widgetApp.launch()
+        // Let the seeded brief settle into the widget view.
+        usleep(800_000)
+        let screenshot = XCUIScreen.main.screenshot()
+        let attachment = XCTAttachment(screenshot: screenshot)
+        attachment.name = "11-widget"
+        attachment.lifetime = .keepAlways
+        add(attachment)
+        widgetApp.terminate()
+    }
 
     // MARK: - Settings
 

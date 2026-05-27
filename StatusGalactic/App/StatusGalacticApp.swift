@@ -34,7 +34,7 @@ struct StatusGalacticApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView(brief: brief)
+            rootView
                 .environment(location)
                 .environment(callsigns)
                 .environment(config)
@@ -51,5 +51,36 @@ struct StatusGalacticApp: App {
                     await ImageCache.shared.purgeExpired()
                 }
         }
+    }
+
+    /// Swap in the widget home-screen preview when the dedicated launch
+    /// flag is set; otherwise the normal app shell. ScreenshotMode is
+    /// already gating the seeded brief that the widget will render.
+    @ViewBuilder
+    private var rootView: some View {
+        if WidgetHomeScreenPreview.isActive {
+            WidgetHomeScreenPreview(
+                entry: BriefWidgetEntry(
+                    date: Date(),
+                    brief: BriefWidgetEntryFactory.fromBriefViewModel(brief),
+                    errorMessage: nil
+                )
+            )
+        } else {
+            ContentView(brief: brief)
+        }
+    }
+}
+
+/// Builds a `BriefWidgetEntry.brief` payload from the in-app
+/// BriefViewModel's seeded state. Lives in the app target because
+/// `BriefViewModel` isn't available to the widget extension.
+enum BriefWidgetEntryFactory {
+    @MainActor
+    static func fromBriefViewModel(_ vm: BriefViewModel) -> Brief? {
+        if case .loaded(let brief, _, _) = vm.state {
+            return brief
+        }
+        return nil
     }
 }

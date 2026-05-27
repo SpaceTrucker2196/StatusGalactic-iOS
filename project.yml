@@ -20,6 +20,13 @@ targets:
     deploymentTarget: "17.0"
     sources:
       - path: StatusGalactic
+      # Share the widget body + entry struct + WidgetConfig (which
+      # BriefWidgetProvider references) so the in-app screenshot
+      # preview can render the medium widget on a faux home screen
+      # (XCUITest can't drive SpringBoard to capture the real widget).
+      - path: StatusGalacticWidget/BriefWidgetView.swift
+      - path: StatusGalacticWidget/BriefWidgetProvider.swift
+      - path: StatusGalacticWidget/WidgetConfig.swift
     dependencies:
       - target: StatusGalacticWidget
     info:

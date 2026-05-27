@@ -19,7 +19,12 @@ struct BriefWidgetView: View {
 
 // MARK: - Small
 
-private struct SmallView: View {
+/// Internal so the in-app screenshot preview can render the medium
+/// widget directly. WidgetKit's `\.widgetFamily` environment key is
+/// read-only from outside the widget bundle, so the preview pipeline
+/// can't drive `BriefWidgetView`'s family dispatch — it instantiates
+/// `MediumView` head-on.
+struct SmallView: View {
     let entry: BriefWidgetEntry
 
     var body: some View {
@@ -106,7 +111,7 @@ private struct SmallView: View {
 
 // MARK: - Medium
 
-private struct MediumView: View {
+struct MediumView: View {
     let entry: BriefWidgetEntry
 
     var body: some View {
