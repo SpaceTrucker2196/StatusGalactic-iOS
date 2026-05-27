@@ -31,7 +31,7 @@ layout: default
   </div>
 
   <div class="phone">
-    <img src="{{ '/assets/img/screens/01-rf-hero.png' | relative_url }}" alt="RF tab — station header, conversations, bulletins, HF band conditions">
+    <img src="{{ '/assets/img/screens/07-brief-hero.png' | relative_url }}" alt="Brief tab — AIA 304 sun imagery, R/S/G storm scales, sunrise to astronomical dusk">
   </div>
 </div>
 
@@ -211,7 +211,7 @@ layout: default
 
 <div class="phone-row">
   <div class="phone">
-    <img src="{{ '/assets/img/screens/07-brief-hero.png' | relative_url }}" alt="Brief tab — AIA 304 sun, R/S/G storm scales, sunrise to astronomical twilight">
+    <img src="{{ '/assets/img/screens/01-rf-hero.png' | relative_url }}" alt="RF tab — station header, conversations, bulletins, HF band conditions">
   </div>
   <div class="phone">
     <img src="{{ '/assets/img/screens/03-pota-sota.png' | relative_url }}" alt="RF tab — Parks On The Air spots with distance and bearing, Summits On The Air section">
