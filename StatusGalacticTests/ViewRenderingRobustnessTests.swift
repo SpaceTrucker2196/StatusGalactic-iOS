@@ -584,6 +584,30 @@ final class ViewRenderingRobustnessTests: XCTestCase {
         )
     }
 
+    /// Regression: a Meshtastic node num with the high bit set (anything
+    /// above 0x7FFF_FFFF — common in production) used to crash the NODES
+    /// row with "Not enough bits to represent the passed value" because of
+    /// an Int → Int32 narrowing in the placeholder-name formatter.
+    func testMeshtasticViewRendersHighBitNodeNum() {
+        let service = MeshtasticService(inMemoryStore: true)
+        // 0xDEADBEEF — high bit set, but with NO shortName so the rendering
+        // code path hits the `String(format: "!%08x", ...)` placeholder.
+        service.knownNodes[Int(0xDEAD_BEEF)] = .init(
+            id: Int(0xDEAD_BEEF),
+            shortName: "",
+            longName: "",
+            lastHeard: Date(),
+            snr: nil,
+            batteryLevel: nil,
+            latitudeI: nil,
+            longitudeI: nil
+        )
+        render(
+            MeshtasticView()
+                .environment(service)
+        )
+    }
+
     // MARK: - X-ray flux helper formatting
 
     func testXRayLetterClassMapping() {

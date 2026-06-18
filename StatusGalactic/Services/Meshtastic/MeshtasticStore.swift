@@ -103,10 +103,27 @@ final class MeshtasticStore {
                 PersistedTrafficEntry.self,
                 PersistedChatMessage.self,
             ])
-            let config = ModelConfiguration(
-                schema: schema,
-                isStoredInMemoryOnly: inMemory
-            )
+            let config: ModelConfiguration
+            if inMemory {
+                config = ModelConfiguration(
+                    schema: schema,
+                    isStoredInMemoryOnly: true
+                )
+            } else {
+                // Pin the store to the *app's own* Application Support
+                // directory. Without this, iOS routes SwiftData to the first
+                // App Group container declared in entitlements (we ship one
+                // for the widget) — which means CoreData would try to create
+                // `Library/Application Support/default.store` under the
+                // group container even though that subdir doesn't exist on a
+                // fresh install. Also, Mesh history shouldn't be visible to
+                // the widget extension.
+                let url = try Self.appOwnedStoreURL()
+                config = ModelConfiguration(
+                    schema: schema,
+                    url: url
+                )
+            }
             self.container = try ModelContainer(for: schema, configurations: config)
         } catch {
             // SwiftData container creation failing on a fresh install is a
@@ -114,6 +131,20 @@ final class MeshtasticStore {
             // runtime and the user won't see Mesh history until it's fixed.
             fatalError("MeshtasticStore failed to initialise: \(error)")
         }
+    }
+
+    /// Returns `~/Library/Application Support/Meshtastic.store` inside the
+    /// app's own sandbox, creating the parent directory if it doesn't yet
+    /// exist (fresh installs ship without one).
+    private static func appOwnedStoreURL() throws -> URL {
+        let fm = FileManager.default
+        let appSupport = try fm.url(
+            for: .applicationSupportDirectory,
+            in: .userDomainMask,
+            appropriateFor: nil,
+            create: true
+        )
+        return appSupport.appendingPathComponent("Meshtastic.store")
     }
 
     // MARK: - Inserts (with FIFO eviction)

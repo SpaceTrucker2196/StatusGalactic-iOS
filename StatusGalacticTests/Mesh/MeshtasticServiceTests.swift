@@ -237,6 +237,42 @@ final class MeshtasticServiceTests: XCTestCase {
         svc.disconnect()
         XCTAssertEqual(fake.disconnectCount, 1)
     }
+
+    // MARK: - Persistence
+
+    /// Regression: on-disk store creation used to land in the App Group
+    /// container (because the app declares one for the widget) and CoreData
+    /// would log a wall of "Failed to stat path" errors before recovering.
+    /// The fix pins the store to the *app's own* Application Support
+    /// directory; this test exercises that path end-to-end and asserts the
+    /// store file is created under the app sandbox.
+    func testOnDiskStoreCreatesUnderAppSandbox() throws {
+        let appSupport = try FileManager.default.url(
+            for: .applicationSupportDirectory,
+            in: .userDomainMask,
+            appropriateFor: nil,
+            create: false
+        )
+        let storeURL = appSupport.appendingPathComponent("Meshtastic.store")
+        // Start clean so the fileExists assertion is meaningful.
+        try? FileManager.default.removeItem(at: storeURL)
+
+        // Force the on-disk path. Drive a single persisted write via the
+        // normal pipeline so SwiftData flushes the store file.
+        let fake = FakeMeshtasticTransport()
+        let svc = MeshtasticService(inMemoryStore: false, transport: fake)
+        fake.simulateConnect()
+        fake.simulateFromRadio(.broadcastText(from: 1, text: "ping"))
+        XCTAssertFalse(svc.traffic.isEmpty)
+
+        XCTAssertTrue(
+            FileManager.default.fileExists(atPath: storeURL.path),
+            "expected SwiftData store at \(storeURL.path), but it wasn't created"
+        )
+
+        // Clean up so reruns of this test see a fresh state.
+        try? FileManager.default.removeItem(at: storeURL)
+    }
 }
 
 // MARK: - Tiny XCTUnwrap shim

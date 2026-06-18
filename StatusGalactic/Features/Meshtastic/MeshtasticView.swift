@@ -157,7 +157,7 @@ struct MeshtasticView: View {
                 HStack(alignment: .firstTextBaseline) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(node.shortName.isEmpty
-                                ? String(format: "!%08x", UInt32(bitPattern: Int32(node.id)))
+                                ? String(format: "!%08x", UInt32(truncatingIfNeeded: node.id))
                                 : node.shortName)
                             .font(.firaCode(.body, weight: .semibold))
                             .foregroundStyle(GalacticPalette.neonCyan)
