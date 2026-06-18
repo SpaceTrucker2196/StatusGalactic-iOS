@@ -40,6 +40,8 @@
 			</dict>
 		</dict>
 	</dict>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>StatusGalactic uses Bluetooth to connect to your Meshtastic node and exchange mesh messages.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Spacetrucker Galactic uses your location to build a Galactic Weather Report for where you are right now.</string>
 	<key>UIAppFonts</key>

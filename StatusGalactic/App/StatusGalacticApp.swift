@@ -9,6 +9,7 @@ struct StatusGalacticApp: App {
     @State private var aprsMessages = APRSMessageStore()
     @State private var aprsStationLog = APRSStationLogStore()
     @State private var brief = BriefViewModel()
+    @State private var meshtastic = MeshtasticService()
 
     init() {
         // No-op outside of `-UITEST_SCREENSHOT_MODE`. Inside it, this seeds
@@ -47,6 +48,7 @@ struct StatusGalacticApp: App {
                 .environment(notifications)
                 .environment(aprsMessages)
                 .environment(aprsStationLog)
+                .environment(meshtastic)
                 // Force dark mode under screenshot mode so the App Store
                 // gallery reads as one consistent neon scheme — otherwise
                 // Callsigns + Settings (which use system Form/List

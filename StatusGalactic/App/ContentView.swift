@@ -38,6 +38,11 @@ struct ContentView: View {
                     Label("Callsigns", systemImage: "person.2.crop.square.stack.fill")
                 }
 
+            MeshtasticView()
+                .tabItem {
+                    Label("Mesh", systemImage: "dot.radiowaves.left.and.right")
+                }
+
             SettingsView()
                 .tabItem { Label("Settings", systemImage: "gearshape.fill") }
         }
@@ -98,4 +103,5 @@ struct ContentView: View {
         .environment(ClientConfig())
         .environment(NotificationManager())
         .environment(APRSMessageStore())
+        .environment(MeshtasticService(inMemoryStore: true))
 }

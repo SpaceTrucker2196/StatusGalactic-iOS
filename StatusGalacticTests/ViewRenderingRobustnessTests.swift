@@ -572,6 +572,18 @@ final class ViewRenderingRobustnessTests: XCTestCase {
         render(SiderealFooter(when: Date(), longitudeEastDeg: 0, magnetic: nil))
     }
 
+    // MARK: - Meshtastic tab
+
+    /// Cold-start render with no persisted history and no BLE connection —
+    /// covers the empty-state branches of every section.
+    func testMeshtasticViewRendersCold() {
+        let service = MeshtasticService(inMemoryStore: true)
+        render(
+            MeshtasticView()
+                .environment(service)
+        )
+    }
+
     // MARK: - X-ray flux helper formatting
 
     func testXRayLetterClassMapping() {

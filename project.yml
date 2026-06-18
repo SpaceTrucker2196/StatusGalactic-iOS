@@ -13,6 +13,11 @@ settings:
     ENABLE_USER_SCRIPT_SANDBOXING: NO
     DEVELOPMENT_TEAM: "U3Z59VXPUB"
 
+packages:
+  SwiftProtobuf:
+    url: https://github.com/apple/swift-protobuf
+    from: "1.28.0"
+
 targets:
   StatusGalactic:
     type: application
@@ -20,6 +25,11 @@ targets:
     deploymentTarget: "17.0"
     sources:
       - path: StatusGalactic
+        excludes:
+          # Vendored Meshtastic .proto schema files + NOTICE — used only by
+          # the protoc generation step, not the Swift build. Generated
+          # *.pb.swift under Services/Meshtastic/Generated/ IS compiled.
+          - "Services/Meshtastic/proto/**"
       # Share the widget body + entry struct + WidgetConfig (which
       # BriefWidgetProvider references) so the in-app screenshot
       # preview can render the medium widget on a faux home screen
@@ -29,6 +39,7 @@ targets:
       - path: StatusGalacticWidget/WidgetConfig.swift
     dependencies:
       - target: StatusGalacticWidget
+      - package: SwiftProtobuf
     info:
       path: StatusGalactic/App/Info.plist
       properties:
@@ -40,6 +51,9 @@ targets:
         NSLocationWhenInUseUsageDescription: >-
           Spacetrucker Galactic uses your location to build a Galactic Weather Report
           for where you are right now.
+        NSBluetoothAlwaysUsageDescription: >-
+          StatusGalactic uses Bluetooth to connect to your Meshtastic node and
+          exchange mesh messages.
         NSAppTransportSecurity:
           NSAllowsLocalNetworking: true
           NSExceptionDomains:
@@ -81,8 +95,11 @@ targets:
     sources:
       - path: StatusGalactic/Models/Brief.swift
       - path: StatusGalactic/Services/ClientConfig.swift
+      - path: StatusGalactic/Services/GalacticPalette.swift
+      - path: StatusGalactic/Services/Typography.swift
       - path: StatusGalactic/Services/Brief
       - path: StatusGalactic/Services/Astronomy
+      - path: StatusGalactic/Resources/Fonts
       - path: StatusGalacticWidget
     info:
       path: StatusGalacticWidget/Info.plist
@@ -92,6 +109,13 @@ targets:
         CFBundleVersion: "1"
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
+        UIAppFonts:
+          - FiraCode-Regular.ttf
+          - FiraCode-Medium.ttf
+          - FiraCode-SemiBold.ttf
+          - FiraCode-Bold.ttf
+          - FiraCode-Light.ttf
+          - FiraCode-Retina.ttf
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.spacetrucker.statusgalactic.widget
@@ -170,6 +194,9 @@ targets:
       - path: StatusGalacticTests
     dependencies:
       - target: StatusGalactic
+      # Mesh fakes/fixtures reference Meshtastic_* protobuf types directly,
+      # so the test target needs the SwiftProtobuf module too.
+      - package: SwiftProtobuf
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.spacetrucker.statusgalactic.tests
