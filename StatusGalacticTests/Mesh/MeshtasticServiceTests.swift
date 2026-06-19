@@ -238,6 +238,69 @@ final class MeshtasticServiceTests: XCTestCase {
         XCTAssertEqual(fake.disconnectCount, 1)
     }
 
+    // MARK: - Signal history
+
+    func testIncomingMeshPacketSamplesRxSnrIntoNodeHistory() {
+        let (svc, fake) = makeService()
+        fake.simulateConnect()
+        // Seed a nodeinfo so the node exists in the directory with a
+        // short name. The detail page sources from `knownNodes[num]`.
+        fake.simulateFromRadio(.nodeInfo(
+            nodeNum: 0xABCDEF01, shortName: "WX5", longName: "Wax Five"
+        ))
+
+        XCTAssertEqual(svc.knownNodes[Int(0xABCDEF01)]?.snrHistory.count, 0)
+
+        // Three RX text packets at varied SNR — each should append a sample.
+        fake.simulateFromRadio(.broadcastText(from: 0xABCDEF01, text: "a", packetID: 1, rxSnr:  4.5, rxRssi: -82))
+        fake.simulateFromRadio(.broadcastText(from: 0xABCDEF01, text: "b", packetID: 2, rxSnr: -2.0, rxRssi: -95))
+        fake.simulateFromRadio(.broadcastText(from: 0xABCDEF01, text: "c", packetID: 3, rxSnr:  6.5, rxRssi: -70))
+
+        let node = svc.knownNodes[Int(0xABCDEF01)]
+        XCTAssertEqual(node?.snrHistory.count, 3)
+        XCTAssertEqual(node?.snrHistory.map(\.snr), [4.5, -2.0, 6.5])
+        XCTAssertEqual(node?.snr, 6.5, "latest snapshot should be the newest SNR")
+        XCTAssertEqual(node?.rssi, -70, "latest snapshot should be the newest RSSI")
+    }
+
+    func testSnrHistoryIsFifoEvictedAtCap() {
+        let (svc, fake) = makeService()
+        fake.simulateConnect()
+        fake.simulateFromRadio(.nodeInfo(nodeNum: 1, shortName: "A", longName: "node A"))
+
+        // Ship `cap + 5` packets and confirm only the most recent `cap`
+        // samples survive in history.
+        let cap = MeshtasticService.snrHistoryDepth
+        for i in 0..<(cap + 5) {
+            fake.simulateFromRadio(.broadcastText(
+                from: 1, text: "p\(i)", packetID: UInt32(i + 1),
+                rxSnr: Float(i), rxRssi: -80
+            ))
+        }
+        let node = svc.knownNodes[1]
+        XCTAssertEqual(node?.snrHistory.count, cap)
+        // The first 5 (snr 0..4) should be evicted; oldest surviving is 5.
+        XCTAssertEqual(node?.snrHistory.first?.snr, 5.0)
+        XCTAssertEqual(node?.snrHistory.last?.snr, Float(cap + 4))
+    }
+
+    func testPacketFromUnknownNodeCreatesEntryAndSamplesSnr() {
+        let (svc, fake) = makeService()
+        fake.simulateConnect()
+        // No prior NodeInfo for 0x9999 — the codec should auto-create a
+        // bare KnownNode so the bar graph starts filling immediately.
+        fake.simulateFromRadio(.broadcastText(
+            from: 0x9999, text: "first", packetID: 1, rxSnr: 2.0, rxRssi: -85
+        ))
+        let node = svc.knownNodes[Int(0x9999)]
+        XCTAssertNotNil(node)
+        XCTAssertEqual(node?.snrHistory.count, 1)
+        XCTAssertEqual(node?.snr, 2.0)
+        XCTAssertEqual(node?.rssi, -85)
+        XCTAssertEqual(node?.shortName, "")
+        XCTAssertEqual(node?.longName, "")
+    }
+
     // MARK: - Persistence
 
     /// Regression: on-disk store creation used to land in the App Group

@@ -598,13 +598,78 @@ final class ViewRenderingRobustnessTests: XCTestCase {
             longName: "",
             lastHeard: Date(),
             snr: nil,
+            rssi: nil,
             batteryLevel: nil,
             latitudeI: nil,
-            longitudeI: nil
+            longitudeI: nil,
+            snrHistory: []
         )
         render(
             MeshtasticView()
                 .environment(service)
+        )
+    }
+
+    /// Cold detail view for a node we know nothing about — exercises the
+    /// "never heard", "no signal samples yet", and missing-position
+    /// branches.
+    func testMeshtasticNodeDetailRendersWithEmptyHistory() {
+        let service = MeshtasticService(inMemoryStore: true)
+        service.knownNodes[Int(0xDEAD_BEEF)] = .init(
+            id: Int(0xDEAD_BEEF),
+            shortName: "DB",
+            longName: "Deadbeef Cafe",
+            lastHeard: nil,
+            snr: nil,
+            rssi: nil,
+            batteryLevel: nil,
+            latitudeI: nil,
+            longitudeI: nil,
+            snrHistory: []
+        )
+        render(
+            NavigationStack {
+                MeshtasticNodeDetailView(nodeNum: Int(0xDEAD_BEEF))
+                    .environment(service)
+            }
+        )
+    }
+
+    /// Detail view with the full populated set: short + long name, every
+    /// metric, a position, and a non-trivial SNR history. Confirms the
+    /// bar-graph rendering path doesn't trap on any of the sample values.
+    func testMeshtasticNodeDetailRendersWithFullHistory() {
+        let service = MeshtasticService(inMemoryStore: true)
+        var history: [MeshtasticService.SNRSample] = []
+        let now = Date()
+        let snrValues: [Float] = [
+            -18, -12, -8, -5, -2, 0, 2, 4, 6, 8,
+             6,  4,  2, -1, -4, -6, -3, 0, 3, 5,
+             7,  9,  4, 1
+        ]
+        for (i, snr) in snrValues.enumerated() {
+            history.append(.init(
+                timestamp: now.addingTimeInterval(TimeInterval(-(snrValues.count - i) * 60)),
+                snr: snr
+            ))
+        }
+        service.knownNodes[Int(0xABCD_1234)] = .init(
+            id: Int(0xABCD_1234),
+            shortName: "WX5",
+            longName: "Wax Five — Northbridge",
+            lastHeard: Date(),
+            snr: 4.5,
+            rssi: -78,
+            batteryLevel: 64,
+            latitudeI: 438_600_000,
+            longitudeI: -916_700_000,
+            snrHistory: history
+        )
+        render(
+            NavigationStack {
+                MeshtasticNodeDetailView(nodeNum: Int(0xABCD_1234))
+                    .environment(service)
+            }
         )
     }
 

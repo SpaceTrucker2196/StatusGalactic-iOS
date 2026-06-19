@@ -87,9 +87,21 @@ final class MeshtasticService {
         let longName: String
         var lastHeard: Date?
         var snr: Float?
+        var rssi: Int?
         var batteryLevel: Int?
         var latitudeI: Int32?
         var longitudeI: Int32?
+        /// Bounded history of `(timestamp, snr_dB)` samples — most recent
+        /// last. Populated from `NodeInfo.snr` and from `MeshPacket.rxSnr`
+        /// on every received packet. Detail view renders this as a bar
+        /// graph; capped at ``MeshtasticService/snrHistoryDepth``.
+        var snrHistory: [SNRSample] = []
+    }
+
+    /// One signal-quality sample for a known node.
+    struct SNRSample: Hashable {
+        let timestamp: Date
+        let snr: Float
     }
 
     // MARK: - Observable state
@@ -110,6 +122,11 @@ final class MeshtasticService {
     /// In-memory cap for the live TRAFFIC + log streams. Disk store keeps
     /// more (see `MeshtasticStore.maxTrafficEntries`).
     nonisolated static let inMemoryRingSize = 500
+
+    /// Per-node SNR history cap — enough to fill the bar graph at typical
+    /// packet rates without unbounded growth. Surfaces in the node detail
+    /// view's bar graph; samples are FIFO-evicted.
+    nonisolated static let snrHistoryDepth = 30
 
     // MARK: - Private
 
@@ -302,6 +319,38 @@ final class MeshtasticService {
         }
         return String(format: "!%08x", num)
     }
+
+    // MARK: - Signal-history helpers
+
+    /// Update a node's running SNR / RSSI snapshot and append a sample to
+    /// its bar-graph history. Creates the node entry if we hadn't heard
+    /// from it before (some MeshPackets arrive before the matching
+    /// NodeInfo lands).
+    private func recordSignal(forNodeNum nodeNum: UInt32, snr: Float, rssi: Int32, at when: Date) {
+        let key = Int(nodeNum)
+        var node = knownNodes[key] ?? KnownNode(
+            id: key,
+            shortName: "",
+            longName: ""
+        )
+        if snr != 0 { node.snr = snr }
+        if rssi != 0 { node.rssi = Int(rssi) }
+        node.lastHeard = when
+        if snr != 0 {
+            appendSNRSample(&node, snr: snr, at: when)
+        }
+        knownNodes[key] = node
+    }
+
+    /// Push a `(timestamp, snr)` sample onto a node, trimming to the
+    /// `snrHistoryDepth` cap. Inlined so callers can mutate a local
+    /// `KnownNode` before reassigning into the dictionary.
+    private func appendSNRSample(_ node: inout KnownNode, snr: Float, at when: Date) {
+        node.snrHistory.append(SNRSample(timestamp: when, snr: snr))
+        if node.snrHistory.count > Self.snrHistoryDepth {
+            node.snrHistory.removeFirst(node.snrHistory.count - Self.snrHistoryDepth)
+        }
+    }
 }
 
 // MARK: - MeshtasticTransportDelegate
@@ -367,24 +416,35 @@ extension MeshtasticService: MeshtasticTransportDelegate {
         case .nodeInfo(let info):
             let num = Int(info.num)
             let user = info.user
-            knownNodes[num] = KnownNode(
+            let previous = knownNodes[num]
+            let lastHeard: Date? = info.lastHeard > 0
+                ? Date(timeIntervalSince1970: TimeInterval(info.lastHeard))
+                : (previous?.lastHeard ?? nil)
+            var updated = KnownNode(
                 id: num,
                 shortName: user.shortName,
                 longName: user.longName,
-                lastHeard: info.lastHeard > 0
-                    ? Date(timeIntervalSince1970: TimeInterval(info.lastHeard))
-                    : (knownNodes[num]?.lastHeard ?? nil),
-                snr: info.snr != 0 ? info.snr : knownNodes[num]?.snr,
+                lastHeard: lastHeard,
+                snr: info.snr != 0 ? info.snr : previous?.snr,
+                rssi: previous?.rssi,
                 batteryLevel: info.deviceMetrics.batteryLevel != 0
                     ? Int(info.deviceMetrics.batteryLevel)
-                    : knownNodes[num]?.batteryLevel,
+                    : previous?.batteryLevel,
                 latitudeI: info.position.latitudeI != 0
                     ? info.position.latitudeI
-                    : knownNodes[num]?.latitudeI,
+                    : previous?.latitudeI,
                 longitudeI: info.position.longitudeI != 0
                     ? info.position.longitudeI
-                    : knownNodes[num]?.longitudeI
+                    : previous?.longitudeI,
+                snrHistory: previous?.snrHistory ?? []
             )
+            // NodeInfo arrives with a single SNR reading; thread it into
+            // history so the bar graph builds up even when no MeshPackets
+            // are flowing.
+            if info.snr != 0 {
+                appendSNRSample(&updated, snr: info.snr, at: lastHeard ?? now)
+            }
+            knownNodes[num] = updated
             appendTraffic(.init(
                 id: UUID(), timestamp: now, direction: .rx,
                 portnum: nil,
@@ -429,6 +489,19 @@ extension MeshtasticService: MeshtasticTransportDelegate {
 
     private func handleMeshPacket(_ packet: Meshtastic_MeshPacket, raw: Data, now: Date) {
         let fromNum = packet.from
+        // Every MeshPacket carries rxSnr / rxRssi at the link layer. Sample
+        // those into the from-node's running history before we dispatch on
+        // the payload so the bar graph fills in even for packet types we
+        // don't otherwise mutate the directory on (encrypted, routing,
+        // unknown portnums).
+        if fromNum != 0 {
+            recordSignal(
+                forNodeNum: fromNum,
+                snr: packet.rxSnr,
+                rssi: packet.rxRssi,
+                at: now
+            )
+        }
         let app = MeshtasticPacketCodec.classify(packet)
 
         switch app {
@@ -447,20 +520,19 @@ extension MeshtasticService: MeshtasticTransportDelegate {
 
         case .nodeInfo(let user):
             let num = Int(fromNum)
-            var existing = knownNodes[num] ?? KnownNode(
-                id: num, shortName: user.shortName, longName: user.longName
-            )
-            existing = KnownNode(
+            let existing = knownNodes[num]
+            knownNodes[num] = KnownNode(
                 id: num,
                 shortName: user.shortName,
                 longName: user.longName,
                 lastHeard: now,
-                snr: existing.snr,
-                batteryLevel: existing.batteryLevel,
-                latitudeI: existing.latitudeI,
-                longitudeI: existing.longitudeI
+                snr: existing?.snr,
+                rssi: existing?.rssi,
+                batteryLevel: existing?.batteryLevel,
+                latitudeI: existing?.latitudeI,
+                longitudeI: existing?.longitudeI,
+                snrHistory: existing?.snrHistory ?? []
             )
-            knownNodes[num] = existing
             appendTraffic(.init(
                 id: UUID(), timestamp: now, direction: .rx,
                 portnum: Int(Meshtastic_PortNum.nodeinfoApp.rawValue),

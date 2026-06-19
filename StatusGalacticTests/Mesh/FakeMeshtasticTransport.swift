@@ -160,7 +160,9 @@ extension Meshtastic_FromRadio {
         from: UInt32,
         text: String,
         channel: UInt32 = 0,
-        packetID: UInt32 = 1
+        packetID: UInt32 = 1,
+        rxSnr: Float = 0,
+        rxRssi: Int32 = 0
     ) -> Self {
         var data = Meshtastic_Data()
         data.portnum = .textMessageApp
@@ -170,6 +172,8 @@ extension Meshtastic_FromRadio {
         packet.to = 0xFFFF_FFFF
         packet.channel = channel
         packet.id = packetID
+        packet.rxSnr = rxSnr
+        packet.rxRssi = rxRssi
         packet.decoded = data
         var msg = Self()
         msg.packet = packet

@@ -150,38 +150,69 @@ struct MeshtasticView: View {
     @ViewBuilder
     private var nodesSection: some View {
         PhosphorSection("NODES") {
+            // Most-recently-heard at the top; nodes without a last-heard
+            // value sort to the bottom.
             let sorted = service.knownNodes.values.sorted { a, b in
                 (a.lastHeard ?? .distantPast) > (b.lastHeard ?? .distantPast)
             }
             ForEach(sorted) { node in
-                HStack(alignment: .firstTextBaseline) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(node.shortName.isEmpty
-                                ? String(format: "!%08x", UInt32(truncatingIfNeeded: node.id))
-                                : node.shortName)
-                            .font(.firaCode(.body, weight: .semibold))
-                            .foregroundStyle(GalacticPalette.neonCyan)
-                        if !node.longName.isEmpty {
-                            Text(node.longName)
-                                .font(.firaCode(.caption))
-                                .foregroundStyle(GalacticPalette.peach)
-                        }
-                    }
-                    Spacer()
-                    if let batt = node.batteryLevel {
-                        Text("\(batt)%")
-                            .font(.firaCode(.caption))
-                            .foregroundStyle(batt < 20 ? GalacticPalette.hotPink : GalacticPalette.mint)
-                    }
-                    if let snr = node.snr {
-                        Text(String(format: "%.1f dB", snr))
-                            .font(.firaCode(.caption))
-                            .foregroundStyle(GalacticPalette.phosphorGreen)
-                    }
+                NavigationLink {
+                    MeshtasticNodeDetailView(nodeNum: node.id)
+                } label: {
+                    nodeRow(node)
                 }
                 .listRowBackground(Color.black.opacity(0.35))
             }
         }
+    }
+
+    @ViewBuilder
+    private func nodeRow(_ node: MeshtasticService.KnownNode) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(node.shortName.isEmpty
+                        ? String(format: "!%08x", UInt32(truncatingIfNeeded: node.id))
+                        : node.shortName)
+                    .font(.firaCode(.body, weight: .semibold))
+                    .foregroundStyle(GalacticPalette.neonCyan)
+                    .neonGlow(GalacticPalette.neonCyan, intensity: 3)
+                if !node.longName.isEmpty {
+                    Text(node.longName)
+                        .font(.firaCode(.subheadline))
+                        .foregroundStyle(GalacticPalette.peach)
+                        .lineLimit(2)
+                }
+                if let lastHeard = node.lastHeard {
+                    Text(relativeTimeString(lastHeard))
+                        .font(.firaCode(.caption2))
+                        .foregroundStyle(GalacticPalette.mint)
+                } else {
+                    Text("never heard")
+                        .font(.firaCode(.caption2))
+                        .foregroundStyle(GalacticPalette.peach.opacity(0.6))
+                }
+            }
+            Spacer(minLength: 4)
+            VStack(alignment: .trailing, spacing: 2) {
+                if let snr = node.snr {
+                    Text(String(format: "%+.1f dB", snr))
+                        .font(.firaCode(.caption, weight: .semibold))
+                        .foregroundStyle(GalacticPalette.phosphorGreen)
+                        .neonGlow(GalacticPalette.phosphorGreen, intensity: 2)
+                }
+                if let batt = node.batteryLevel {
+                    Text("\(batt)%")
+                        .font(.firaCode(.caption2))
+                        .foregroundStyle(batt < 20 ? GalacticPalette.hotPink : GalacticPalette.mint)
+                }
+            }
+        }
+    }
+
+    private func relativeTimeString(_ date: Date) -> String {
+        let fmt = RelativeDateTimeFormatter()
+        fmt.unitsStyle = .short
+        return "heard " + fmt.localizedString(for: date, relativeTo: Date())
     }
 
     // MARK: - TRAFFIC
