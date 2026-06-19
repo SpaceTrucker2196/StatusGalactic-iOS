@@ -17,6 +17,8 @@ This guide walks you through setting up Spacetrucker Galactic for local developm
 - An **aprs.fi read API key** (free — register at [aprs.fi](https://aprs.fi)) for callsign position lookups
 - A **NASA API key** (free — register at [api.nasa.gov](https://api.nasa.gov)) for APOD backgrounds and NEO data
 - An Apple Watch paired simulator for watchOS development
+- A physical **Meshtastic node** (T-Beam, Heltec, RAK, etc.) for the Mesh tab — the simulator has no Bluetooth central, so this feature is only exercisable on a real iPhone
+- **protoc + protoc-gen-swift** (`brew install protobuf swift-protobuf`) **only if you want to regenerate the vendored Meshtastic protobuf bindings**. The generated `*.pb.swift` files are committed under `StatusGalactic/Services/Meshtastic/Generated/`, so a routine build does not need either tool installed.
 
 ---
 
@@ -46,11 +48,11 @@ The project is defined entirely in `project.yml` — no committed `.xcodeproj`. 
 
 ### Targets generated:
 
-1. **StatusGalactic** — Main iOS app
+1. **StatusGalactic** — Main iOS app (links the `SwiftProtobuf` Swift package; resolved automatically by SwiftPM on first build)
 2. **StatusGalacticWidget** — WidgetKit extension
 3. **StatusGalacticWatch** — Standalone watchOS app
 4. **StatusGalacticWatchComplications** — Watch complications
-5. **StatusGalacticTests** — Unit tests
+5. **StatusGalacticTests** — Unit tests (also links `SwiftProtobuf` so the Mesh fakes/fixtures can construct `Meshtastic_*` types directly)
 6. **StatusGalacticUITests** — UI tests + screenshot automation
 
 ---
@@ -137,6 +139,8 @@ If you're new to the codebase, start here:
 | Change settings | `StatusGalactic/Features/Settings/SettingsView.swift` |
 | Update astronomy math | `StatusGalactic/Services/Astronomy/` |
 | Modify the widget | `StatusGalacticWidget/BriefWidgetView.swift` |
+| Work on the Meshtastic feature | `StatusGalactic/Services/Meshtastic/` (service, BLE transport, codec, store) + `StatusGalactic/Features/Meshtastic/` (view, viewmodel) |
+| Add a Meshtastic test scenario | `StatusGalacticTests/Mesh/FakeMeshtasticTransport.swift` + `StatusGalacticTests/Mesh/MeshtasticServiceTests.swift` — the fake transport ships fixture builders on `Meshtastic_FromRadio` / `Meshtastic_LogRecord` so no CoreBluetooth or hardware is needed |
 | Run tests | `StatusGalacticTests/` |
 
 ---
@@ -146,7 +150,50 @@ If you're new to the codebase, start here:
 | Problem | Solution |
 |---------|----------|
 | "No such module" errors | Run `xcodegen generate` — the .xcodeproj may be stale |
+| "No such module 'SwiftProtobuf'" | First build hasn't resolved the SwiftPM package yet — build once with `xcodebuild ... -resolvePackageDependencies` or just `⌘B` in Xcode |
 | Location always San Francisco | Simulator defaults; use Features → Location → Custom Location |
 | Weather shows "offline" | Simulator needs network; NWS occasionally rate-limits |
 | Widget shows placeholder | Run the main app first to seed App Group with location data |
 | Watch scheme missing | Ensure Xcode 15.4+ with watchOS 10+ SDK installed |
+| Mesh tab shows "Bluetooth Off" forever in the simulator | Expected — the iOS Simulator has no Bluetooth central. Test the Mesh tab on a real iPhone with a Meshtastic node nearby. |
+
+---
+
+## Regenerating the Meshtastic protobuf bindings
+
+The Meshtastic wire protocol is protobufs; we vendor a snapshot of the upstream `.proto` files and check in the generated Swift bindings so the build is hermetic. To pull a newer protocol version:
+
+```bash
+# 1. Install the toolchain (one-time).
+brew install protobuf swift-protobuf
+
+# 2. Replace the vendored proto files from upstream.
+git clone --depth 1 https://github.com/meshtastic/protobufs /tmp/mesh-protos
+cp /tmp/mesh-protos/meshtastic/*.proto \
+   StatusGalactic/Services/Meshtastic/proto/meshtastic/
+cp /tmp/mesh-protos/nanopb.proto \
+   StatusGalactic/Services/Meshtastic/proto/
+
+# 3. Strip the upstream's `option swift_prefix = "";` line so generated
+#    types pick up the standard Meshtastic_ prefix and don't collide
+#    with Config/User/Channel/Position elsewhere in the app.
+sed -i '' '/^option swift_prefix = "";/d' \
+   StatusGalactic/Services/Meshtastic/proto/meshtastic/*.proto
+
+# 4. Regenerate the *.pb.swift bindings.
+cd StatusGalactic/Services/Meshtastic
+rm -rf Generated/meshtastic Generated/nanopb.pb.swift
+protoc \
+  --proto_path=proto \
+  --swift_out=Generated \
+  --swift_opt=Visibility=Internal \
+  proto/meshtastic/*.proto proto/nanopb.proto
+
+# 5. Build + run the Mesh test suite to confirm nothing broke.
+xcodebuild -project ../../../StatusGalactic.xcodeproj \
+  -scheme StatusGalactic \
+  -destination 'platform=iOS Simulator,name=iPhone 17' \
+  -only-testing:StatusGalacticTests/MeshtasticServiceTests test
+```
+
+The modification described in step 3 is documented in `StatusGalactic/Services/Meshtastic/proto/NOTICE.md`. **No code is copied from the GPLv3 `Meshtastic-Apple` reference client** — only the schema is reused.

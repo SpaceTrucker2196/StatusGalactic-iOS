@@ -10,7 +10,7 @@
 
 **Galactic** is a native iOS personal almanac for amateur radio operators, space-weather watchers, sailors, and anyone who keeps an antenna outside. It combines live HF propagation data, APRS tracking, Parks on the Air / Summits on the Air spots, weather, marine forecasts, sun/moon/planet positions, and upcoming launches — all tuned to your current location.
 
-The app runs **entirely on-device** with zero backend dependency. Every data source is fetched directly from its public origin, and all astronomy computations happen locally using validated Meeus-based algorithms.
+The app runs **entirely on-device** with zero backend dependency. Every data source is fetched directly from its public origin, all astronomy computations happen locally using validated Meeus-based algorithms, and the optional Meshtastic tab pairs over Bluetooth LE with a node you own — no internet hop required.
 
 ---
 
@@ -26,15 +26,16 @@ The app runs **entirely on-device** with zero backend dependency. Every data sou
 | [Widgets & Watch](Widgets-and-Watch.md) | Home-screen widgets and Apple Watch companion app |
 | [Notifications](Notifications.md) | Local notification scheduling for golden hour, twilight, and space weather |
 | [APRS & Callsigns](APRS-and-Callsigns.md) | Callsign tracking, APRS messaging, DX stats |
+| [Mesh Tab](Features.md#mesh-tab--meshtastic) | Meshtastic BLE pairing, live traffic, broadcast text |
 
 ---
 
 ## Design Principles
 
 1. **No backend.** The app calls public APIs directly — no intermediary server, no account, no login.
-2. **No analytics.** Zero crash reporters, no telemetry, no third-party SDKs.
-3. **On-device first.** Astronomy (sun, moon, planets, magnetic declination) works offline. Network sections gracefully degrade with a quiet banner.
-4. **Pure Swift.** Swift 5.10+, SwiftUI, no third-party dependencies. iOS 17+, watchOS 10+.
+2. **No analytics.** Zero crash reporters, no telemetry, no advertising SDKs.
+3. **On-device first.** Astronomy (sun, moon, planets, magnetic declination) works offline. Network sections gracefully degrade with a quiet banner. The Meshtastic tab connects directly to local hardware over Bluetooth LE — no internet involved.
+4. **System frameworks only**, with one carve-out. Swift 5.10+, SwiftUI, watchOS 10+, iOS 17+. The only third-party Swift package linked into the app is Apple's Apache-2.0 [`swift-protobuf`](https://github.com/apple/swift-protobuf), scoped to the Meshtastic tab so it can decode the node's protobuf wire format.
 5. **Polite client.** Rate-limited, proper User-Agent, credits each data provider.
 
 ---
@@ -45,9 +46,10 @@ The app runs **entirely on-device** with zero backend dependency. Every data sou
 |--------|-------|
 | Minimum iOS version | 17.0 |
 | Swift version | 5.10+ |
-| Third-party dependencies | 0 |
+| Third-party dependencies | 1 — `apple/swift-protobuf` (Apache-2.0), scoped to the Meshtastic tab |
 | Brief sections | 12+ |
 | Live data sources | 8+ public APIs |
+| Local hardware integration | Meshtastic node over Bluetooth LE |
 | Local computations | Sun events, moon phase, 10 planetary positions, magnetic declination |
 | Delivery surfaces | App, widget (small/medium), watchOS app, watch complications |
 

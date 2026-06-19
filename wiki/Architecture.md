@@ -69,13 +69,16 @@ StatusGalactic-iOS/
 ├── StatusGalactic/                  # Main iOS app target
 │   ├── App/                         # Entry point, root TabView, Info.plist
 │   │   ├── StatusGalacticApp.swift  # @main App struct
-│   │   ├── ContentView.swift        # Root TabView (RF, Brief, APRS, Callsigns, Settings)
+│   │   ├── ContentView.swift        # Root TabView (Brief, RF, Callsigns, Mesh, Settings)
 │   │   └── Info.plist
 │   ├── Models/
 │   │   └── Brief.swift              # The Brief struct + all nested model types
 │   ├── Services/
 │   │   ├── Brief/                   # BriefBuilder + all HTTP source clients
 │   │   ├── Astronomy/               # On-device computation (sun, moon, planets)
+│   │   ├── Meshtastic/              # MeshtasticService + BLE transport +
+│   │   │                            #   protobuf codec + SwiftData store +
+│   │   │                            #   vendored proto/ + Generated/ pb.swift
 │   │   ├── LocationManager.swift    # Core Location wrapper (@Observable)
 │   │   ├── CallsignStore.swift      # UserDefaults-backed callsign registry
 │   │   ├── ClientConfig.swift       # User settings (API keys, marine zone, UA)
@@ -90,8 +93,9 @@ StatusGalactic-iOS/
 │   ├── Features/
 │   │   ├── Brief/                   # BriefView, BriefDetailView, all section panels
 │   │   ├── APRS/                    # APRS messaging, DX stats, station views
-│   │   ├── Callsigns/              # Add/list/detail callsign views
-│   │   └── Settings/               # SettingsView, API key help, marine zone picker
+│   │   ├── Callsigns/               # Add/list/detail callsign views
+│   │   ├── Meshtastic/              # MeshtasticView + MeshtasticViewModel
+│   │   └── Settings/                # SettingsView, API key help, marine zone picker
 │   ├── Screenshots/                 # Screenshot automation helpers
 │   └── Resources/                   # Asset catalog (AppIcon, colors)
 ├── StatusGalacticWidget/            # WidgetKit extension
@@ -174,7 +178,7 @@ A single file defines the entire data contract:
 
 ### Services Layer (`Services/`)
 
-Two sub-categories:
+Three sub-categories:
 
 **HTTP Clients** (`Services/Brief/`) — Each client is a lightweight struct with:
 - A `URLSession` reference
@@ -188,6 +192,16 @@ Two sub-categories:
 - `MoonPhase` — Meeus chapter 47 periodic terms
 - `Planets` — Mean orbital elements + equation of center for 10 bodies
 - `SiderealClock` — Local sidereal time computation
+
+**Meshtastic Stack** (`Services/Meshtastic/`) — A second, parallel pipeline that does *not* go through `BriefBuilder` because there's no aggregate-and-render cycle; instead an `@Observable` service streams live state to its SwiftUI view. The pieces:
+
+- `MeshtasticTransport` — protocol exposing `powerOn / startScan / connect / disconnect / send` plus a delegate callback surface (state changes, discovered peers, FromRadio bytes, LogRadio bytes). Real implementation is `MeshtasticBLETransport` (CoreBluetooth); the test target ships a `FakeMeshtasticTransport` that drives the service synchronously without BLE.
+- `MeshtasticBLETransport` — `CBCentralManager` + `CBPeripheralDelegate` wrapper. Owns the FromNum-notify drain loop on FromRadio, subscribes to LogRadio, buffers writes issued before the ToRadio characteristic is discovered.
+- `MeshtasticPacketCodec` — stateless protobuf encoder/decoder. Builds `ToRadio { wantConfigID }` for the handshake and `ToRadio { packet }` for broadcast text; decodes `FromRadio` envelopes and classifies `MeshPacket.decoded.portnum` into typed events (text, NodeInfo, Position, Telemetry, Routing, encrypted, other).
+- `MeshtasticStore` — SwiftData persistence under the app's own `Library/Application Support/Meshtastic.store` (explicitly **not** the App Group container — Mesh history shouldn't bleed into the widget extension). Two `@Model` types: `PersistedTrafficEntry` (cap 5000 FIFO) and `PersistedChatMessage` (cap 2000 FIFO).
+- `MeshtasticService` — the `@Observable @MainActor` source of truth that owns the transport + codec + store and exposes `status`, `discoveredNodes`, `traffic`, `chat`, `knownNodes`, `deviceLog`, `ownNodeNum` to the view.
+- `proto/` — vendored snapshot of `meshtastic/protobufs` `.proto` files (GPLv3 schema, included for build-time regeneration only).
+- `Generated/*.pb.swift` — checked-in output of `protoc-gen-swift` so the routine build is hermetic (no protoc dependency at build time). The only third-party Swift package linked into the app is `apple/swift-protobuf` (Apache-2.0).
 
 ### Features Layer (`Features/`)
 
@@ -213,9 +227,9 @@ Minimal — just the `@main` entry, root `TabView`, and Info.plist configuration
 | `StatusGalacticTests` | iOS 17+ | XCTest unit tests |
 | `StatusGalacticUITests` | iOS 17+ | UI automation + screenshot capture |
 
-All targets share source files from `Models/` and `Services/` — no separate framework. XcodeGen's `sources` array compiles the same Swift files into each target that needs them.
+All targets share source files from `Models/` and `Services/` — no separate framework. XcodeGen's `sources` array compiles the same Swift files into each target that needs them. The main app also links the `SwiftProtobuf` Swift package (Apache-2.0) for the Meshtastic codec; the test target links it too so the Mesh fakes/fixtures can construct `Meshtastic_*` types directly.
 
-**App Groups:** `group.com.spacetrucker.statusgalactic` connects all four targets. The main app writes location + User-Agent to `SharedDefaults`; widgets and complications read them at timeline/complication refresh time.
+**App Groups:** `group.com.spacetrucker.statusgalactic` connects all four targets. The main app writes location + User-Agent to `SharedDefaults`; widgets and complications read them at timeline/complication refresh time. **Meshtastic history is intentionally excluded** — `MeshtasticStore` pins its SwiftData container to the app's own `Library/Application Support/` rather than the App Group container, so chat and traffic logs stay private to the main app.
 
 ---
 

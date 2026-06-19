@@ -27,6 +27,13 @@ Cross-platform parity tracking. **As of v0.2 there is no backend dependency for 
 | ll.thespacedevs.com (launches) | ✅ | ⏳ | Direct HTTP |
 | api.aprs.fi (callsign locate) | ✅ | ⏳ | Direct HTTP with API key in app settings |
 
+## Mesh (local hardware)
+
+| Source | iOS | Android | Notes |
+|--------|:---:|:-------:|-------|
+| Meshtastic node over BLE | ✅ | ⏳ | CoreBluetooth + `apple/swift-protobuf` (Apache-2.0); no internet hop |
+| Meshtastic node over Wi-Fi/TCP | ⏳ | ⏳ | Deferred past v1; BLE only at launch |
+
 ## Astronomy (local computation)
 
 | Quantity | iOS | Android | Notes |
@@ -50,6 +57,7 @@ Cross-platform parity tracking. **As of v0.2 there is no backend dependency for 
 | Upcoming launches | ✅ | ⏳ | |
 | Sun day strip (twilight bands) | ✅ | ⏳ | Pure-data viz |
 | APRS map (callsign last-known) | ✅ | ⏳ | MapKit on iOS |
+| Meshtastic tab (BLE pair, live traffic, broadcast text) | ✅ | ⏳ | Service + BLE + protobuf codec + SwiftData store; vaporwave chrome |
 
 ## Inputs
 
@@ -81,6 +89,7 @@ Cross-platform parity tracking. **As of v0.2 there is no backend dependency for 
 3. **iOS ships first.** Android mirrors. Feature drift is documented in this matrix with ⚠️.
 4. **Tests are mirrored.** Every iOS XCTest should have a Kotlin counterpart. Skip ones that test SwiftUI rendering.
 5. **No backend dependency.** Both clients call public APIs directly. If a feature is impossible client-side (e.g., scheduled push delivery), document and skip.
+6. **One approved third-party Swift package.** `apple/swift-protobuf` (Apache-2.0) is linked into the iOS target so the Meshtastic tab can decode the node's protobuf wire format. No other third-party SDKs. Android should mirror by using the equivalent Kotlin protobuf runtime.
 
 ## When Android porting begins
 

@@ -15,10 +15,11 @@ Native iOS personal almanac. Earth weather, marine weather, space weather, sunri
 - **Location-aware** via Core Location.
 - **Callsign tracking.** Add APRS callsigns; load a brief at any of their last-known positions via aprs.fi (read API key configurable in Settings).
 - **Marine zone** per session, for coastal and sailing use.
+- **Meshtastic mesh networking.** Pair with a nearby Meshtastic node over Bluetooth LE, watch live mesh traffic + the device log, list known nodes, and exchange broadcast text messages on the primary channel. All on-device — the node is local hardware you own.
 - **Local notifications.** Golden hour and astronomical dusk alerts scheduled 14 days ahead.
 - **Home-screen widget** (small + medium) with current temperature, sun events, Kp, moon phase.
 - **Full Galactic brief** including 10 planetary positions and six twilight transitions.
-- **Pure-Swift, no third-party deps.** Swift 5.10+, SwiftUI, CoreLocation, MapKit, WidgetKit, UserNotifications, iOS 17+.
+- **System frameworks only**, with one carve-out. Swift 5.10+, SwiftUI, CoreLocation, MapKit, WidgetKit, UserNotifications, CoreBluetooth, SwiftData, iOS 17+. The lone third-party dependency is Apple's Apache-2.0 [`swift-protobuf`](https://github.com/apple/swift-protobuf), scoped to the Meshtastic tab so it can decode the node's protobuf wire format.
 
 ## Quick start
 
@@ -27,6 +28,7 @@ Prerequisites:
 - iOS 17+ simulator or device
 - [XcodeGen](https://github.com/yonaskolb/XcodeGen): `brew install xcodegen`
 - An aprs.fi read API key (free, register at aprs.fi) **if you want callsign lookups**
+- `protoc` + `protoc-gen-swift` (`brew install protobuf swift-protobuf`) **only if you want to regenerate the vendored Meshtastic protobuf bindings**. The generated `*.pb.swift` is committed, so a routine build does not need either tool.
 
 ```bash
 git clone https://github.com/SpaceTrucker2196/StatusGalactic-iOS.git
@@ -73,6 +75,7 @@ open StatusGalactic.xcodeproj
 | Planetary positions | Local computation (mean orbital elements + equation of center) | n/a |
 | Upcoming launches | ll.thespacedevs.com | none |
 | Callsign location | api.aprs.fi | aprs.fi read API key |
+| Meshtastic mesh traffic / chat | A nearby Meshtastic node over Bluetooth LE | none (local pairing) |
 
 ### Astronomy accuracy
 
@@ -97,10 +100,13 @@ StatusGalactic/
   Services/
     Brief/              BriefBuilder + source HTTP clients (NWS/SWPC/Marine/APRS/Launches/HTTPError)
     Astronomy/          JulianDate, SunEvents, MoonPhase, Planets
+    Meshtastic/         MeshtasticService + BLE transport + protobuf codec +
+                        SwiftData store + vendored proto/ + Generated/ pb.swift
     LocationManager.swift, CallsignStore.swift, ClientConfig.swift, NotificationManager.swift
   Features/
     Brief/              BriefView, BriefDetailView, BriefViewModel, SunStrip
     Callsigns/          list + detail + add
+    Meshtastic/         MeshtasticView, MeshtasticViewModel
     Settings/           SettingsView
 StatusGalacticWidget/   WidgetKit extension (shares Models + Services with main app)
 StatusGalacticTests/    XCTest suite

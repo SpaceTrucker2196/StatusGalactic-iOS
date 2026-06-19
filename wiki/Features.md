@@ -10,6 +10,7 @@ Galactic assembles a comprehensive "brief" — a single scrollable view containi
 - [Brief Tab — The Galactic Almanac](#brief-tab--the-galactic-almanac)
 - [APRS Tab — Station Tracking & Messaging](#aprs-tab--station-tracking--messaging)
 - [Callsigns Tab — Your Station Registry](#callsigns-tab--your-station-registry)
+- [Mesh Tab — Meshtastic](#mesh-tab--meshtastic)
 - [Settings](#settings)
 
 ---
@@ -174,6 +175,74 @@ Save APRS callsigns for quick access:
 - View their position on a map via MapKit
 - Get directions to their last fix via Apple Maps
 - Persisted to UserDefaults — stays on-device
+
+---
+
+## Mesh Tab — Meshtastic
+
+Pair Galactic with a nearby [Meshtastic](https://meshtastic.org) node over Bluetooth LE and use the node as your radio while the iPhone handles the UI. Everything in this tab is local: the node is hardware you own, the BLE link is short-range, and the iPhone never reaches the internet to make Mesh work.
+
+### STATUS
+
+Connection state, the node's own num once handshake completes, and a discovery list of nearby Meshtastic peripherals advertising the standard service UUID (`6BA1B218-15A8-461F-9FA8-5DCAE273EAFD`).
+
+- **Scan** advertises the Meshtastic service UUID and lists every node within BLE range with its RSSI.
+- **Connect** pairs to the chosen node, subscribes to the `FromNum` and `LogRadio` notify characteristics, and issues a `ToRadio { want_config_id }` handshake. The node streams its `MyNodeInfo`, all `NodeInfo` records, and channel/config envelopes back, terminating with a matching `config_complete_id` — at which point the STATUS row flips to "Connected · *NodeName*".
+- **Clear history** wipes both the in-memory feed and the on-disk SwiftData store (see "Persistence" below).
+
+### NODES
+
+A live directory of every node the connected radio knows about, sorted by last-heard time. Each row shows the short name, long name, battery percentage (when reported via Telemetry), and signal-to-noise ratio. The directory updates from `NodeInfo`, `Position`, and `Telemetry` packets as they arrive.
+
+### TRAFFIC
+
+Append-only, vaporwave-styled log of every protobuf envelope the link exchanges. Rows are tagged RX or TX with a phosphor-green or neon-cyan glow respectively, decoded by portnum, and capped at 500 entries in memory. A **pause** toggle in the section header stops auto-scrolling so you can read older rows without the latest packet kicking them off-screen.
+
+The codec routes incoming `MeshPacket.decoded.portnum`:
+
+| PortNum | Effect |
+|---------|--------|
+| `TEXT_MESSAGE_APP` | Appended to TRAFFIC and to the **SEND** chat thread |
+| `NODEINFO_APP` | Updates the NODES directory (`User` payload) |
+| `POSITION_APP` | Updates the node's last-known position |
+| `TELEMETRY_APP` | Updates battery / device metrics |
+| anything else | Logged to TRAFFIC only, with the portnum surfaced |
+
+Encrypted packets the node doesn't have a channel key for are logged as `RX encrypted` rather than decoded.
+
+### DEVICE LOG
+
+Free-running tail of the `LogRadio` notify characteristic — every `LogRecord` the firmware emits, tagged by level (CRIT / ERR / WARN / INFO / DBG / TRC). Useful when bringing up a node or diagnosing a radio config issue without serial cables.
+
+### SEND
+
+A text field plus a chat thread. Submitting a message builds a `MeshPacket { to: 0xFFFFFFFF, channel: 0, decoded: Data { portnum: TEXT_MESSAGE_APP, payload: utf8 } }`, wraps it in `ToRadio { packet: }`, and writes it to the `ToRadio` characteristic. The message is mirrored locally (the node won't loop your own broadcast back) so you see the TX row in TRAFFIC and the outbound bubble in the chat thread immediately.
+
+The send button is disabled until the link is fully connected and there's non-whitespace text in the field.
+
+### Persistence
+
+Traffic + chat history persists across app relaunches via [SwiftData](https://developer.apple.com/documentation/swiftdata) under the app's own `Library/Application Support/Meshtastic.store`. Two model types are stored:
+
+- `PersistedTrafficEntry` — every TRAFFIC row, capped at 5,000 with FIFO eviction.
+- `PersistedChatMessage` — every chat message (sent + received), capped at 2,000 with FIFO eviction.
+
+The store is intentionally pinned to the app's own sandbox (*not* the widget's App Group container) so Mesh history isn't visible to the widget.
+
+### Privacy
+
+- Bluetooth permission is requested only when the Mesh tab first appears; it's not asked for at app launch.
+- The iPhone never relays Mesh traffic to the internet. Everything stays between your phone and the node.
+- The Meshtastic protobuf bindings under `Services/Meshtastic/Generated/` were regenerated locally with `apple/swift-protobuf` (Apache-2.0) from a vendored snapshot of [`meshtastic/protobufs`](https://github.com/meshtastic/protobufs). No code from the GPLv3 `Meshtastic-Apple` client was copied; the CoreBluetooth wrapper, codec, store, and view are all original. See `Services/Meshtastic/proto/NOTICE.md` for the license posture in detail.
+
+### Out of scope (v1)
+
+- TCP / Wi-Fi transport (BLE only)
+- Encrypted channels beyond the primary
+- Channel management UI (PSK rotation, QR pairing)
+- Position sharing from the phone to the mesh
+- Background scanning / push notifications on new messages
+- iPad layout (the app is iPhone-only at launch)
 
 ---
 
