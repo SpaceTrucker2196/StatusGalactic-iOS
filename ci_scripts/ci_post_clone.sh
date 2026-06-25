@@ -31,4 +31,20 @@ fi
 echo "  • running xcodegen generate"
 xcodegen generate
 
+# Xcode Cloud runs xcodebuild with automatic SPM resolution disabled
+# for reproducibility, and refuses to build without a checked-in
+# Package.resolved. xcodegen doesn't produce one (the .xcodeproj is
+# regenerated from scratch on every clone), so we resolve once here
+# to populate
+# StatusGalactic.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
+# before the archive step runs. Without this the archive fails with
+# "a resolved file is required when automatic dependency resolution
+# is disabled".
+echo "  • resolving Swift Package Manager dependencies"
+xcodebuild \
+  -resolvePackageDependencies \
+  -project StatusGalactic.xcodeproj \
+  -scheme StatusGalactic \
+  -clonedSourcePackagesDirPath SourcePackages
+
 echo "✓ StatusGalactic.xcodeproj is ready for xcodebuild"
