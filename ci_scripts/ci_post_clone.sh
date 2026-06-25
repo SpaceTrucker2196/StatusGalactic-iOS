@@ -31,20 +31,21 @@ fi
 echo "  • running xcodegen generate"
 xcodegen generate
 
-# Xcode Cloud runs xcodebuild with automatic SPM resolution disabled
-# for reproducibility, and refuses to build without a checked-in
-# Package.resolved. xcodegen doesn't produce one (the .xcodeproj is
-# regenerated from scratch on every clone), so we resolve once here
-# to populate
-# StatusGalactic.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
-# before the archive step runs. Without this the archive fails with
-# "a resolved file is required when automatic dependency resolution
-# is disabled".
-echo "  • resolving Swift Package Manager dependencies"
-xcodebuild \
-  -resolvePackageDependencies \
-  -project StatusGalactic.xcodeproj \
-  -scheme StatusGalactic \
-  -clonedSourcePackagesDirPath SourcePackages
+# Xcode Cloud disables automatic SPM resolution for reproducibility
+# and refuses to build without a checked-in Package.resolved. We
+# can't commit the file at its real path because the whole
+# .xcodeproj/ directory is gitignored — xcodegen rebuilds it from
+# scratch each clone. The workaround: keep a hand-committed copy at
+# ci_scripts/Package.resolved and copy it into the generated
+# workspace right after xcodegen finishes.
+#
+# When you bump or add a Swift package in Xcode locally, refresh
+# the committed copy with:
+#   cp StatusGalactic.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved \
+#      ci_scripts/Package.resolved
+echo "  • staging committed Package.resolved into the regenerated workspace"
+SPM_DEST="StatusGalactic.xcodeproj/project.xcworkspace/xcshareddata/swiftpm"
+mkdir -p "$SPM_DEST"
+cp ci_scripts/Package.resolved "$SPM_DEST/Package.resolved"
 
 echo "✓ StatusGalactic.xcodeproj is ready for xcodebuild"

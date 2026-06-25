@@ -15,6 +15,12 @@ Package.pins
 Package.resolved
 .swiftpm/
 
+# Xcode Cloud needs a committed Package.resolved because it disables
+# SPM auto-resolution for reproducibility. .xcodeproj/ is regenerated
+# per clone, so we keep the canonical copy here and ci_post_clone.sh
+# stages it into the generated workspace.
+!ci_scripts/Package.resolved
+
 # macOS
 .DS_Store
 
