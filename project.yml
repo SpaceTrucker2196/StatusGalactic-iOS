@@ -44,8 +44,8 @@ targets:
       path: StatusGalactic/App/Info.plist
       properties:
         CFBundleDisplayName: Galactic
-        CFBundleShortVersionString: "0.2.0"
-        CFBundleVersion: "2"
+        CFBundleShortVersionString: "0.2.1"
+        CFBundleVersion: "1"
         UILaunchScreen:
           UIColorName: AccentColor
         NSLocationWhenInUseUsageDescription: >-
@@ -106,8 +106,8 @@ targets:
       path: StatusGalacticWidget/Info.plist
       properties:
         CFBundleDisplayName: Galactic
-        CFBundleShortVersionString: "0.2.0"
-        CFBundleVersion: "2"
+        CFBundleShortVersionString: "0.2.1"
+        CFBundleVersion: "1"
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
         UIAppFonts:
@@ -142,8 +142,8 @@ targets:
       path: StatusGalacticWatch/Info.plist
       properties:
         CFBundleDisplayName: Galactic
-        CFBundleShortVersionString: "0.2.0"
-        CFBundleVersion: "2"
+        CFBundleShortVersionString: "0.2.1"
+        CFBundleVersion: "1"
         WKApplication: true
         WKWatchOnly: true
         NSLocationWhenInUseUsageDescription: >-
@@ -177,8 +177,8 @@ targets:
       path: StatusGalacticWatchComplications/Info.plist
       properties:
         CFBundleDisplayName: Galactic
-        CFBundleShortVersionString: "0.2.0"
-        CFBundleVersion: "2"
+        CFBundleShortVersionString: "0.2.1"
+        CFBundleVersion: "1"
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
     settings:
