@@ -27,6 +27,7 @@ The app runs **entirely on-device** with zero backend dependency. Every data sou
 | [Notifications](Notifications.md) | Local notification scheduling for golden hour, twilight, and space weather |
 | [APRS & Callsigns](APRS-and-Callsigns.md) | Callsign tracking, APRS messaging, DX stats |
 | [Mesh Tab](Features.md#mesh-tab--meshtastic) | Meshtastic BLE pairing, live traffic, broadcast text |
+| [Release Automation](Release-Automation.md) | Xcode Cloud tag-triggered App Store releases |
 
 ---
 
