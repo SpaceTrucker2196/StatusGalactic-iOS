@@ -44,6 +44,13 @@ struct Brief: Codable {
     let solarCycle: [SolarCyclePoint]
     let weatherAlerts: [WeatherAlert]
     let magneticDeclination: MagneticDeclination?
+    /// Upcoming priyom.org shortwave broadcasts (numbers stations, etc.)
+    /// keyed to start time. Empty when the calendar endpoint is offline.
+    let priyomBroadcasts: [PriyomBroadcast]
+    /// 90-day daily binning of world M4.5+ earthquakes vs solar flares,
+    /// used by the seismic↔solar correlation chart. Optional so older
+    /// cached briefs (and refreshes where DONKI/USGS are slow) round-trip.
+    let seismicSolarCorrelation: SeismicSolarCorrelation?
     let errors: [String: String]
 
     enum CodingKeys: String, CodingKey {
@@ -68,6 +75,8 @@ struct Brief: Codable {
         case solarCycle = "solar_cycle"
         case weatherAlerts = "weather_alerts"
         case magneticDeclination = "magnetic_declination"
+        case priyomBroadcasts = "priyom_broadcasts"
+        case seismicSolarCorrelation = "seismic_solar_correlation"
         case errors
     }
 
@@ -113,6 +122,8 @@ struct Brief: Codable {
         solarCycle: [SolarCyclePoint] = [],
         weatherAlerts: [WeatherAlert] = [],
         magneticDeclination: MagneticDeclination? = nil,
+        priyomBroadcasts: [PriyomBroadcast] = [],
+        seismicSolarCorrelation: SeismicSolarCorrelation? = nil,
         errors: [String: String]
     ) {
         self.when = when
@@ -156,7 +167,42 @@ struct Brief: Codable {
         self.solarCycle = solarCycle
         self.weatherAlerts = weatherAlerts
         self.magneticDeclination = magneticDeclination
+        self.priyomBroadcasts = priyomBroadcasts
+        self.seismicSolarCorrelation = seismicSolarCorrelation
         self.errors = errors
+    }
+}
+
+/// 90-day daily binning of world M4.5+ earthquake counts and GOES X-ray
+/// flare activity, used for the seismic↔solar correlation chart. Each
+/// bin is keyed to UTC midnight (start of that UTC day) so the chart
+/// can ignore the viewer's timezone when laying out the x-axis.
+struct SeismicSolarCorrelation: Codable, Hashable {
+    let fetchedAt: Date
+    let days: [DayBin]
+
+    struct DayBin: Codable, Hashable, Identifiable {
+        var id: Date { date }
+        let date: Date                  // UTC midnight (start of day)
+        let quakeCount: Int             // M4.5+ globally
+        /// Largest magnitude observed that day, nil if no quakes recorded.
+        /// Used to color the count bar in the correlation chart.
+        let peakMagnitude: Double?
+        let flareCount: Int             // any class (A/B/C/M/X)
+        let peakFlareFluxLog10: Double? // log10 of peak flux that day, nil if no flares
+
+        enum CodingKeys: String, CodingKey {
+            case date
+            case quakeCount = "quake_count"
+            case peakMagnitude = "peak_magnitude"
+            case flareCount = "flare_count"
+            case peakFlareFluxLog10 = "peak_flare_flux_log10"
+        }
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case fetchedAt = "fetched_at"
+        case days
     }
 }
 

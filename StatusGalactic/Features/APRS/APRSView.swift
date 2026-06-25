@@ -343,6 +343,19 @@ struct RFView: View {
                 }
                 .listRowBackground(GalacticPalette.deepPurple.opacity(0.25))
             }
+            if !brief.priyomBroadcasts.isEmpty {
+                Section {
+                    ForEach(brief.priyomBroadcasts) { bc in
+                        PriyomBroadcastRow(broadcast: bc)
+                    }
+                } header: {
+                    Text("Upcoming Shortwave").phosphorHeader()
+                } footer: {
+                    Text("priyom.org · numbers stations & unusual shortwave broadcasts.")
+                        .font(.firaCode(.caption2))
+                }
+                .listRowBackground(GalacticPalette.deepPurple.opacity(0.25))
+            }
             if !brief.repeaters.isEmpty {
                 Section {
                     ForEach(brief.repeaters) { repeater in

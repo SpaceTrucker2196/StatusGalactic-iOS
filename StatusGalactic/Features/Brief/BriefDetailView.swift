@@ -278,10 +278,33 @@ struct BriefDetailView: View {
                 }
             }
             if !brief.earthquakes.isEmpty {
+                if brief.seismicSolarCorrelation != nil {
+                    Section {
+                        SeismicSolarCorrelationChart(
+                            data: brief.seismicSolarCorrelation
+                        )
+                    } header: {
+                        Text("Solar ↔ Seismic").phosphorHeader()
+                    } footer: {
+                        Text("Independently scaled — world M4.5+ quakes (USGS) vs DONKI flare peak flux, last 90 days.")
+                            .font(.firaCode(.caption2))
+                    }
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(EdgeInsets(top: 4, leading: 16,
+                                              bottom: 4, trailing: 16))
+                }
                 Section {
                     EarthquakeTimelineChart(quakes: brief.earthquakes)
                     ForEach(brief.earthquakes) { q in
-                        EarthquakeRow(quake: q)
+                        NavigationLink {
+                            EarthquakeDetailView(
+                                quake: q,
+                                allQuakes: brief.earthquakes,
+                                correlation: brief.seismicSolarCorrelation
+                            )
+                        } label: {
+                            EarthquakeRow(quake: q)
+                        }
                     }
                 } header: {
                     Text("Recent Earthquakes").phosphorHeader()

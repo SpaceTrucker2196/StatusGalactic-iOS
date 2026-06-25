@@ -91,6 +91,14 @@ struct BriefBuilder {
         let solarCycleClient = SolarCycleClient(
             session: session, userAgent: config.userAgent
         )
+        let correlationClient = SeismicSolarCorrelationClient(
+            session: session,
+            userAgent: config.userAgent,
+            apiKey: config.nasaAPIKey
+        )
+        let priyomClient = PriyomClient(
+            session: session, userAgent: config.userAgent
+        )
 
         // 48-hour window: NWS periods are 12 hours each, so 4 covers today,
         // tonight, tomorrow, and tomorrow night. We render the first one as
@@ -132,6 +140,8 @@ struct BriefBuilder {
         )) ?? []
         async let magTask: MagneticDeclination? = magClient.fetch(lat: lat, lng: lng)
         async let solarCycleTask: [SolarCyclePoint] = (try? await solarCycleClient.fetchObserved()) ?? []
+        async let correlationTask: SeismicSolarCorrelation? = await correlationClient.fetch()
+        async let priyomTask: [PriyomBroadcast] = (try? await priyomClient.fetchUpcoming()) ?? []
         let n2yoKey = config.n2yoAPIKey
         async let passesTask: [ISSPass] = n2yoKey.isEmpty
             ? []
@@ -194,6 +204,8 @@ struct BriefBuilder {
         let weatherAlerts = await alertsTask
         let magneticDeclination = await magTask
         let solarCycle = await solarCycleTask
+        let seismicSolarCorrelation = await correlationTask
+        let priyomBroadcasts = await priyomTask
         let bandConditions = BandConditions.evaluate(
             sfi: space?.solarFlux,
             kp: space?.kpIndex,
@@ -260,6 +272,8 @@ struct BriefBuilder {
             solarCycle: solarCycle,
             weatherAlerts: weatherAlerts,
             magneticDeclination: magneticDeclination,
+            priyomBroadcasts: priyomBroadcasts,
+            seismicSolarCorrelation: seismicSolarCorrelation,
             errors: errors
         )
     }
