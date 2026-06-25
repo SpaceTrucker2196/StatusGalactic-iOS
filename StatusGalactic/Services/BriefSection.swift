@@ -110,6 +110,17 @@ enum BriefSection: String, CaseIterable, Hashable, Codable, Identifiable {
         return known + missing
     }
 
+    /// Sections to render in view mode — the user's order, minus
+    /// anything they've explicitly hidden, minus anything with no
+    /// content this load. Pure so the filter logic is testable.
+    static func visible(
+        in order: [BriefSection],
+        hidden: Set<BriefSection>,
+        hasContent: (BriefSection) -> Bool
+    ) -> [BriefSection] {
+        order.filter { !hidden.contains($0) && hasContent($0) }
+    }
+
     /// Translates a `.onMove` drag in a filtered "visible" subset back
     /// into a new full order. Invisible sections keep their relative
     /// positions; the moved section is placed so it sits "before" the

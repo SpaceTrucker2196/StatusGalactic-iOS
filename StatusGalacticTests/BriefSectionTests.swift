@@ -207,6 +207,21 @@ final class BriefSectionMoveTests: XCTestCase {
         XCTAssertEqual(moved, order)
     }
 
+    /// A move where the visible[destination] is the same kind being
+    /// moved (caused by destination pointing into a visible whose
+    /// pre-move position equals source) should be a no-op or at least
+    /// non-destructive.
+    func testMoveDestinationEqualsSelfIsBenign() {
+        let order: [BriefSection] = [.sun, .moon, .planets]
+        let moved = BriefSection.moveInFullOrder(
+            order: order,
+            visible: order,
+            from: IndexSet(integer: 2),
+            to: 2
+        )
+        XCTAssertEqual(moved, order)
+    }
+
     /// Multiple back-to-back reorders compose correctly — what a user
     /// drag session looks like in practice.
     func testMultipleReordersCompose() {
@@ -236,5 +251,92 @@ final class BriefSectionMoveTests: XCTestCase {
         // Order still includes every case exactly once.
         XCTAssertEqual(Set(order), Set(BriefSection.allCases))
         XCTAssertEqual(order.count, BriefSection.allCases.count)
+    }
+}
+
+final class BriefSectionVisibilityTests: XCTestCase {
+
+    /// Nothing hidden, every section has content — visible equals
+    /// order, preserving it verbatim.
+    func testNoHiddenAllContent() {
+        let order: [BriefSection] = [.sun, .moon, .planets, .earthquakes]
+        let result = BriefSection.visible(
+            in: order, hidden: [], hasContent: { _ in true }
+        )
+        XCTAssertEqual(result, order)
+    }
+
+    /// Hidden sections are excluded and the remaining order is
+    /// preserved exactly.
+    func testHiddenSectionsExcluded() {
+        let order: [BriefSection] = [.sun, .moon, .planets, .earthquakes]
+        let result = BriefSection.visible(
+            in: order,
+            hidden: [.moon, .earthquakes],
+            hasContent: { _ in true }
+        )
+        XCTAssertEqual(result, [.sun, .planets])
+    }
+
+    /// Sections without content are excluded even when not hidden.
+    func testEmptyContentExcluded() {
+        let order: [BriefSection] = [.sun, .moon, .planets]
+        let result = BriefSection.visible(
+            in: order,
+            hidden: [],
+            hasContent: { $0 != .moon }
+        )
+        XCTAssertEqual(result, [.sun, .planets])
+    }
+
+    /// Hidden + no-content union: a section in either set is excluded.
+    func testHiddenAndEmptyUnion() {
+        let order: [BriefSection] = [.sun, .moon, .planets, .earthquakes]
+        let result = BriefSection.visible(
+            in: order,
+            hidden: [.sun],
+            hasContent: { $0 != .planets }
+        )
+        XCTAssertEqual(result, [.moon, .earthquakes])
+    }
+
+    /// Hiding every section yields an empty visible list — the brief
+    /// renders nothing, which is exactly what the user asked for.
+    func testHidingEverythingClearsVisible() {
+        let order: [BriefSection] = [.sun, .moon, .planets]
+        let result = BriefSection.visible(
+            in: order,
+            hidden: Set(order),
+            hasContent: { _ in true }
+        )
+        XCTAssertEqual(result, [])
+    }
+
+    /// Hiding a section the user never had in their order is harmless
+    /// — `hidden` is just a filter, not authoritative.
+    func testHiddenSectionNotInOrderIsHarmless() {
+        let order: [BriefSection] = [.sun, .moon]
+        let result = BriefSection.visible(
+            in: order,
+            hidden: [.earthquakes],
+            hasContent: { _ in true }
+        )
+        XCTAssertEqual(result, [.sun, .moon])
+    }
+
+    /// Hidden sections still keep their slot in the persisted order —
+    /// unhiding restores them at the same position. The visibility
+    /// helper is order-preserving, so this reduces to a round-trip
+    /// over hide / unhide.
+    func testUnhideRestoresOriginalPosition() {
+        let order: [BriefSection] = [.sun, .moon, .planets, .earthquakes]
+        let withHidden = BriefSection.visible(
+            in: order, hidden: [.moon], hasContent: { _ in true }
+        )
+        let restored = BriefSection.visible(
+            in: order, hidden: [], hasContent: { _ in true }
+        )
+        XCTAssertEqual(withHidden, [.sun, .planets, .earthquakes])
+        XCTAssertEqual(restored, order)
     }
 }

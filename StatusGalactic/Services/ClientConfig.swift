@@ -15,6 +15,7 @@ final class ClientConfig {
     static let userAgentKey = "io.river.statusgalactic.userAgent"
     static let apodBackgroundKey = "io.river.statusgalactic.useAPODBackground"
     static let briefSectionOrderKey = "io.river.statusgalactic.briefSectionOrder"
+    static let hiddenBriefSectionsKey = "io.river.statusgalactic.hiddenBriefSections"
 
     static let defaultUserAgent =
         "StatusGalactic-iOS/0.2 (+https://github.com/SpaceTrucker2196/StatusGalactic-iOS)"
@@ -62,6 +63,17 @@ final class ClientConfig {
         }
     }
 
+    /// Sections the user has explicitly hidden from the Brief tab via
+    /// the section-management list. Persisted as a raw-value array
+    /// since `Set` isn't natively storable in UserDefaults; unknown
+    /// raw values are silently dropped on load.
+    var hiddenBriefSections: Set<BriefSection> {
+        didSet {
+            UserDefaults.standard.set(hiddenBriefSections.map(\.rawValue),
+                                      forKey: Self.hiddenBriefSectionsKey)
+        }
+    }
+
     init() {
         let defaults = UserDefaults.standard
         self.aprsAPIKey = defaults.string(forKey: Self.aprsKeyKey) ?? ""
@@ -73,6 +85,8 @@ final class ClientConfig {
         self.useAPODBackground = defaults.object(forKey: Self.apodBackgroundKey) as? Bool ?? true
         let persistedOrder = defaults.stringArray(forKey: Self.briefSectionOrderKey) ?? []
         self.briefSectionOrder = BriefSection.reconcile(persistedRawValues: persistedOrder)
+        let persistedHidden = defaults.stringArray(forKey: Self.hiddenBriefSectionsKey) ?? []
+        self.hiddenBriefSections = Set(persistedHidden.compactMap(BriefSection.init(rawValue:)))
 
         // Mirror to the shared app-group suite so the widget and watch
         // complications can read the latest User-Agent without their own

@@ -15,31 +15,37 @@ struct BriefDetailView: View {
     }
 
     var body: some View {
-        listBody
-            .opacity(isStale ? 0.55 : 1)
-            .grayscale(isStale ? 0.85 : 0)
-            .animation(.easeInOut(duration: 0.4), value: isStale)
-            .environment(\.editMode, $editMode)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        withAnimation { editMode = editMode.isEditing ? .inactive : .active }
-                    } label: {
-                        Text(editMode.isEditing ? "Done" : "Reorder")
-                            .font(.firaCode(.caption, weight: .semibold))
-                    }
-                    .accessibilityLabel(editMode.isEditing
-                                        ? "Stop reordering brief sections"
-                                        : "Reorder brief sections")
-                }
+        Group {
+            if editMode.isEditing {
+                managementList
+            } else {
+                listBody
             }
-            .overlay(alignment: .top) {
-                if isStale {
-                    staleBanner
-                } else if isOfflineLike {
-                    offlineBanner
+        }
+        .opacity(isStale ? 0.55 : 1)
+        .grayscale(isStale ? 0.85 : 0)
+        .animation(.easeInOut(duration: 0.4), value: isStale)
+        .environment(\.editMode, $editMode)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    withAnimation { editMode = editMode.isEditing ? .inactive : .active }
+                } label: {
+                    Text(editMode.isEditing ? "Done" : "Manage")
+                        .font(.firaCode(.caption, weight: .semibold))
                 }
+                .accessibilityLabel(editMode.isEditing
+                                    ? "Stop managing brief sections"
+                                    : "Manage brief sections")
             }
+        }
+        .overlay(alignment: .top) {
+            if isStale {
+                staleBanner
+            } else if isOfflineLike {
+                offlineBanner
+            }
+        }
     }
 
     /// The pure-compute fields (planets, sun, moon, ephemeris) always
@@ -83,6 +89,65 @@ struct BriefDetailView: View {
         .padding(.top, 6)
     }
 
+    /// "Manage sections" list shown while EditMode is .active. Every
+    /// known section is listed regardless of whether it currently has
+    /// content — this is the only way to unhide one that the user
+    /// previously dismissed, and the only way to reorder a section
+    /// whose data isn't loaded right now.
+    private var managementList: some View {
+        List {
+            Section {
+                ForEach(config.briefSectionOrder) { kind in
+                    SectionManagementRow(
+                        kind: kind,
+                        isHidden: config.hiddenBriefSections.contains(kind),
+                        hasContent: hasContent(for: kind),
+                        toggle: { toggleHidden(kind) }
+                    )
+                }
+                .onMove { source, destination in
+                    config.briefSectionOrder = BriefSection.moveInFullOrder(
+                        order: config.briefSectionOrder,
+                        visible: config.briefSectionOrder,
+                        from: source,
+                        to: destination
+                    )
+                }
+            } header: {
+                Text("Manage sections").phosphorHeader()
+            } footer: {
+                Text("Drag to reorder · tap the eye to hide or unhide. Hidden sections stay in the order so they reappear in the same place.")
+                    .font(.firaCode(.caption2))
+            }
+
+            Section {
+                Button(role: .destructive) {
+                    config.briefSectionOrder = BriefSection.defaultOrder
+                    config.hiddenBriefSections = []
+                } label: {
+                    HStack {
+                        Image(systemName: "arrow.uturn.backward")
+                        Text("Reset to defaults")
+                            .font(.firaCode(.callout, weight: .semibold))
+                    }
+                }
+            }
+        }
+        .listStyle(.insetGrouped)
+        .scrollContentBackground(.hidden)
+        .background(briefBackground.ignoresSafeArea())
+    }
+
+    private func toggleHidden(_ kind: BriefSection) {
+        var next = config.hiddenBriefSections
+        if next.contains(kind) {
+            next.remove(kind)
+        } else {
+            next.insert(kind)
+        }
+        config.hiddenBriefSections = next
+    }
+
     private var listBody: some View {
         List {
             // POTA, SOTA, DX cluster, and nearby repeaters live in the
@@ -107,9 +172,14 @@ struct BriefDetailView: View {
     }
 
     /// Sections in the user's persisted order, filtered to only those
-    /// that would actually render content for the current brief.
+    /// that would actually render content for the current brief AND
+    /// haven't been hidden via the manage-sections list.
     private var visibleSections: [BriefSection] {
-        config.briefSectionOrder.filter(hasContent(for:))
+        BriefSection.visible(
+            in: config.briefSectionOrder,
+            hidden: config.hiddenBriefSections,
+            hasContent: hasContent(for:)
+        )
     }
 
     /// Mirrors the `if let …` / `!isEmpty` guards used by each section's
@@ -931,5 +1001,43 @@ private struct LaunchRow: View {
                     .foregroundStyle(.secondary)
             }
         }
+    }
+}
+
+/// One row in the "Manage sections" list. Shows the section's display
+/// name, a "no data" hint when the section is currently empty, and an
+/// eye toggle that flips the hidden state.
+private struct SectionManagementRow: View {
+    let kind: BriefSection
+    let isHidden: Bool
+    let hasContent: Bool
+    let toggle: () -> Void
+
+    var body: some View {
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(kind.displayName)
+                    .font(.firaCode(.subheadline, weight: .semibold))
+                    .foregroundStyle(isHidden ? Color.secondary : GalacticPalette.neonCyan)
+                if !hasContent {
+                    Text("No data this load")
+                        .font(.firaCode(.caption2))
+                        .foregroundStyle(.secondary)
+                }
+            }
+            Spacer()
+            Button(action: toggle) {
+                Image(systemName: isHidden ? "eye.slash.fill" : "eye.fill")
+                    .foregroundStyle(isHidden ? Color.secondary : GalacticPalette.mint)
+                    .neonGlow(isHidden ? Color.clear : GalacticPalette.mint,
+                              intensity: isHidden ? 0 : 4)
+                    .font(.body)
+            }
+            .buttonStyle(.borderless)
+            .accessibilityLabel(isHidden
+                                ? "Show \(kind.displayName)"
+                                : "Hide \(kind.displayName)")
+        }
+        .padding(.vertical, 2)
     }
 }
