@@ -14,6 +14,7 @@ final class ClientConfig {
     static let marineZoneKey = "io.river.statusgalactic.defaultMarineZone"
     static let userAgentKey = "io.river.statusgalactic.userAgent"
     static let apodBackgroundKey = "io.river.statusgalactic.useAPODBackground"
+    static let briefSectionOrderKey = "io.river.statusgalactic.briefSectionOrder"
 
     static let defaultUserAgent =
         "StatusGalactic-iOS/0.2 (+https://github.com/SpaceTrucker2196/StatusGalactic-iOS)"
@@ -51,6 +52,16 @@ final class ClientConfig {
         didSet { UserDefaults.standard.set(useAPODBackground, forKey: Self.apodBackgroundKey) }
     }
 
+    /// User-chosen order of sections on the Brief tab. Persisted as the
+    /// raw-value list so new releases can add cases without invalidating
+    /// the saved order (see `BriefSection.reconcile`).
+    var briefSectionOrder: [BriefSection] {
+        didSet {
+            UserDefaults.standard.set(briefSectionOrder.map(\.rawValue),
+                                      forKey: Self.briefSectionOrderKey)
+        }
+    }
+
     init() {
         let defaults = UserDefaults.standard
         self.aprsAPIKey = defaults.string(forKey: Self.aprsKeyKey) ?? ""
@@ -60,6 +71,8 @@ final class ClientConfig {
         self.defaultMarineZone = defaults.string(forKey: Self.marineZoneKey) ?? ""
         self.userAgent = defaults.string(forKey: Self.userAgentKey) ?? Self.defaultUserAgent
         self.useAPODBackground = defaults.object(forKey: Self.apodBackgroundKey) as? Bool ?? true
+        let persistedOrder = defaults.stringArray(forKey: Self.briefSectionOrderKey) ?? []
+        self.briefSectionOrder = BriefSection.reconcile(persistedRawValues: persistedOrder)
 
         // Mirror to the shared app-group suite so the widget and watch
         // complications can read the latest User-Agent without their own

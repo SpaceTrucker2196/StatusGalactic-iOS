@@ -114,8 +114,44 @@ struct SeismicSolarCorrelationClient {
                   let cls = row["classType"] as? String,
                   let flux = Self.flux(forClassType: cls), flux > 0
             else { return nil }
+            // Earth-directed filter: drop flares whose source region is
+            // outside the ±45° geoeffective cone of the central meridian,
+            // and drop entries with no usable source location at all.
+            // X-rays from limb flares technically reach Earth but the
+            // associated CME / proton flux that "hits" us only comes from
+            // Earth-facing eruptions.
+            guard let loc = row["sourceLocation"] as? String,
+                  Self.isEarthDirected(sourceLocation: loc)
+            else { return nil }
             return (t, log10(flux))
         }
+    }
+
+    /// Returns true when the heliographic source location is on the
+    /// Earth-facing side of the disk and within ±45° of the central
+    /// meridian. Accepts the standard DONKI/NOAA notation
+    /// (e.g. "N15W30", "S08E12", "C00W05"). Returns false for empty
+    /// strings, off-disk events, or unparseable values.
+    static func isEarthDirected(sourceLocation: String,
+                                maxLongitudeDeg: Int = 45) -> Bool {
+        guard let lon = parseLongitudeDeg(sourceLocation) else { return false }
+        return abs(lon) <= maxLongitudeDeg
+    }
+
+    /// Pulls the signed longitude degrees out of a heliographic string
+    /// like "S12E70" → -70 (east is negative by convention) or
+    /// "N15W30" → +30. "C00W05" → +5. nil when the format doesn't match.
+    static func parseLongitudeDeg(_ raw: String) -> Int? {
+        let s = raw.uppercased().trimmingCharacters(in: .whitespaces)
+        // Expect "<lat-letter><digits><lon-letter><digits>".
+        // Find the longitude letter (E or W) — sometimes preceded by a
+        // central "C" marker we can ignore.
+        guard let lonIdx = s.firstIndex(where: { $0 == "E" || $0 == "W" })
+        else { return nil }
+        let lonLetter = s[lonIdx]
+        let digits = s[s.index(after: lonIdx)...]
+        guard let mag = Int(digits) else { return nil }
+        return lonLetter == "E" ? -mag : mag
     }
 
     // MARK: - Binning

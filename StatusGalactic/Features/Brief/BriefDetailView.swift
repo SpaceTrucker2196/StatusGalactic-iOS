@@ -6,6 +6,7 @@ struct BriefDetailView: View {
     let isStale: Bool
 
     @Environment(ClientConfig.self) private var config
+    @State private var editMode: EditMode = .inactive
 
     init(brief: Brief, fetchedAt: Date, isStale: Bool = false) {
         self.brief = brief
@@ -18,6 +19,20 @@ struct BriefDetailView: View {
             .opacity(isStale ? 0.55 : 1)
             .grayscale(isStale ? 0.85 : 0)
             .animation(.easeInOut(duration: 0.4), value: isStale)
+            .environment(\.editMode, $editMode)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        withAnimation { editMode = editMode.isEditing ? .inactive : .active }
+                    } label: {
+                        Text(editMode.isEditing ? "Done" : "Reorder")
+                            .font(.firaCode(.caption, weight: .semibold))
+                    }
+                    .accessibilityLabel(editMode.isEditing
+                                        ? "Stop reordering brief sections"
+                                        : "Reorder brief sections")
+                }
+            }
             .overlay(alignment: .top) {
                 if isStale {
                     staleBanner
@@ -70,281 +85,480 @@ struct BriefDetailView: View {
 
     private var listBody: some View {
         List {
-            if !brief.weatherAlerts.isEmpty {
-                Section {
-                    ForEach(brief.weatherAlerts) { alert in
-                        WeatherAlertCard(alert: alert)
-                            .padding(.vertical, 4)
-                    }
-                } header: {
-                    Text("Active Alerts").phosphorHeader()
-                } footer: {
-                    Text("NWS · CAP feed for your coordinates.")
-                        .font(.firaCode(.caption2))
-                }
-                .listRowBackground(Color.clear)
-                .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
-            }
-            Section {
-                AnimatedSunPanel()
-            }
-            .listRowBackground(Color.clear)
-            .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
-            Section {
-                StormScaleRow(brief: brief)
-            }
-            .listRowBackground(Color.clear)
-            .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 4, trailing: 16))
-            if let sun = brief.sun {
-                PhosphorSection("Sun") {
-                    SunStrip(sun: sun, now: fetchedAt)
-                        .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
-                    SunSectionView(sun: sun)
-                }
-            }
-            Section {
-                LocationHeader(brief: brief, fetchedAt: fetchedAt)
-            }
-            .listRowBackground(Color.clear)
-            if let earth = brief.earth, let summary = earth.periods.first {
-                PhosphorSection("Earth Weather") {
-                    NavigationLink {
-                        WeatherAlmanacView(earth: earth, timezoneName: brief.timezone)
-                    } label: {
-                        WeatherSummaryView(period: summary)
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            if let river = brief.river {
-                PhosphorSection("River Stage") {
-                    NavigationLink {
-                        RiverStageAlmanacView(
-                            gauge: river,
-                            viewerLat: brief.lat,
-                            viewerLng: brief.lng
-                        )
-                    } label: {
-                        RiverGaugeCard(gauge: river)
-                            .padding(.vertical, 4)
-                    }
-                }
-            }
-            if let marine = brief.marine, !marine.periods.isEmpty {
-                PhosphorSection("Marine Weather \(marine.zoneId)") {
-                    ForEach(marine.periods) { period in
-                        WeatherPeriodRow(period: period, isMarine: true)
-                    }
-                }
-            }
-            if let tides = brief.tides {
-                PhosphorSection("Tides") {
-                    TidesCard(tides: tides, timezoneName: brief.timezone)
-                        .padding(.vertical, 4)
-                }
-            }
-            if let space = brief.space {
-                PhosphorSection("Space Weather") {
-                    NavigationLink {
-                        SolarAlmanacView(brief: brief)
-                    } label: {
-                        SpaceWeatherView(space: space)
-                    }
-                }
-            }
-            Section {
-                SunImageryView()
-                    .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
-                    .listRowBackground(Color.clear)
-            } header: {
-                Text("Sun Imagery").phosphorHeader()
-            } footer: {
-                Text("Latest frames from NASA SDO, NOAA SWPC GOES SUVI, and SOHO LASCO. Tap any image to zoom.")
-            }
-            Section {
-                AuroraImageryView()
-                    .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
-                    .listRowBackground(Color.clear)
-            } header: {
-                Text("Aurora Forecast").phosphorHeader()
-            } footer: {
-                Text("NOAA SWPC OVATION 30-min forecast, both hemispheres.")
-            }
-            // Deep Sky strip removed — APOD section below already
-            // surfaces new Hubble / JWST picks.
-            if let moon = brief.moon {
-                PhosphorSection("Moon") {
-                    MoonImageHero(moon: moon)
-                        .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
-                        .listRowBackground(Color.clear)
-                    MoonSectionView(moon: moon)
-                }
-            }
-            if !brief.planets.isEmpty {
-                PhosphorSection("Planetary Positions") {
-                    ForEach(brief.planets) { planet in
-                        PlanetRow(planet: planet, timezone: brief.timezone)
-                    }
-                }
-            }
-            if !brief.crewedLaunches.isEmpty {
-                Section {
-                    ForEach(brief.crewedLaunches) { launch in
-                        CrewedLaunchRow(launch: launch)
-                    }
-                } header: {
-                    Text("Upcoming Crewed Launches").phosphorHeader()
-                } footer: {
-                    Text("Human-spaceflight missions only · Launch Library 2.")
-                        .font(.firaCode(.caption2))
-                }
-            }
-            if !brief.launches.isEmpty {
-                PhosphorSection("Upcoming Launches") {
-                    ForEach(brief.launches) { launch in
-                        LaunchRow(launch: launch)
-                    }
-                }
-            }
-            if !brief.crewed.isEmpty {
-                Section {
-                    ForEach(brief.crewed) { obj in
-                        ISSCard(iss: obj, observerLat: brief.lat, observerLng: brief.lng)
-                            .padding(.vertical, 4)
-                    }
-                } header: {
-                    Text("International Space Station").phosphorHeader()
-                } footer: {
-                    Text("Live position from wheretheiss.at.")
-                        .font(.firaCode(.caption2))
-                }
-            }
-            if !brief.constellations.isEmpty {
-                Section {
-                    ForEach(brief.constellations) { c in
-                        ConstellationRow(summary: c)
-                            .padding(.vertical, 2)
-                    }
-                } header: {
-                    Text("Satellite Constellations").phosphorHeader()
-                } footer: {
-                    Text("Object counts from Celestrak GP element sets.")
-                        .font(.firaCode(.caption2))
-                }
-            }
-            if let apod = brief.apod {
-                PhosphorSection("Astronomy Picture of the Day") {
-                    APODCard(apod: apod)
-                        .padding(.vertical, 4)
-                }
-            }
-            if let mars = brief.mars {
-                Section {
-                    NavigationLink {
-                        MarsAlmanacView(mars: mars, when: brief.when)
-                    } label: {
-                        MarsWeatherCard(mars: mars)
-                            .padding(.vertical, 4)
-                    }
-                } header: {
-                    Text("Mars Weather").phosphorHeader()
-                } footer: {
-                    Text("Perseverance MEDA + Curiosity REMS via mars.nasa.gov; freshest source wins.")
-                        .font(.firaCode(.caption2))
-                }
-            }
-            if !brief.neos.isEmpty {
-                Section {
-                    ForEach(brief.neos) { neo in
-                        NEORow(neo: neo)
-                    }
-                } header: {
-                    Text("Near-Earth Objects").phosphorHeader()
-                } footer: {
-                    Text("Close approaches in the next week · NASA NEO.")
-                        .font(.firaCode(.caption2))
-                }
-            }
-            if !brief.interstellar.isEmpty {
-                Section {
-                    ForEach(brief.interstellar) { obj in
-                        InterstellarRow(obj: obj)
-                    }
-                } header: {
-                    Text("Interstellar Visitors").phosphorHeader()
-                } footer: {
-                    Text("Confirmed hyperbolic trajectory · curated.")
-                        .font(.firaCode(.caption2))
-                }
-            }
-            if !brief.earthquakes.isEmpty {
-                if brief.seismicSolarCorrelation != nil {
-                    Section {
-                        SeismicSolarCorrelationChart(
-                            data: brief.seismicSolarCorrelation
-                        )
-                    } header: {
-                        Text("Solar ↔ Seismic").phosphorHeader()
-                    } footer: {
-                        Text("Independently scaled — world M4.5+ quakes (USGS) vs DONKI flare peak flux, last 90 days.")
-                            .font(.firaCode(.caption2))
-                    }
-                    .listRowBackground(Color.clear)
-                    .listRowInsets(EdgeInsets(top: 4, leading: 16,
-                                              bottom: 4, trailing: 16))
-                }
-                Section {
-                    EarthquakeTimelineChart(quakes: brief.earthquakes)
-                    ForEach(brief.earthquakes) { q in
-                        NavigationLink {
-                            EarthquakeDetailView(
-                                quake: q,
-                                allQuakes: brief.earthquakes,
-                                correlation: brief.seismicSolarCorrelation
-                            )
-                        } label: {
-                            EarthquakeRow(quake: q)
-                        }
-                    }
-                } header: {
-                    Text("Recent Earthquakes").phosphorHeader()
-                } footer: {
-                    Text("USGS · global significant + nearby past 7 days.")
-                        .font(.firaCode(.caption2))
-                }
-            }
-            // POTA, SOTA, DX cluster, and nearby repeaters now live in the
+            // POTA, SOTA, DX cluster, and nearby repeaters live in the
             // RF tab. See RFView.rfBriefSections.
-            Section {
-                SiderealFooter(
-                    when: brief.when,
-                    longitudeEastDeg: brief.lng,
-                    magnetic: brief.magneticDeclination
-                )
-                    .padding(.vertical, 4)
+            //
+            // Section ordering is driven by config.briefSectionOrder so
+            // a user can drag rows around in Reorder mode. We iterate
+            // only over sections that actually have content — SwiftUI's
+            // SectionAccumulator crashes if a ForEach iteration in a
+            // List produces zero Sections (see the formIndex(after:)
+            // trap we hit while developing this). The full persisted
+            // order is preserved across data states by translating the
+            // visible-index move back into the underlying order.
+            ForEach(visibleSections) { kind in
+                section(for: kind)
             }
-            .listRowBackground(GalacticPalette.deepPurple.opacity(0.35))
-            if !brief.errors.isEmpty {
-                Section {
-                    ForEach(brief.errors.sorted(by: { $0.key < $1.key }), id: \.key) { key, msg in
-                        Label {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(key).font(.subheadline.weight(.medium))
-                                Text(msg).font(.caption).foregroundStyle(.secondary)
-                            }
-                        } icon: {
-                            Image(systemName: "exclamationmark.triangle.fill")
-                                .foregroundStyle(.orange)
-                        }
-                    }
-                } header: {
-                    Text("Source errors").phosphorHeader()
-                }
-            }
+            .onMove(perform: moveVisibleSections)
         }
         .listStyle(.insetGrouped)
         .scrollContentBackground(.hidden)
         .background(briefBackground.ignoresSafeArea())
+    }
+
+    /// Sections in the user's persisted order, filtered to only those
+    /// that would actually render content for the current brief.
+    private var visibleSections: [BriefSection] {
+        config.briefSectionOrder.filter(hasContent(for:))
+    }
+
+    /// Mirrors the `if let …` / `!isEmpty` guards used by each section's
+    /// @ViewBuilder. Keep this in sync when adding sections or guards.
+    private func hasContent(for kind: BriefSection) -> Bool {
+        switch kind {
+        case .weatherAlerts:    return !brief.weatherAlerts.isEmpty
+        case .animatedSun:      return true
+        case .stormScale:       return true
+        case .sun:              return brief.sun != nil
+        case .locationHeader:   return true
+        case .earthWeather:     return (brief.earth?.periods.first) != nil
+        case .riverStage:       return brief.river != nil
+        case .marineWeather:
+            return (brief.marine?.periods.isEmpty == false)
+        case .tides:            return brief.tides != nil
+        case .spaceWeather:     return brief.space != nil
+        case .sunImagery:       return true
+        case .auroraForecast:   return true
+        case .moon:             return brief.moon != nil
+        case .planets:          return !brief.planets.isEmpty
+        case .crewedLaunches:   return !brief.crewedLaunches.isEmpty
+        case .launches:         return !brief.launches.isEmpty
+        case .crewed:           return !brief.crewed.isEmpty
+        case .constellations:   return !brief.constellations.isEmpty
+        case .apod:             return brief.apod != nil
+        case .mars:             return brief.mars != nil
+        case .neos:             return !brief.neos.isEmpty
+        case .interstellar:     return !brief.interstellar.isEmpty
+        case .solarSeismic:
+            return !brief.earthquakes.isEmpty
+                && brief.seismicSolarCorrelation != nil
+        case .earthquakes:      return !brief.earthquakes.isEmpty
+        case .siderealFooter:   return true
+        case .errors:           return !brief.errors.isEmpty
+        }
+    }
+
+    /// Persists a visible-list reorder back into the full order. The
+    /// pure transformation lives on `BriefSection` so it can be unit
+    /// tested without a SwiftUI view.
+    private func moveVisibleSections(from source: IndexSet, to destination: Int) {
+        config.briefSectionOrder = BriefSection.moveInFullOrder(
+            order: config.briefSectionOrder,
+            visible: visibleSections,
+            from: source,
+            to: destination
+        )
+    }
+
+    // MARK: - Section dispatch
+
+    @ViewBuilder
+    private func section(for kind: BriefSection) -> some View {
+        switch kind {
+        case .weatherAlerts:    weatherAlertsSection
+        case .animatedSun:      animatedSunSection
+        case .stormScale:       stormScaleSection
+        case .sun:              sunSection
+        case .locationHeader:   locationHeaderSection
+        case .earthWeather:     earthWeatherSection
+        case .riverStage:       riverStageSection
+        case .marineWeather:    marineWeatherSection
+        case .tides:            tidesSection
+        case .spaceWeather:     spaceWeatherSection
+        case .sunImagery:       sunImagerySection
+        case .auroraForecast:   auroraForecastSection
+        case .moon:             moonSection
+        case .planets:          planetsSection
+        case .crewedLaunches:   crewedLaunchesSection
+        case .launches:         launchesSection
+        case .crewed:           crewedSection
+        case .constellations:   constellationsSection
+        case .apod:             apodSection
+        case .mars:             marsSection
+        case .neos:             neosSection
+        case .interstellar:     interstellarSection
+        case .solarSeismic:     solarSeismicSection
+        case .earthquakes:      earthquakesSection
+        case .siderealFooter:   siderealFooterSection
+        case .errors:           errorsSection
+        }
+    }
+
+    // MARK: - Sections
+
+    @ViewBuilder
+    private var weatherAlertsSection: some View {
+        if !brief.weatherAlerts.isEmpty {
+            Section {
+                ForEach(brief.weatherAlerts) { alert in
+                    WeatherAlertCard(alert: alert)
+                        .padding(.vertical, 4)
+                }
+            } header: {
+                Text("Active Alerts").phosphorHeader()
+            } footer: {
+                Text("NWS · CAP feed for your coordinates.")
+                    .font(.firaCode(.caption2))
+            }
+            .listRowBackground(Color.clear)
+            .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
+        }
+    }
+
+    private var animatedSunSection: some View {
+        Section {
+            AnimatedSunPanel()
+        }
+        .listRowBackground(Color.clear)
+        .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
+    }
+
+    private var stormScaleSection: some View {
+        Section {
+            StormScaleRow(brief: brief)
+        }
+        .listRowBackground(Color.clear)
+        .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 4, trailing: 16))
+    }
+
+    @ViewBuilder
+    private var sunSection: some View {
+        if let sun = brief.sun {
+            PhosphorSection("Sun") {
+                SunStrip(sun: sun, now: fetchedAt)
+                    .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                SunSectionView(sun: sun)
+            }
+        }
+    }
+
+    private var locationHeaderSection: some View {
+        Section {
+            LocationHeader(brief: brief, fetchedAt: fetchedAt)
+        }
+        .listRowBackground(Color.clear)
+    }
+
+    @ViewBuilder
+    private var earthWeatherSection: some View {
+        if let earth = brief.earth, let summary = earth.periods.first {
+            PhosphorSection("Earth Weather") {
+                NavigationLink {
+                    WeatherAlmanacView(earth: earth, timezoneName: brief.timezone)
+                } label: {
+                    WeatherSummaryView(period: summary)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var riverStageSection: some View {
+        if let river = brief.river {
+            PhosphorSection("River Stage") {
+                NavigationLink {
+                    RiverStageAlmanacView(
+                        gauge: river,
+                        viewerLat: brief.lat,
+                        viewerLng: brief.lng
+                    )
+                } label: {
+                    RiverGaugeCard(gauge: river)
+                        .padding(.vertical, 4)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var marineWeatherSection: some View {
+        if let marine = brief.marine, !marine.periods.isEmpty {
+            PhosphorSection("Marine Weather \(marine.zoneId)") {
+                ForEach(marine.periods) { period in
+                    WeatherPeriodRow(period: period, isMarine: true)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var tidesSection: some View {
+        if let tides = brief.tides {
+            PhosphorSection("Tides") {
+                TidesCard(tides: tides, timezoneName: brief.timezone)
+                    .padding(.vertical, 4)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var spaceWeatherSection: some View {
+        if let space = brief.space {
+            PhosphorSection("Space Weather") {
+                NavigationLink {
+                    SolarAlmanacView(brief: brief)
+                } label: {
+                    SpaceWeatherView(space: space)
+                }
+            }
+        }
+    }
+
+    private var sunImagerySection: some View {
+        Section {
+            SunImageryView()
+                .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
+                .listRowBackground(Color.clear)
+        } header: {
+            Text("Sun Imagery").phosphorHeader()
+        } footer: {
+            Text("Latest frames from NASA SDO, NOAA SWPC GOES SUVI, and SOHO LASCO. Tap any image to zoom.")
+        }
+    }
+
+    private var auroraForecastSection: some View {
+        Section {
+            AuroraImageryView()
+                .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
+                .listRowBackground(Color.clear)
+        } header: {
+            Text("Aurora Forecast").phosphorHeader()
+        } footer: {
+            Text("NOAA SWPC OVATION 30-min forecast, both hemispheres.")
+        }
+    }
+
+    @ViewBuilder
+    private var moonSection: some View {
+        if let moon = brief.moon {
+            PhosphorSection("Moon") {
+                MoonImageHero(moon: moon)
+                    .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
+                    .listRowBackground(Color.clear)
+                MoonSectionView(moon: moon)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var planetsSection: some View {
+        if !brief.planets.isEmpty {
+            PhosphorSection("Planetary Positions") {
+                ForEach(brief.planets) { planet in
+                    PlanetRow(planet: planet, timezone: brief.timezone)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var crewedLaunchesSection: some View {
+        if !brief.crewedLaunches.isEmpty {
+            Section {
+                ForEach(brief.crewedLaunches) { launch in
+                    CrewedLaunchRow(launch: launch)
+                }
+            } header: {
+                Text("Upcoming Crewed Launches").phosphorHeader()
+            } footer: {
+                Text("Human-spaceflight missions only · Launch Library 2.")
+                    .font(.firaCode(.caption2))
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var launchesSection: some View {
+        if !brief.launches.isEmpty {
+            PhosphorSection("Upcoming Launches") {
+                ForEach(brief.launches) { launch in
+                    LaunchRow(launch: launch)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var crewedSection: some View {
+        if !brief.crewed.isEmpty {
+            Section {
+                ForEach(brief.crewed) { obj in
+                    ISSCard(iss: obj, observerLat: brief.lat, observerLng: brief.lng)
+                        .padding(.vertical, 4)
+                }
+            } header: {
+                Text("International Space Station").phosphorHeader()
+            } footer: {
+                Text("Live position from wheretheiss.at.")
+                    .font(.firaCode(.caption2))
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var constellationsSection: some View {
+        if !brief.constellations.isEmpty {
+            Section {
+                ForEach(brief.constellations) { c in
+                    ConstellationRow(summary: c)
+                        .padding(.vertical, 2)
+                }
+            } header: {
+                Text("Satellite Constellations").phosphorHeader()
+            } footer: {
+                Text("Object counts from Celestrak GP element sets.")
+                    .font(.firaCode(.caption2))
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var apodSection: some View {
+        if let apod = brief.apod {
+            PhosphorSection("Astronomy Picture of the Day") {
+                APODCard(apod: apod)
+                    .padding(.vertical, 4)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var marsSection: some View {
+        if let mars = brief.mars {
+            Section {
+                NavigationLink {
+                    MarsAlmanacView(mars: mars, when: brief.when)
+                } label: {
+                    MarsWeatherCard(mars: mars)
+                        .padding(.vertical, 4)
+                }
+            } header: {
+                Text("Mars Weather").phosphorHeader()
+            } footer: {
+                Text("Perseverance MEDA + Curiosity REMS via mars.nasa.gov; freshest source wins.")
+                    .font(.firaCode(.caption2))
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var neosSection: some View {
+        if !brief.neos.isEmpty {
+            Section {
+                ForEach(brief.neos) { neo in
+                    NEORow(neo: neo)
+                }
+            } header: {
+                Text("Near-Earth Objects").phosphorHeader()
+            } footer: {
+                Text("Close approaches in the next week · NASA NEO.")
+                    .font(.firaCode(.caption2))
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var interstellarSection: some View {
+        if !brief.interstellar.isEmpty {
+            Section {
+                ForEach(brief.interstellar) { obj in
+                    InterstellarRow(obj: obj)
+                }
+            } header: {
+                Text("Interstellar Visitors").phosphorHeader()
+            } footer: {
+                Text("Confirmed hyperbolic trajectory · curated.")
+                    .font(.firaCode(.caption2))
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var solarSeismicSection: some View {
+        if !brief.earthquakes.isEmpty, brief.seismicSolarCorrelation != nil {
+            Section {
+                SeismicSolarCorrelationChart(
+                    data: brief.seismicSolarCorrelation
+                )
+            } header: {
+                Text("Solar ↔ Seismic").phosphorHeader()
+            } footer: {
+                Text("Independently scaled — world M4.5+ quakes (USGS) vs Earth-directed DONKI flares (±45° of central meridian) over the last 90 days. Bars colored by the day's strongest quake.")
+                    .font(.firaCode(.caption2))
+            }
+            .listRowBackground(Color.clear)
+            .listRowInsets(EdgeInsets(top: 4, leading: 16,
+                                      bottom: 4, trailing: 16))
+        }
+    }
+
+    @ViewBuilder
+    private var earthquakesSection: some View {
+        if !brief.earthquakes.isEmpty {
+            Section {
+                EarthquakeTimelineChart(quakes: brief.earthquakes)
+                ForEach(brief.earthquakes) { q in
+                    NavigationLink {
+                        EarthquakeDetailView(
+                            quake: q,
+                            allQuakes: brief.earthquakes,
+                            correlation: brief.seismicSolarCorrelation
+                        )
+                    } label: {
+                        EarthquakeRow(quake: q)
+                    }
+                }
+            } header: {
+                Text("Recent Earthquakes").phosphorHeader()
+            } footer: {
+                Text("USGS · global significant + nearby past 7 days.")
+                    .font(.firaCode(.caption2))
+            }
+        }
+    }
+
+    private var siderealFooterSection: some View {
+        Section {
+            SiderealFooter(
+                when: brief.when,
+                longitudeEastDeg: brief.lng,
+                magnetic: brief.magneticDeclination
+            )
+                .padding(.vertical, 4)
+        }
+        .listRowBackground(GalacticPalette.deepPurple.opacity(0.35))
+    }
+
+    @ViewBuilder
+    private var errorsSection: some View {
+        if !brief.errors.isEmpty {
+            Section {
+                ForEach(brief.errors.sorted(by: { $0.key < $1.key }), id: \.key) { key, msg in
+                    Label {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(key).font(.subheadline.weight(.medium))
+                            Text(msg).font(.caption).foregroundStyle(.secondary)
+                        }
+                    } icon: {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.orange)
+                    }
+                }
+            } header: {
+                Text("Source errors").phosphorHeader()
+            }
+        }
     }
 
     @ViewBuilder

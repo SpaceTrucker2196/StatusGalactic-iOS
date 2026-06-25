@@ -95,6 +95,7 @@ targets:
     sources:
       - path: StatusGalactic/Models/Brief.swift
       - path: StatusGalactic/Services/ClientConfig.swift
+      - path: StatusGalactic/Services/BriefSection.swift
       - path: StatusGalactic/Services/GalacticPalette.swift
       - path: StatusGalactic/Services/Typography.swift
       - path: StatusGalactic/Services/Brief
@@ -132,6 +133,7 @@ targets:
     sources:
       - path: StatusGalactic/Models/Brief.swift
       - path: StatusGalactic/Services/ClientConfig.swift
+      - path: StatusGalactic/Services/BriefSection.swift
       - path: StatusGalactic/Services/LocationManager.swift
       - path: StatusGalactic/Services/Brief
       - path: StatusGalactic/Services/Astronomy
@@ -167,6 +169,7 @@ targets:
     sources:
       - path: StatusGalactic/Models/Brief.swift
       - path: StatusGalactic/Services/ClientConfig.swift
+      - path: StatusGalactic/Services/BriefSection.swift
       - path: StatusGalactic/Services/Brief
       - path: StatusGalactic/Services/Astronomy
       - path: StatusGalacticWatchComplications
