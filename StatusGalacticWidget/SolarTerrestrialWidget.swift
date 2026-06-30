@@ -1,0 +1,463 @@
+import SwiftUI
+import WidgetKit
+
+/// Vaporwave reinterpretation of the classic hamqsl.com solar-terrestrial
+/// propagation widget. Same shape (compact monospace data table + small sun
+/// + status pills), but rendered on the Spacetrucker cosmic-sky gradient
+/// with neon-glow chrome and phosphor-green headers.
+///
+/// Reuses `BriefWidgetProvider` so a single brief fetch feeds both widgets.
+struct SolarTerrestrialWidget: Widget {
+    let kind: String = "io.river.statusgalactic.solarTerrestrialWidget"
+
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: kind, provider: BriefWidgetProvider()) { entry in
+            SolarTerrestrialView(entry: entry)
+                .containerBackground(GalacticPalette.cosmicSky, for: .widget)
+        }
+        .configurationDisplayName("Solar-Terrestrial")
+        .description("HF propagation snapshot — SFI, Kp, X-ray, aurora, geomag.")
+        .supportedFamilies([.systemSmall, .systemMedium])
+    }
+}
+
+// MARK: - Local color helpers
+
+private enum SolarTokens {
+    static let mutedText = Color(red: 0.78, green: 0.82, blue: 0.96)
+
+    static func sfiColor(_ sfi: Double) -> Color {
+        switch sfi {
+        case 150...:    return GalacticPalette.mint
+        case 100..<150: return GalacticPalette.peach
+        case 80..<100:  return GalacticPalette.hotPink
+        default:        return GalacticPalette.neonMagenta
+        }
+    }
+
+    static func xRayColor(_ klass: String) -> Color {
+        guard let first = klass.first else { return mutedText }
+        switch first {
+        case "A", "B": return GalacticPalette.neonCyan
+        case "C":      return GalacticPalette.mint
+        case "M":      return GalacticPalette.peach
+        case "X":      return GalacticPalette.neonMagenta
+        default:       return mutedText
+        }
+    }
+}
+
+// MARK: - View
+
+struct SolarTerrestrialView: View {
+    @Environment(\.widgetFamily) private var family
+    let entry: BriefWidgetEntry
+
+    var body: some View {
+        switch family {
+        case .systemSmall:  SolarSmallView(entry: entry)
+        case .systemMedium: SolarMediumView(entry: entry)
+        default:            SolarSmallView(entry: entry)
+        }
+    }
+}
+
+// MARK: - Small
+
+struct SolarSmallView: View {
+    let entry: BriefWidgetEntry
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            headerBar
+            Divider().background(GalacticPalette.phosphorGreen.opacity(0.4))
+
+            let m = SolarMetrics(brief: entry.brief)
+            VStack(alignment: .leading, spacing: 2) {
+                bigReadout("SFI", value: m.sfiText, color: m.sfiColor)
+                miniRow("Kp",    m.kpText,    color: m.kpColor)
+                miniRow("X-RAY", m.xRayClass, color: m.xRayColor)
+                miniRow("AUR",   m.auroraText, color: GalacticPalette.hotPink)
+            }
+            Spacer(minLength: 0)
+            geomagPill(m.geomag)
+        }
+        .padding(2)
+        .foregroundStyle(SolarTokens.mutedText)
+    }
+
+    private var headerBar: some View {
+        HStack {
+            Text("SOLAR")
+                .font(.firaCodeFixed(size: 11, weight: .bold))
+                .tracking(2)
+                .foregroundStyle(GalacticPalette.phosphorGreen)
+                .neonGlow(GalacticPalette.phosphorGreen, intensity: 3)
+            Spacer()
+            Text(zuluTime(entry.brief?.space?.observedAt ?? entry.date))
+                .font(.firaCodeFixed(size: 9))
+                .foregroundStyle(GalacticPalette.phosphorGreen.opacity(0.75))
+        }
+    }
+
+    private func bigReadout(_ label: String, value: String, color: Color) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 6) {
+            Text(label)
+                .font(.firaCodeFixed(size: 10, weight: .semibold))
+                .foregroundStyle(SolarTokens.mutedText.opacity(0.7))
+            Text(value)
+                .font(.firaCodeFixed(size: 26, weight: .bold))
+                .foregroundStyle(color)
+                .neonGlow(color, intensity: 4)
+                .minimumScaleFactor(0.7)
+                .lineLimit(1)
+        }
+    }
+
+    private func miniRow(_ label: String, _ value: String, color: Color) -> some View {
+        HStack(spacing: 0) {
+            Text(label)
+                .font(.firaCodeFixed(size: 9, weight: .semibold))
+                .foregroundStyle(SolarTokens.mutedText.opacity(0.7))
+                .frame(width: 38, alignment: .leading)
+            Text(value)
+                .font(.firaCodeFixed(size: 11, weight: .bold))
+                .foregroundStyle(color)
+                .lineLimit(1)
+        }
+    }
+
+    private func geomagPill(_ label: String) -> some View {
+        let color = geomagColor(label)
+        return HStack(spacing: 4) {
+            Circle().fill(color).frame(width: 6, height: 6).neonGlow(color, intensity: 3)
+            Text(label.uppercased())
+                .font(.firaCodeFixed(size: 9, weight: .bold))
+                .tracking(1)
+                .foregroundStyle(color)
+        }
+        .padding(.horizontal, 6)
+        .padding(.vertical, 2)
+        .background(
+            Capsule().stroke(color.opacity(0.6), lineWidth: 0.6)
+        )
+    }
+}
+
+// MARK: - Medium
+
+struct SolarMediumView: View {
+    let entry: BriefWidgetEntry
+
+    var body: some View {
+        let m = SolarMetrics(brief: entry.brief)
+        VStack(spacing: 4) {
+            headerBar
+            Divider().background(GalacticPalette.phosphorGreen.opacity(0.4))
+
+            HStack(alignment: .top, spacing: 10) {
+                bigColumn(m)
+                Divider().background(GalacticPalette.neonCyan.opacity(0.25))
+                tableColumn(m)
+                Divider().background(GalacticPalette.neonCyan.opacity(0.25))
+                sunColumn(m)
+            }
+
+            Divider().background(GalacticPalette.phosphorGreen.opacity(0.4))
+            statusFooter(m)
+        }
+        .padding(2)
+        .foregroundStyle(SolarTokens.mutedText)
+    }
+
+    private var headerBar: some View {
+        HStack {
+            Text("SOLAR-TERRESTRIAL")
+                .font(.firaCodeFixed(size: 11, weight: .bold))
+                .tracking(2.5)
+                .foregroundStyle(GalacticPalette.phosphorGreen)
+                .neonGlow(GalacticPalette.phosphorGreen, intensity: 4)
+            Spacer()
+            Text(utcStamp(entry.brief?.space?.observedAt ?? entry.date))
+                .font(.firaCodeFixed(size: 10))
+                .foregroundStyle(GalacticPalette.phosphorGreen.opacity(0.75))
+        }
+    }
+
+    private func bigColumn(_ m: SolarMetrics) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            readout("SFI", value: m.sfiText, color: m.sfiColor, size: 22)
+            readout("Kp",  value: m.kpText,  color: m.kpColor,  size: 22)
+            Spacer(minLength: 0)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func tableColumn(_ m: SolarMetrics) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            tableRow("A-IDX",  m.aIdxText,    color: GalacticPalette.peach)
+            tableRow("X-RAY",  m.xRayClass,   color: m.xRayColor)
+            tableRow("24H PK", m.xRayPeak,    color: m.xRayPeakColor)
+            tableRow("PROTON", m.protonText,  color: m.protonColor)
+            tableRow("AURORA", m.auroraText,  color: GalacticPalette.hotPink)
+            tableRow("M-FLR",  m.mFlareText,  color: GalacticPalette.neonMagenta)
+            Spacer(minLength: 0)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func sunColumn(_ m: SolarMetrics) -> some View {
+        VStack(spacing: 4) {
+            Image(systemName: "sun.max.fill")
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 36, height: 36)
+                .foregroundStyle(GalacticPalette.sunsetOrange)
+                .neonGlow(GalacticPalette.sunsetOrange, intensity: 6)
+            HStack(spacing: 3) {
+                scaleChip(m.rScale)
+                scaleChip(m.sScale)
+                scaleChip(m.gScale)
+            }
+            if let sn = m.sunspotNumber {
+                Text("SN \(sn)")
+                    .font(.firaCodeFixed(size: 9, weight: .bold))
+                    .foregroundStyle(GalacticPalette.mint)
+            }
+            Spacer(minLength: 0)
+        }
+        .frame(width: 70)
+    }
+
+    private func statusFooter(_ m: SolarMetrics) -> some View {
+        HStack(spacing: 8) {
+            statusPill(label: "GEOMAG", value: m.geomag, color: geomagColor(m.geomag))
+            statusPill(label: "HF DAY", value: m.hfDay, color: hfColor(m.hfDay))
+            statusPill(label: "HF NIGHT", value: m.hfNight, color: hfColor(m.hfNight))
+            Spacer(minLength: 0)
+        }
+    }
+
+    private func readout(_ label: String, value: String, color: Color, size: CGFloat) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 6) {
+            Text(label)
+                .font(.firaCodeFixed(size: 10, weight: .semibold))
+                .foregroundStyle(SolarTokens.mutedText.opacity(0.7))
+                .frame(width: 28, alignment: .leading)
+            Text(value)
+                .font(.firaCodeFixed(size: size, weight: .bold))
+                .foregroundStyle(color)
+                .neonGlow(color, intensity: 4)
+                .minimumScaleFactor(0.6)
+                .lineLimit(1)
+        }
+    }
+
+    private func tableRow(_ label: String, _ value: String, color: Color) -> some View {
+        HStack(spacing: 0) {
+            Text(label)
+                .font(.firaCodeFixed(size: 9, weight: .semibold))
+                .foregroundStyle(SolarTokens.mutedText.opacity(0.65))
+                .frame(width: 48, alignment: .leading)
+            Text(value)
+                .font(.firaCodeFixed(size: 11, weight: .bold))
+                .foregroundStyle(color)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+        }
+    }
+
+    private func scaleChip(_ level: String) -> some View {
+        let digit = level.last.flatMap { Int(String($0)) } ?? 0
+        let color: Color = {
+            switch digit {
+            case 0:  return GalacticPalette.neonCyan
+            case 1:  return GalacticPalette.mint
+            case 2:  return GalacticPalette.peach
+            case 3:  return GalacticPalette.hotPink
+            default: return GalacticPalette.neonMagenta
+            }
+        }()
+        return Text(level)
+            .font(.firaCodeFixed(size: 9, weight: .bold))
+            .foregroundStyle(color)
+            .padding(.horizontal, 4)
+            .padding(.vertical, 1)
+            .background(
+                Capsule().stroke(color.opacity(0.7), lineWidth: 0.6)
+            )
+    }
+
+    private func statusPill(label: String, value: String, color: Color) -> some View {
+        HStack(spacing: 3) {
+            Text(label)
+                .font(.firaCodeFixed(size: 8, weight: .semibold))
+                .foregroundStyle(SolarTokens.mutedText.opacity(0.6))
+            Text(value.uppercased())
+                .font(.firaCodeFixed(size: 9, weight: .bold))
+                .tracking(0.8)
+                .foregroundStyle(color)
+        }
+        .padding(.horizontal, 5)
+        .padding(.vertical, 2)
+        .background(
+            Capsule().stroke(color.opacity(0.55), lineWidth: 0.5)
+        )
+    }
+}
+
+// MARK: - Metrics derivation
+
+private struct SolarMetrics {
+    let sfiText: String
+    let sfiColor: Color
+    let kpText: String
+    let kpColor: Color
+    let aIdxText: String
+    let xRayClass: String
+    let xRayColor: Color
+    let xRayPeak: String
+    let xRayPeakColor: Color
+    let protonText: String
+    let protonColor: Color
+    let auroraText: String
+    let mFlareText: String
+    let rScale: String
+    let sScale: String
+    let gScale: String
+    let geomag: String
+    let hfDay: String
+    let hfNight: String
+    let sunspotNumber: Int?
+
+    init(brief: Brief?) {
+        let sfi = brief?.space?.solarFlux
+        sfiText = sfi.map { String(Int($0.rounded())) } ?? "—"
+        sfiColor = sfi.map(SolarTokens.sfiColor) ?? SolarTokens.mutedText
+
+        let kp = brief?.space?.kpIndex
+        kpText = kp.map { String(format: "%.1f", $0) } ?? "—"
+        kpColor = kp.map(GalacticPalette.kp) ?? SolarTokens.mutedText
+
+        // A-index: prefer today's outlook, fall back to WWV bulletin.
+        let aIdx = brief?.solarOutlook.first?.aIndex ?? brief?.wwvBulletin?.aIndex
+        aIdxText = aIdx.map(String.init) ?? "—"
+
+        if let xr = brief?.xRay {
+            xRayClass = xr.currentClass
+            xRayColor = SolarTokens.xRayColor(xr.currentClass)
+            xRayPeak = xr.peakClass24h
+            xRayPeakColor = SolarTokens.xRayColor(xr.peakClass24h)
+            rScale = xr.rScale
+        } else {
+            xRayClass = "—"; xRayColor = SolarTokens.mutedText
+            xRayPeak = "—";  xRayPeakColor = SolarTokens.mutedText
+            rScale = "R0"
+        }
+
+        if let p = brief?.proton {
+            protonText = String(format: "%.1e", p.fluxPfu)
+            sScale = p.sScale
+            protonColor = (p.sScale == "S0") ? GalacticPalette.mint : GalacticPalette.hotPink
+        } else {
+            protonText = "—"; sScale = "S0"; protonColor = SolarTokens.mutedText
+        }
+
+        if let a = brief?.aurora {
+            auroraText = "\(a.localProbabilityPct)% / \(a.globalMaxPct)%"
+        } else {
+            auroraText = "—"
+        }
+
+        if let fp = brief?.flareProbability {
+            mFlareText = "M \(fp.mClassPct)% X \(fp.xClassPct)%"
+        } else {
+            mFlareText = "—"
+        }
+
+        gScale = Self.gScale(forKp: kp)
+        geomag = Self.geomagLabel(forKp: kp)
+
+        // Day/night HF: coarse single-word readout off the synthesized bands.
+        let bands = brief?.bandConditions ?? []
+        hfDay = Self.summarizeHF(bands.map(\.dayStatus))
+        hfNight = Self.summarizeHF(bands.map(\.nightStatus))
+
+        sunspotNumber = brief?.solarCycle.last
+            .map { Int($0.sunspotNumber.rounded()) }
+    }
+
+    private static func gScale(forKp kp: Double?) -> String {
+        guard let kp else { return "G0" }
+        switch kp {
+        case ..<5: return "G0"
+        case ..<6: return "G1"
+        case ..<7: return "G2"
+        case ..<8: return "G3"
+        case ..<9: return "G4"
+        default:   return "G5"
+        }
+    }
+
+    private static func geomagLabel(forKp kp: Double?) -> String {
+        guard let kp else { return "—" }
+        switch kp {
+        case ..<2: return "Quiet"
+        case ..<3: return "Unsett"
+        case ..<4: return "Active"
+        case ..<5: return "Minor"
+        case ..<6: return "Mod"
+        case ..<7: return "Strong"
+        case ..<8: return "Severe"
+        default:   return "Extreme"
+        }
+    }
+
+    private static func summarizeHF(_ statuses: [String]) -> String {
+        guard !statuses.isEmpty else { return "—" }
+        if statuses.contains(where: { $0.caseInsensitiveCompare("Open") == .orderedSame }) { return "Good" }
+        if statuses.contains(where: { $0.caseInsensitiveCompare("Fair") == .orderedSame }) { return "Fair" }
+        if statuses.contains(where: { $0.caseInsensitiveCompare("Poor") == .orderedSame }) { return "Poor" }
+        return "Closed"
+    }
+}
+
+// MARK: - Helpers
+
+private func zuluTime(_ date: Date) -> String {
+    let f = DateFormatter()
+    f.timeZone = TimeZone(identifier: "UTC")
+    f.dateFormat = "HHmm'Z'"
+    return f.string(from: date)
+}
+
+private func utcStamp(_ date: Date) -> String {
+    let f = DateFormatter()
+    f.timeZone = TimeZone(identifier: "UTC")
+    f.dateFormat = "yyyy MMM dd HHmm 'UTC'"
+    return f.string(from: date).uppercased()
+}
+
+fileprivate func geomagColor(_ label: String) -> Color {
+    switch label.lowercased() {
+    case "quiet":   return GalacticPalette.neonCyan
+    case "unsett":  return GalacticPalette.mint
+    case "active":  return GalacticPalette.peach
+    case "minor":   return GalacticPalette.hotPink
+    case "mod":     return GalacticPalette.hotPink
+    case "strong":  return GalacticPalette.neonMagenta
+    case "severe":  return GalacticPalette.neonMagenta
+    case "extreme": return GalacticPalette.neonMagenta
+    default:        return SolarTokens.mutedText
+    }
+}
+
+fileprivate func hfColor(_ label: String) -> Color {
+    switch label.lowercased() {
+    case "good":   return GalacticPalette.mint
+    case "fair":   return GalacticPalette.peach
+    case "poor":   return GalacticPalette.hotPink
+    case "closed": return GalacticPalette.neonMagenta
+    default:       return SolarTokens.mutedText
+    }
+}

@@ -113,13 +113,141 @@ Phases follow the CareTime convention: iOS ships first, Android mirrors. **As of
 
 ---
 
-## Dependencies on the backend
+## Phase E: HF radio + space-weather depth (v0.2 expansion)
+
+The v0.2 work bloomed past "ports the original brief to a standalone iOS
+app." Captured retroactively here so the milestone history reflects what
+actually shipped.
+
+### M17: SolarHam-tier HF data
+**Goal:** Surface every datum a HF operator routinely checks on solarham.com without leaving the app.
+**Deliverables:**
+- Active regions + flare history (NOAA SRS / GOES)
+- 3-day Kp forecast + 27-day F10.7 outlook (SWPC)
+- Solar wind speed + IMF Bz (DSCOVR via SWPC)
+- WWV/WWVH propagation bulletin parser
+- D-RAP + DONKI CMEs + R/S/G storm scales
+- Ionosonde MUF/foF2 (prop.kc2g.com)
+- Local aurora probability (OVATION) + HF band conditions
+**Status:** ✅
+
+### M18: Ham activity feeds
+**Goal:** Live ham activity from anywhere, with distance to viewer.
+**Deliverables:**
+- POTA spots (Parks On The Air)
+- SOTA spots (Summits On The Air)
+- DX Cluster (dxsummit.fi)
+- RepeaterBook nearby repeaters
+**Status:** ✅
+
+### M19: RF tab consolidation
+**Goal:** Move every ham-radio-flavored surface out of the general Brief into a dedicated RF tab.
+**Deliverables:**
+- New tab with station header (APRS-symbol icon, passcode, location fix)
+- aprs.fi-backed messaging: inbox, threads, compose, bulletins
+- Path-derived DX stats (today / month / year)
+- 5-minute freshness gating on refresh so tab switches don't pound the APIs
+**Status:** ✅
+
+### M20: NWS + space-weather alerts
+**Goal:** Severe weather + aurora + R/S/G storm escalations as notifications and inline chips.
+**Deliverables:**
+- NWS active alerts (CAP severity) on the brief
+- Severe + Extreme auto-notify
+- Aurora alert ≥ threshold pct (user-configurable)
+- Storm-scale alert ≥ user-configurable G/S/R level
+- Watch + widget surface the same alert summary
+**Status:** ✅
+
+### M21: Brief visualization upgrades
+**Goal:** Turn the read-only brief into a glanceable dashboard.
+**Deliverables:**
+- Animated sun panel (SDO HMI/AIA frames with buffering progress)
+- GOES X-ray 24h sparkline (log-scale flare-class axis)
+- Tides, solar wind 24h, earthquake timeline sparklines
+- Tappable solar almanac with Kp + F10.7 flux sparklines
+- Phosphor section headers + storm-scale row layout polish
+- Aurora forecast view with global oval imagery
+**Status:** ✅
+
+### M22: Cosmos + earth-physical breadth
+**Goal:** Bring in the data sources that round out a "what's happening around you, on every axis" report.
+**Deliverables:**
+- Disk-backed image cache (90-day TTL) + APOD background
+- Mars Curiosity + Perseverance feeds with freshness badge
+- Upcoming crewed launches
+- USGS earthquakes near viewer
+- Planet ephemeris + sidereal footer
+- Magnetic declination (WMM-2025)
+- River gauge + flood-risk derivation
+**Status:** ✅
+
+---
+
+## Phase F: Launch readiness
+
+Everything between "feature-complete" and "live on the App Store."
+
+### M23: Deterministic XCUITest screenshot pipeline
+**Goal:** App Store screenshots regenerable from a single command, no manual sim driving.
+**Deliverables:**
+- `ScreenshotMode.swift` seeder (gated on `-UITEST_SCREENSHOT_MODE` launch arg)
+- Hero `Brief` fixture covering every section the gallery showcases
+- `StatusGalacticUITests/ScreenshotTests.swift` — 11 cases, swipe-count anchored
+- `scripts/screenshots.sh` orchestrator: status-bar override, xcresult extraction, sips resample, flake retry
+- Dark-mode force in screenshot mode so Callsigns + Settings chrome matches the neon-cyan accent
+**Status:** ✅
+
+### M24: App Store submission package
+**Goal:** Everything App Store Connect needs to accept the v0.2 build.
+**Deliverables:**
+- Marketing copy drafted in `marketing/app-store.md`
+- Privacy / support / landing pages live on GitHub Pages
+- 6.9" + 6.1" screenshot galleries generated and resampled to target sizes
+- Manual home-screen widget shot (#11) — not automatable via XCUITest
+- App icon (1024×1024 source, opaque RGB, no pre-applied corners)
+- Privacy nutrition labels filled in App Store Connect
+**Status:** 🚧 widget shot + nutrition labels pending
+
+### M25: Real-hardware verification
+**Goal:** Run end-to-end on physical devices before TestFlight to catch what the sim hides.
+**Deliverables:**
+- iPhone (any 16/17-class device) — install Release build, walk every tab, confirm widget timeline + notifications fire
+- Apple Watch (Series 9+ or Ultra 2) — install paired Watch app, confirm complications render on Modular + Infograph faces
+**Status:** ⏳ Not Started
+
+### M26: TestFlight + build-number policy
+**Goal:** First TestFlight push out the door, with a sustainable build-number scheme so subsequent uploads don't get rejected.
+**Deliverables:**
+- Pick a build-number scheme — monotonic integer, date-of-day (`260526`), or CI-driven
+- Document in `project.yml` comment or `scripts/`
+- Push first build to TestFlight, complete Apple's beta review
+- Internal testers added
+**Status:** ⏳ Not Started
+
+---
+
+## Later (no committed timeline)
+
+### M27: Apple Watch hardware run
+Mirror of M25 watch leg — gated on owning the hardware. Tracked separately because it can ship without blocking M24/M26.
+
+### M28: Android port
+Kotlin + Compose mirror keyed to `M1..M26`. See `FEATURE_MATRIX.md` for the parity table; no work has started.
+
+---
+
+## Backend dependencies (historical)
+
+The app was backend-dependent through v0.1.x and went standalone at v0.2.
+Kept here for archaeological context — no future milestone depends on a
+backend.
 
 | iOS milestone | Backend requirement | Backend status |
 |---------------|---------------------|----------------|
-| M4 | `GET /brief` with lat/lng/call/zone/tz | ✅ (v0.4) |
-| M11 | `GET /aprs/locate?call=X` proxy endpoint | ✅ (v0.5) |
-| M13 | Push delivery channel | ⏳ |
+| M4  | `GET /brief` with lat/lng/call/zone/tz   | ✅ (v0.4) — superseded by client-side fetch in v0.2 |
+| M11 | `GET /aprs/locate?call=X` proxy endpoint | ✅ (v0.5) — superseded by direct aprs.fi calls in v0.2 |
+| M13 | Push delivery channel                     | ❌ Dropped — local notifications cover the use case |
 
 ---
 

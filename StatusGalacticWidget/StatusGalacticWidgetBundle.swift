@@ -5,5 +5,7 @@ import WidgetKit
 struct StatusGalacticWidgetBundle: WidgetBundle {
     var body: some Widget {
         BriefWidget()
+        SolarTerrestrialWidget()
+        TidesWidget()
     }
 }
