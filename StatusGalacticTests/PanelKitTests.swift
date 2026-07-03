@@ -48,6 +48,47 @@ final class PanelKitTests: XCTestCase {
         }
     }
 
+    // MARK: - PanelLayoutStore
+
+    func testLayoutStoreEmptyReturnsFallback() {
+        PanelLayoutStore.clear()
+        let fallback: [PanelTile] = [.init(kind: .brief, size: .wide)]
+        let loaded = PanelLayoutStore.load(fallback: fallback)
+        XCTAssertEqual(loaded.count, 1)
+        XCTAssertEqual(loaded[0].kind, .brief)
+        XCTAssertEqual(loaded[0].size, .wide)
+    }
+
+    func testLayoutStoreRoundTripPreservesTilesAndIds() {
+        PanelLayoutStore.clear()
+        defer { PanelLayoutStore.clear() }
+
+        let original: [PanelTile] = [
+            .init(kind: .brief,            size: .wide),
+            .init(kind: .solarTerrestrial, size: .tall),
+            .init(kind: .tides,            size: .large),
+        ]
+        PanelLayoutStore.save(original)
+
+        let loaded = PanelLayoutStore.load(fallback: [])
+        XCTAssertEqual(loaded.count, 3)
+        XCTAssertEqual(loaded.map(\.kind), original.map(\.kind))
+        XCTAssertEqual(loaded.map(\.size), original.map(\.size))
+        // Ids must round-trip so tile identity is stable across launches.
+        XCTAssertEqual(loaded.map(\.id), original.map(\.id))
+    }
+
+    func testLayoutStoreCorruptDataReturnsFallback() {
+        // Write garbage under the store's key, then confirm load falls
+        // back cleanly instead of throwing / crashing.
+        SharedDefaults.store.set(Data([0xFF, 0x00, 0x42]),
+                                 forKey: PanelLayoutStore.key)
+        defer { PanelLayoutStore.clear() }
+        let fallback: [PanelTile] = [.init(kind: .tides, size: .small)]
+        let loaded = PanelLayoutStore.load(fallback: fallback)
+        XCTAssertEqual(loaded, fallback)
+    }
+
     /// Solar has bespoke `.tall` and `.large` renderers — this pins the
     /// four Solar sub-view types actually exist as distinct SwiftUI
     /// views. If a future refactor deletes one and re-collapses to

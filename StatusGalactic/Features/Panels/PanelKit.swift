@@ -7,7 +7,7 @@ import WidgetKit
 ///
 /// Order here defines both the widget bundle's default order and the iPad
 /// grid's initial layout.
-public enum PanelKind: String, CaseIterable, Identifiable, Hashable {
+public enum PanelKind: String, CaseIterable, Identifiable, Hashable, Codable {
     case brief
     case solarTerrestrial
     case tides
@@ -34,7 +34,7 @@ public enum PanelKind: String, CaseIterable, Identifiable, Hashable {
 ///   `.wide`  — 2×1  · systemMedium
 ///   `.tall`  — 1×2  · (no direct widget family; iPad grid only for now)
 ///   `.large` — 2×2  · systemLarge
-public enum PanelSize: String, CaseIterable, Identifiable, Hashable {
+public enum PanelSize: String, CaseIterable, Identifiable, Hashable, Codable {
     case small
     case wide
     case tall

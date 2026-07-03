@@ -1,9 +1,8 @@
 import SwiftUI
 
-/// iPad-first home for the panel grid. Pilots the abstraction with the
-/// Solar-Terrestrial panel at three of its four sizes so the grid packing
-/// is exercised. As other panels get factored into `PanelKit`, this
-/// screen's `defaultLayout` grows.
+/// iPad-first home for the panel grid. Renders whatever layout the user
+/// has persisted via `PanelLayoutStore`, falling back to `defaultLayout`
+/// on first launch or after a decode failure.
 ///
 /// Renders fine on iPhone too (falls back to a single wider column via
 /// `columns(for:)`), so we can wire it as a tab today without gating.
@@ -11,9 +10,12 @@ struct PanelsScreen: View {
     @Environment(BriefViewModel.self) private var brief
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
-    /// Sample layout — kept in code until slice 3 lands a persisted,
-    /// user-editable layout. Order and mix demonstrate all three panels
-    /// at multiple sizes so the packer + tile chrome are exercised.
+    @State private var tiles: [PanelTile] = PanelLayoutStore.load(fallback: PanelsScreen.defaultLayout)
+    @State private var showingEditor = false
+
+    /// Ship-with layout. Order and mix demonstrate all three panels at
+    /// multiple sizes so the packer + tile chrome are exercised out of
+    /// the box. Also used as the "Reset to default" target in the editor.
     static let defaultLayout: [PanelTile] = [
         .init(kind: .brief,            size: .wide),
         .init(kind: .solarTerrestrial, size: .small),
@@ -28,7 +30,7 @@ struct PanelsScreen: View {
     var body: some View {
         ScrollView {
             PanelGrid(
-                tiles: Self.defaultLayout,
+                tiles: tiles,
                 columns: columns(for: horizontalSizeClass),
                 cellSize: cellSize(for: horizontalSizeClass)
             ) { tile in
@@ -38,6 +40,26 @@ struct PanelsScreen: View {
         }
         .background(GalacticPalette.cosmicSky.ignoresSafeArea())
         .navigationTitle("Panels")
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    showingEditor = true
+                } label: {
+                    Image(systemName: "square.grid.3x3.square")
+                        .foregroundStyle(GalacticPalette.neonCyan)
+                }
+                .accessibilityLabel("Edit panel layout")
+            }
+        }
+        .sheet(isPresented: $showingEditor) {
+            PanelLayoutEditor(
+                tiles: $tiles,
+                defaultLayout: PanelsScreen.defaultLayout
+            )
+        }
+        .onChange(of: tiles) { _, new in
+            PanelLayoutStore.save(new)
+        }
     }
 
     private var currentBrief: Brief? {

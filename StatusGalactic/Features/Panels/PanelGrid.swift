@@ -3,10 +3,14 @@ import SwiftUI
 /// A single tile placement: which panel, what size. `PanelGrid` renders a
 /// list of these into a variable-span layout that packs left-to-right,
 /// top-to-bottom, wrapping when a tile doesn't fit in the current row.
-struct PanelTile: Identifiable, Hashable {
-    let id = UUID()
-    let kind: PanelKind
-    let size: PanelSize
+///
+/// `id` is a stable UUID that survives encode/decode round-trips through
+/// `PanelLayoutStore`, so a tile the user has selected/highlighted in
+/// the editor stays the same identity across launches.
+struct PanelTile: Identifiable, Hashable, Codable {
+    var id: UUID = UUID()
+    var kind: PanelKind
+    var size: PanelSize
 }
 
 /// Variable-span grid host for `PanelTile`s. Home for the iPad home
