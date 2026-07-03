@@ -30,11 +30,11 @@ targets:
           # the protoc generation step, not the Swift build. Generated
           # *.pb.swift under Services/Meshtastic/Generated/ IS compiled.
           - "Services/Meshtastic/proto/**"
-      # Share the widget body + entry struct + WidgetConfig (which
-      # BriefWidgetProvider references) so the in-app screenshot
-      # preview can render the medium widget on a faux home screen
-      # (XCUITest can't drive SpringBoard to capture the real widget).
-      - path: StatusGalacticWidget/BriefWidgetView.swift
+      # Share the entry struct + WidgetConfig (which BriefWidgetProvider
+      # references) so the in-app screenshot preview can render the
+      # medium widget on a faux home screen (XCUITest can't drive
+      # SpringBoard to capture the real widget). The BriefPanel view
+      # code that the preview uses now lives under Features/Panels/Brief.
       - path: StatusGalacticWidget/BriefWidgetProvider.swift
       - path: StatusGalacticWidget/WidgetConfig.swift
     dependencies:
@@ -104,7 +104,9 @@ targets:
       # renders panels via WidgetKit; the app renders the same source
       # into an iPad-first PanelGrid. See docs/panels or Panels/PanelKit.swift.
       - path: StatusGalactic/Features/Panels/PanelKit.swift
+      - path: StatusGalactic/Features/Panels/Brief
       - path: StatusGalactic/Features/Panels/Solar
+      - path: StatusGalactic/Features/Panels/Tides
       - path: StatusGalactic/Resources/Fonts
       - path: StatusGalacticWidget
     info:

@@ -35,6 +35,19 @@ final class PanelKitTests: XCTestCase {
         XCTAssertEqual(PanelKind.tides.displayName,            "Tides")
     }
 
+    // MARK: - Panel renderers
+
+    /// Instantiating each shared panel at every size must not crash even
+    /// with a nil brief. If a future refactor breaks any panel's empty
+    /// state, this test catches it before it ships to a widget slot.
+    func testEveryPanelRendersAtEverySizeWithNilBrief() {
+        for size in PanelSize.allCases {
+            _ = SolarPanel(size: size, brief: nil).body
+            _ = BriefPanel(size: size, brief: nil).body
+            _ = TidesPanel(size: size, brief: nil).body
+        }
+    }
+
     // MARK: - PanelGrid packing
 
     func testPackingSingleSmallSitsAtOrigin() {

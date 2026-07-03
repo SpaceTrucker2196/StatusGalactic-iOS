@@ -43,13 +43,18 @@ struct WidgetHomeScreenPreview: View {
             VStack(spacing: 30) {
                 // The widget itself — rendered at native medium-widget
                 // aspect with the standard 22pt corner radius. We
-                // instantiate `MediumView` directly because WidgetKit's
-                // `\.widgetFamily` environment key isn't writable from
-                // outside the widget bundle. The `.containerBackground`
-                // that iOS would normally apply is replaced here by a
-                // matching dark fill so SF Symbols sit readable on the
-                // home-screen wallpaper.
-                MediumView(entry: entry)
+                // instantiate `BriefPanel(size: .wide)` directly because
+                // WidgetKit's `\.widgetFamily` environment key isn't
+                // writable from outside the widget bundle. The
+                // `.containerBackground` that iOS would normally apply
+                // is replaced here by a matching dark fill so SF Symbols
+                // sit readable on the home-screen wallpaper.
+                BriefPanel(
+                    size: .wide,
+                    brief: entry.brief,
+                    referenceDate: entry.date,
+                    errorMessage: entry.errorMessage
+                )
                     .frame(width: 364, height: 170)
                     .padding(12)
                     .background(

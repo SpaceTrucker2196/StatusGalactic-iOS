@@ -1,41 +1,59 @@
 import SwiftUI
-import WidgetKit
 
-struct BriefWidgetView: View {
-    @Environment(\.widgetFamily) private var family
-    let entry: BriefWidgetEntry
+/// Shared brief panel — used by the `BriefWidget` and by the iPad
+/// `PanelGrid`. Factored out of `StatusGalacticWidget/BriefWidgetView.swift`
+/// so both hosts render the same pixels.
+///
+/// Renderer accepts `brief` + `referenceDate` — no App-Group defaults, no
+/// WidgetKit types. Widget shell passes the entry's brief/date; iPad host
+/// passes its own state.
+///
+/// Initial slice: `.tall` and `.large` fall through to `.small` / `.wide`.
+/// Bespoke layouts for the new sizes land per-panel as design iterates.
+struct BriefPanel: View {
+    let size: PanelSize
+    let brief: Brief?
+    let errorMessage: String?
+    let referenceDate: Date
+
+    init(
+        size: PanelSize,
+        brief: Brief?,
+        referenceDate: Date = Date(),
+        errorMessage: String? = nil
+    ) {
+        self.size = size
+        self.brief = brief
+        self.errorMessage = errorMessage
+        self.referenceDate = referenceDate
+    }
 
     var body: some View {
-        switch family {
-        case .systemSmall:
-            SmallView(entry: entry)
-        case .systemMedium:
-            MediumView(entry: entry)
-        default:
-            SmallView(entry: entry)
+        switch size {
+        case .small, .tall:
+            BriefSmallView(brief: brief, errorMessage: errorMessage, referenceDate: referenceDate)
+        case .wide, .large:
+            BriefMediumView(brief: brief, errorMessage: errorMessage, referenceDate: referenceDate)
         }
     }
 }
 
 // MARK: - Small
 
-/// Internal so the in-app screenshot preview can render the medium
-/// widget directly. WidgetKit's `\.widgetFamily` environment key is
-/// read-only from outside the widget bundle, so the preview pipeline
-/// can't drive `BriefWidgetView`'s family dispatch — it instantiates
-/// `MediumView` head-on.
-struct SmallView: View {
-    let entry: BriefWidgetEntry
+struct BriefSmallView: View {
+    let brief: Brief?
+    let errorMessage: String?
+    let referenceDate: Date
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            if let brief = entry.brief {
-                Text(brief.locationName ?? coordsLabel(brief))
+            if let brief {
+                Text(brief.locationName ?? briefCoordsLabel(brief))
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
 
-                if let temp = currentTemp(brief) {
+                if let temp = briefCurrentTemp(brief) {
                     Text("\(temp)°")
                         .font(.system(size: 36, weight: .bold, design: .rounded))
                         .monospacedDigit()
@@ -44,7 +62,7 @@ struct SmallView: View {
                         .font(.system(size: 36, weight: .bold, design: .rounded))
                 }
 
-                if let cond = currentCondition(brief) {
+                if let cond = briefCurrentCondition(brief) {
                     Text(cond)
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -55,10 +73,9 @@ struct SmallView: View {
 
                 if let alert = brief.weatherAlerts.first {
                     alertChip(alert)
-                } else if let next = nextSunEvent(brief, now: entry.date) {
+                } else if let next = briefNextSunEvent(brief, now: referenceDate) {
                     HStack(spacing: 4) {
-                        Image(systemName: next.icon)
-                            .font(.caption2)
+                        Image(systemName: next.icon).font(.caption2)
                         Text("\(next.label) \(next.date, style: .relative)")
                             .font(.caption2)
                             .monospacedDigit()
@@ -82,8 +99,7 @@ struct SmallView: View {
             }
         }()
         return HStack(spacing: 4) {
-            Image(systemName: "exclamationmark.triangle.fill")
-                .font(.caption2)
+            Image(systemName: "exclamationmark.triangle.fill").font(.caption2)
             Text(alert.event)
                 .font(.caption2.weight(.semibold))
                 .lineLimit(1)
@@ -100,7 +116,7 @@ struct SmallView: View {
         VStack(alignment: .leading) {
             Image(systemName: "globe.americas").font(.title2)
             Text("Spacetrucker Galactic").font(.caption.weight(.semibold))
-            if let err = entry.errorMessage {
+            if let err = errorMessage {
                 Text(err).font(.caption2).foregroundStyle(.secondary).lineLimit(3)
             } else {
                 Text("No data").font(.caption2).foregroundStyle(.secondary)
@@ -111,28 +127,30 @@ struct SmallView: View {
 
 // MARK: - Medium
 
-struct MediumView: View {
-    let entry: BriefWidgetEntry
+struct BriefMediumView: View {
+    let brief: Brief?
+    let errorMessage: String?
+    let referenceDate: Date
 
     var body: some View {
-        if let brief = entry.brief {
+        if let brief {
             VStack(spacing: 4) {
                 if let alert = brief.weatherAlerts.first {
                     alertBanner(alert, more: brief.weatherAlerts.count - 1)
                 }
                 HStack(alignment: .top, spacing: 14) {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(brief.locationName ?? coordsLabel(brief))
+                        Text(brief.locationName ?? briefCoordsLabel(brief))
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
 
-                        if let temp = currentTemp(brief) {
+                        if let temp = briefCurrentTemp(brief) {
                             Text("\(temp)°")
                                 .font(.system(size: 40, weight: .bold, design: .rounded))
                                 .monospacedDigit()
                         }
-                        if let cond = currentCondition(brief) {
+                        if let cond = briefCurrentCondition(brief) {
                             Text(cond)
                                 .font(.caption2)
                                 .foregroundStyle(.secondary)
@@ -152,7 +170,7 @@ struct MediumView: View {
                         if let sunset = brief.sun?.sunsetUtc {
                             sunRow(icon: "sunset.fill", label: "Sunset", date: sunset, tz: brief.sun?.timezone)
                         }
-                        if let next = nextSunEvent(brief, now: entry.date) {
+                        if let next = briefNextSunEvent(brief, now: referenceDate) {
                             sunRow(
                                 icon: next.icon,
                                 label: next.label,
@@ -163,8 +181,7 @@ struct MediumView: View {
                         }
                         if let moon = brief.moon {
                             HStack(spacing: 4) {
-                                Image(systemName: moonIcon(for: moon))
-                                    .font(.caption2)
+                                Image(systemName: moonIcon(for: moon)).font(.caption2)
                                 Text("\(Int(moon.illuminationPct))% \(moon.phaseName)")
                                     .font(.caption2)
                                     .lineLimit(1)
@@ -185,7 +202,7 @@ struct MediumView: View {
                 }
             }
         } else {
-            SmallView(entry: entry)
+            BriefSmallView(brief: nil, errorMessage: errorMessage, referenceDate: referenceDate)
         }
     }
 
@@ -284,51 +301,52 @@ struct MediumView: View {
 
     private func moonIcon(for moon: Moon) -> String {
         switch moon.phaseName.lowercased() {
-        case let s where s.contains("new"): return "moonphase.new.moon"
-        case let s where s.contains("waxing crescent"): return "moonphase.waxing.crescent"
-        case let s where s.contains("first quarter"): return "moonphase.first.quarter"
-        case let s where s.contains("waxing gibbous"): return "moonphase.waxing.gibbous"
-        case let s where s.contains("full"): return "moonphase.full.moon"
-        case let s where s.contains("waning gibbous"): return "moonphase.waning.gibbous"
-        case let s where s.contains("last quarter"): return "moonphase.last.quarter"
-        case let s where s.contains("waning crescent"): return "moonphase.waning.crescent"
-        default: return "moon"
+        case let s where s.contains("new"):              return "moonphase.new.moon"
+        case let s where s.contains("waxing crescent"):  return "moonphase.waxing.crescent"
+        case let s where s.contains("first quarter"):    return "moonphase.first.quarter"
+        case let s where s.contains("waxing gibbous"):   return "moonphase.waxing.gibbous"
+        case let s where s.contains("full"):             return "moonphase.full.moon"
+        case let s where s.contains("waning gibbous"):   return "moonphase.waning.gibbous"
+        case let s where s.contains("last quarter"):     return "moonphase.last.quarter"
+        case let s where s.contains("waning crescent"):  return "moonphase.waning.crescent"
+        default:                                         return "moon"
         }
     }
 }
 
-// MARK: - Shared helpers
+// MARK: - Shared helpers (file-private with `brief` prefix so they don't
+// collide with identically-named helpers in other panel files.)
 
-private func coordsLabel(_ brief: Brief) -> String {
+func briefCoordsLabel(_ brief: Brief) -> String {
     String(format: "%.2f, %.2f", brief.lat, brief.lng)
 }
 
-private func currentTemp(_ brief: Brief) -> Int? {
+func briefCurrentTemp(_ brief: Brief) -> Int? {
     brief.earth?.periods.first?.temperature
 }
 
-private func currentCondition(_ brief: Brief) -> String? {
+func briefCurrentCondition(_ brief: Brief) -> String? {
     brief.earth?.periods.first?.shortForecast
 }
 
-private struct NextSunEvent {
+struct BriefNextSunEvent {
     let label: String
     let date: Date
     let icon: String
 }
 
-private func nextSunEvent(_ brief: Brief, now: Date) -> NextSunEvent? {
+func briefNextSunEvent(_ brief: Brief, now: Date) -> BriefNextSunEvent? {
     guard let sun = brief.sun else { return nil }
 
     let candidates: [(String, Date?, String)] = [
         ("Golden hour", sun.goldenEveningStartUtc, "sun.haze.fill"),
-        ("Sunset", sun.sunsetUtc, "sunset.fill"),
-        ("Astro dusk", sun.astronomicalDuskUtc, "moon.stars.fill"),
-        ("Sunrise", sun.sunriseUtc, "sunrise.fill"),
+        ("Sunset",      sun.sunsetUtc,             "sunset.fill"),
+        ("Astro dusk",  sun.astronomicalDuskUtc,   "moon.stars.fill"),
+        ("Sunrise",     sun.sunriseUtc,            "sunrise.fill"),
     ]
     for (label, date, icon) in candidates {
         if let date, date > now {
-            return NextSunEvent(label: label, date: date, icon: icon)
+            return BriefNextSunEvent(label: label, date: date, icon: icon)
         }
     }
     return nil

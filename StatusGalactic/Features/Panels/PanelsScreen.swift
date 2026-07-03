@@ -11,14 +11,18 @@ struct PanelsScreen: View {
     @Environment(BriefViewModel.self) private var brief
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
-    /// Sample layout for the pilot slice. Once more panels are factored,
-    /// this becomes a persisted, user-editable layout.
+    /// Sample layout — kept in code until slice 3 lands a persisted,
+    /// user-editable layout. Order and mix demonstrate all three panels
+    /// at multiple sizes so the packer + tile chrome are exercised.
     static let defaultLayout: [PanelTile] = [
-        .init(kind: .solarTerrestrial, size: .wide),
+        .init(kind: .brief,            size: .wide),
         .init(kind: .solarTerrestrial, size: .small),
         .init(kind: .solarTerrestrial, size: .small),
-        .init(kind: .solarTerrestrial, size: .tall),
+        .init(kind: .tides,            size: .wide),
         .init(kind: .solarTerrestrial, size: .large),
+        .init(kind: .tides,            size: .tall),
+        .init(kind: .brief,            size: .small),
+        .init(kind: .solarTerrestrial, size: .tall),
     ]
 
     var body: some View {
@@ -76,34 +80,12 @@ struct PanelTileView: View {
     @ViewBuilder
     private var content: some View {
         switch tile.kind {
+        case .brief:
+            BriefPanel(size: tile.size, brief: brief, referenceDate: referenceDate)
         case .solarTerrestrial:
             SolarPanel(size: tile.size, brief: brief, referenceDate: referenceDate)
-        case .brief, .tides:
-            // Not yet factored into a shared `PanelView`. Render a labelled
-            // placeholder so the grid layout is still exercised.
-            PanelPlaceholder(kind: tile.kind, size: tile.size)
-        }
-    }
-}
-
-/// Vaporwave placeholder for panels that haven't been factored yet.
-struct PanelPlaceholder: View {
-    let kind: PanelKind
-    let size: PanelSize
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(kind.displayName.uppercased())
-                .font(.firaCodeFixed(size: 11, weight: .bold))
-                .tracking(2)
-                .foregroundStyle(GalacticPalette.phosphorGreen)
-            Text(size.rawValue.uppercased())
-                .font(.firaCodeFixed(size: 9, weight: .semibold))
-                .foregroundStyle(GalacticPalette.peach.opacity(0.7))
-            Spacer(minLength: 0)
-            Text("Panel not yet factored")
-                .font(.firaCodeFixed(size: 9))
-                .foregroundStyle(GalacticPalette.hotPink.opacity(0.75))
+        case .tides:
+            TidesPanel(size: tile.size, brief: brief, referenceDate: referenceDate)
         }
     }
 }
