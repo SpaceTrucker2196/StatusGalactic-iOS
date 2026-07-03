@@ -100,6 +100,11 @@ targets:
       - path: StatusGalactic/Services/Typography.swift
       - path: StatusGalactic/Services/Brief
       - path: StatusGalactic/Services/Astronomy
+      # Shared panel abstraction + per-panel renderers. Widget target
+      # renders panels via WidgetKit; the app renders the same source
+      # into an iPad-first PanelGrid. See docs/panels or Panels/PanelKit.swift.
+      - path: StatusGalactic/Features/Panels/PanelKit.swift
+      - path: StatusGalactic/Features/Panels/Solar
       - path: StatusGalactic/Resources/Fonts
       - path: StatusGalacticWidget
     info:

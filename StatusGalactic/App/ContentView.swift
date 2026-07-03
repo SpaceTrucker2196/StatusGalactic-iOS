@@ -28,6 +28,11 @@ struct ContentView: View {
             BriefView()
                 .tabItem { Label("Brief", systemImage: "globe.americas.fill") }
 
+            NavigationStack {
+                PanelsScreen()
+            }
+            .tabItem { Label("Panels", systemImage: "square.grid.2x2.fill") }
+
             RFView()
                 .tabItem {
                     Label("RF", systemImage: "antenna.radiowaves.left.and.right.circle.fill")
