@@ -77,11 +77,12 @@ targets:
           - FiraCode-Retina.ttf
     settings:
       base:
-        # iPhone-only at launch — flip back to "1,2" when the dedicated
-        # iPad UI lands so the App Store listing picks up the iPad slot.
-        # The SwiftUI views already compile for iPad; the deferral is
-        # purely so we don't ship iPhone-stretched chrome.
-        TARGETED_DEVICE_FAMILY: "1"
+        # iPhone + iPad. The panel grid lives in the "Panels" tab and
+        # uses `horizontalSizeClass == .regular` to render as a 4-column
+        # layout on iPad and 2-column on iPhone. Existing iPhone tabs
+        # (Brief, RF, Callsigns, Mesh, Settings) all render on iPad too
+        # — they're SwiftUI-native and don't rely on iPhone-only chrome.
+        TARGETED_DEVICE_FAMILY: "1,2"
         PRODUCT_BUNDLE_IDENTIFIER: com.spacetrucker.statusgalactic
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
@@ -127,8 +128,9 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.spacetrucker.statusgalactic.widget
-        # Mirror the main app — flip to "1,2" together when iPad lands.
-        TARGETED_DEVICE_FAMILY: "1"
+        # Mirror the main app so widgets show up on iPad's Add Widget
+        # gallery in addition to iPhone's.
+        TARGETED_DEVICE_FAMILY: "1,2"
         GENERATE_INFOPLIST_FILE: NO
         SKIP_INSTALL: YES
         CODE_SIGN_ENTITLEMENTS: StatusGalacticWidget/StatusGalacticWidget.entitlements
