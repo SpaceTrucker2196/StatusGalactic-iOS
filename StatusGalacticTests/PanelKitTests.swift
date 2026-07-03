@@ -48,6 +48,21 @@ final class PanelKitTests: XCTestCase {
         }
     }
 
+    /// Solar has bespoke `.tall` and `.large` renderers — this pins the
+    /// four Solar sub-view types actually exist as distinct SwiftUI
+    /// views. If a future refactor deletes one and re-collapses to
+    /// small/medium, this catches it.
+    func testSolarHasFourDistinctSubviewTypes() {
+        let types: [Any.Type] = [
+            SolarSmallView.self,
+            SolarMediumView.self,
+            SolarTallView.self,
+            SolarLargeView.self,
+        ]
+        let names = Set(types.map { "\($0)" })
+        XCTAssertEqual(names.count, 4, "Expected 4 distinct Solar sub-views, got \(names)")
+    }
+
     // MARK: - PanelGrid packing
 
     func testPackingSingleSmallSitsAtOrigin() {

@@ -25,19 +25,10 @@ struct SolarPanel: View {
 
     var body: some View {
         switch size {
-        case .small:
-            SolarSmallView(brief: brief, referenceDate: referenceDate)
-        case .wide:
-            SolarMediumView(brief: brief, referenceDate: referenceDate)
-        case .tall:
-            // Placeholder: same content as .small at natural height. A
-            // bespoke tall layout (adds trend micro-charts) will replace
-            // this in a future slice.
-            SolarSmallView(brief: brief, referenceDate: referenceDate)
-        case .large:
-            // Placeholder: same content as .wide with more vertical
-            // breathing room. Bespoke large layout lands later.
-            SolarMediumView(brief: brief, referenceDate: referenceDate)
+        case .small: SolarSmallView(brief: brief, referenceDate: referenceDate)
+        case .wide:  SolarMediumView(brief: brief, referenceDate: referenceDate)
+        case .tall:  SolarTallView(brief: brief, referenceDate: referenceDate)
+        case .large: SolarLargeView(brief: brief, referenceDate: referenceDate)
         }
     }
 }
@@ -101,7 +92,7 @@ struct SolarSmallView: View {
                 .foregroundStyle(GalacticPalette.phosphorGreen)
                 .neonGlow(GalacticPalette.phosphorGreen, intensity: 3)
             Spacer()
-            Text(zuluTime(brief?.space?.observedAt ?? referenceDate))
+            Text(solarZuluTime(brief?.space?.observedAt ?? referenceDate))
                 .font(.firaCodeFixed(size: 9))
                 .foregroundStyle(GalacticPalette.phosphorGreen.opacity(0.75))
         }
@@ -186,7 +177,7 @@ struct SolarMediumView: View {
                 .foregroundStyle(GalacticPalette.phosphorGreen)
                 .neonGlow(GalacticPalette.phosphorGreen, intensity: 4)
             Spacer()
-            Text(utcStamp(brief?.space?.observedAt ?? referenceDate))
+            Text(solarUTCStamp(brief?.space?.observedAt ?? referenceDate))
                 .font(.firaCodeFixed(size: 10))
                 .foregroundStyle(GalacticPalette.phosphorGreen.opacity(0.75))
         }
@@ -314,6 +305,392 @@ struct SolarMediumView: View {
     }
 }
 
+// MARK: - Tall (1×2)
+
+/// Portrait Solar readout: SFI + Kp headline stacked, then the full
+/// 6-row data table, then a stacked sun icon + R/S/G chips + geomag
+/// pill at the bottom.
+struct SolarTallView: View {
+    let brief: Brief?
+    let referenceDate: Date
+
+    var body: some View {
+        let m = SolarMetrics(brief: brief)
+        VStack(alignment: .leading, spacing: 6) {
+            headerBar
+            Divider().background(GalacticPalette.phosphorGreen.opacity(0.4))
+
+            readout("SFI", value: m.sfiText, color: m.sfiColor, size: 26)
+            readout("Kp",  value: m.kpText,  color: m.kpColor,  size: 26)
+
+            Divider().background(GalacticPalette.neonCyan.opacity(0.25))
+
+            VStack(alignment: .leading, spacing: 3) {
+                tableRow("A-IDX",  m.aIdxText,   color: GalacticPalette.peach)
+                tableRow("X-RAY",  m.xRayClass,  color: m.xRayColor)
+                tableRow("24H PK", m.xRayPeak,   color: m.xRayPeakColor)
+                tableRow("PROTON", m.protonText, color: m.protonColor)
+                tableRow("AURORA", m.auroraText, color: GalacticPalette.hotPink)
+                tableRow("M-FLR",  m.mFlareText, color: GalacticPalette.neonMagenta)
+            }
+
+            Spacer(minLength: 0)
+
+            HStack(spacing: 6) {
+                Image(systemName: "sun.max.fill")
+                    .resizable().aspectRatio(contentMode: .fit)
+                    .frame(width: 28, height: 28)
+                    .foregroundStyle(GalacticPalette.sunsetOrange)
+                    .neonGlow(GalacticPalette.sunsetOrange, intensity: 5)
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack(spacing: 3) {
+                        scaleChip(m.rScale)
+                        scaleChip(m.sScale)
+                        scaleChip(m.gScale)
+                    }
+                    if let sn = m.sunspotNumber {
+                        Text("SN \(sn)")
+                            .font(.firaCodeFixed(size: 9, weight: .bold))
+                            .foregroundStyle(GalacticPalette.mint)
+                    }
+                }
+                Spacer(minLength: 0)
+                geomagPill(m.geomag)
+            }
+        }
+        .padding(2)
+        .foregroundStyle(SolarTokens.mutedText)
+    }
+
+    private var headerBar: some View {
+        HStack {
+            Text("SOLAR")
+                .font(.firaCodeFixed(size: 11, weight: .bold))
+                .tracking(2)
+                .foregroundStyle(GalacticPalette.phosphorGreen)
+                .neonGlow(GalacticPalette.phosphorGreen, intensity: 3)
+            Spacer()
+            Text(solarZuluTime(brief?.space?.observedAt ?? referenceDate))
+                .font(.firaCodeFixed(size: 9))
+                .foregroundStyle(GalacticPalette.phosphorGreen.opacity(0.75))
+        }
+    }
+
+    private func readout(_ label: String, value: String, color: Color, size: CGFloat) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 6) {
+            Text(label)
+                .font(.firaCodeFixed(size: 10, weight: .semibold))
+                .foregroundStyle(SolarTokens.mutedText.opacity(0.7))
+                .frame(width: 28, alignment: .leading)
+            Text(value)
+                .font(.firaCodeFixed(size: size, weight: .bold))
+                .foregroundStyle(color)
+                .neonGlow(color, intensity: 4)
+                .minimumScaleFactor(0.6)
+                .lineLimit(1)
+        }
+    }
+
+    private func tableRow(_ label: String, _ value: String, color: Color) -> some View {
+        HStack(spacing: 0) {
+            Text(label)
+                .font(.firaCodeFixed(size: 9, weight: .semibold))
+                .foregroundStyle(SolarTokens.mutedText.opacity(0.65))
+                .frame(width: 52, alignment: .leading)
+            Text(value)
+                .font(.firaCodeFixed(size: 11, weight: .bold))
+                .foregroundStyle(color)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+        }
+    }
+
+    private func scaleChip(_ level: String) -> some View {
+        let digit = level.last.flatMap { Int(String($0)) } ?? 0
+        let color: Color = {
+            switch digit {
+            case 0:  return GalacticPalette.neonCyan
+            case 1:  return GalacticPalette.mint
+            case 2:  return GalacticPalette.peach
+            case 3:  return GalacticPalette.hotPink
+            default: return GalacticPalette.neonMagenta
+            }
+        }()
+        return Text(level)
+            .font(.firaCodeFixed(size: 9, weight: .bold))
+            .foregroundStyle(color)
+            .padding(.horizontal, 4)
+            .padding(.vertical, 1)
+            .background(Capsule().stroke(color.opacity(0.7), lineWidth: 0.6))
+    }
+
+    private func geomagPill(_ label: String) -> some View {
+        let color = solarGeomagColor(label)
+        return HStack(spacing: 4) {
+            Circle().fill(color).frame(width: 6, height: 6).neonGlow(color, intensity: 3)
+            Text(label.uppercased())
+                .font(.firaCodeFixed(size: 9, weight: .bold))
+                .tracking(1)
+                .foregroundStyle(color)
+        }
+        .padding(.horizontal, 6)
+        .padding(.vertical, 2)
+        .background(Capsule().stroke(color.opacity(0.6), lineWidth: 0.6))
+    }
+}
+
+// MARK: - Large (2×2)
+
+/// Full 2×2 Solar dashboard: medium content up top (big readouts, data
+/// table, sun column), plus an HF band-conditions table and a 3-day Kp
+/// outlook strip in the lower half.
+struct SolarLargeView: View {
+    let brief: Brief?
+    let referenceDate: Date
+
+    var body: some View {
+        let m = SolarMetrics(brief: brief)
+        VStack(spacing: 6) {
+            headerBar
+            Divider().background(GalacticPalette.phosphorGreen.opacity(0.4))
+
+            // Top row — everything the medium widget shows.
+            HStack(alignment: .top, spacing: 12) {
+                bigColumn(m)
+                Divider().background(GalacticPalette.neonCyan.opacity(0.25))
+                tableColumn(m)
+                Divider().background(GalacticPalette.neonCyan.opacity(0.25))
+                sunColumn(m)
+            }
+
+            Divider().background(GalacticPalette.phosphorGreen.opacity(0.4))
+
+            // Bottom half — HF band table + 3-day Kp outlook. Only
+            // shown when the underlying data is present so the layout
+            // doesn't leave a big blank slab.
+            HStack(alignment: .top, spacing: 12) {
+                bandTable
+                Divider().background(GalacticPalette.neonCyan.opacity(0.25))
+                kpOutlook
+            }
+
+            Divider().background(GalacticPalette.phosphorGreen.opacity(0.4))
+            statusFooter(m)
+        }
+        .padding(4)
+        .foregroundStyle(SolarTokens.mutedText)
+    }
+
+    private var headerBar: some View {
+        HStack {
+            Text("SOLAR-TERRESTRIAL")
+                .font(.firaCodeFixed(size: 12, weight: .bold))
+                .tracking(2.5)
+                .foregroundStyle(GalacticPalette.phosphorGreen)
+                .neonGlow(GalacticPalette.phosphorGreen, intensity: 4)
+            Spacer()
+            Text(solarUTCStamp(brief?.space?.observedAt ?? referenceDate))
+                .font(.firaCodeFixed(size: 10))
+                .foregroundStyle(GalacticPalette.phosphorGreen.opacity(0.75))
+        }
+    }
+
+    private func bigColumn(_ m: SolarMetrics) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            largeReadout("SFI", value: m.sfiText, color: m.sfiColor, size: 30)
+            largeReadout("Kp",  value: m.kpText,  color: m.kpColor,  size: 30)
+            Spacer(minLength: 0)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func tableColumn(_ m: SolarMetrics) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            tableRow("A-IDX",  m.aIdxText,    color: GalacticPalette.peach)
+            tableRow("X-RAY",  m.xRayClass,   color: m.xRayColor)
+            tableRow("24H PK", m.xRayPeak,    color: m.xRayPeakColor)
+            tableRow("PROTON", m.protonText,  color: m.protonColor)
+            tableRow("AURORA", m.auroraText,  color: GalacticPalette.hotPink)
+            tableRow("M-FLR",  m.mFlareText,  color: GalacticPalette.neonMagenta)
+            Spacer(minLength: 0)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func sunColumn(_ m: SolarMetrics) -> some View {
+        VStack(spacing: 5) {
+            Image(systemName: "sun.max.fill")
+                .resizable().aspectRatio(contentMode: .fit)
+                .frame(width: 50, height: 50)
+                .foregroundStyle(GalacticPalette.sunsetOrange)
+                .neonGlow(GalacticPalette.sunsetOrange, intensity: 7)
+            HStack(spacing: 4) {
+                scaleChip(m.rScale)
+                scaleChip(m.sScale)
+                scaleChip(m.gScale)
+            }
+            if let sn = m.sunspotNumber {
+                Text("SN \(sn)")
+                    .font(.firaCodeFixed(size: 10, weight: .bold))
+                    .foregroundStyle(GalacticPalette.mint)
+            }
+            Spacer(minLength: 0)
+        }
+        .frame(width: 84)
+    }
+
+    @ViewBuilder
+    private var bandTable: some View {
+        let bands = brief?.bandConditions ?? []
+        VStack(alignment: .leading, spacing: 3) {
+            HStack(spacing: 0) {
+                Text("HF BAND")
+                    .frame(width: 52, alignment: .leading)
+                Text("DAY")
+                    .frame(width: 56, alignment: .leading)
+                Text("NIGHT")
+                    .frame(width: 56, alignment: .leading)
+            }
+            .font(.firaCodeFixed(size: 9, weight: .semibold))
+            .foregroundStyle(SolarTokens.mutedText.opacity(0.6))
+
+            if bands.isEmpty {
+                Text("HF band data unavailable")
+                    .font(.firaCodeFixed(size: 10))
+                    .foregroundStyle(SolarTokens.mutedText.opacity(0.55))
+            } else {
+                ForEach(bands.prefix(6)) { band in
+                    HStack(spacing: 0) {
+                        Text(band.band)
+                            .font(.firaCodeFixed(size: 11, weight: .bold))
+                            .foregroundStyle(GalacticPalette.neonCyan)
+                            .frame(width: 52, alignment: .leading)
+                        Text(band.dayStatus.uppercased())
+                            .font(.firaCodeFixed(size: 10, weight: .bold))
+                            .foregroundStyle(solarHFColor(band.dayStatus))
+                            .frame(width: 56, alignment: .leading)
+                        Text(band.nightStatus.uppercased())
+                            .font(.firaCodeFixed(size: 10, weight: .bold))
+                            .foregroundStyle(solarHFColor(band.nightStatus))
+                            .frame(width: 56, alignment: .leading)
+                    }
+                }
+            }
+            Spacer(minLength: 0)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    @ViewBuilder
+    private var kpOutlook: some View {
+        let days = brief?.kpForecast.prefix(3) ?? []
+        VStack(alignment: .leading, spacing: 3) {
+            Text("KP 3-DAY OUTLOOK")
+                .font(.firaCodeFixed(size: 9, weight: .semibold))
+                .foregroundStyle(SolarTokens.mutedText.opacity(0.6))
+            if days.isEmpty {
+                Text("Forecast unavailable")
+                    .font(.firaCodeFixed(size: 10))
+                    .foregroundStyle(SolarTokens.mutedText.opacity(0.55))
+            } else {
+                ForEach(Array(days)) { day in
+                    HStack(spacing: 6) {
+                        Text(solarShortDate(day.date))
+                            .font(.firaCodeFixed(size: 10, weight: .semibold))
+                            .foregroundStyle(SolarTokens.mutedText.opacity(0.75))
+                            .frame(width: 48, alignment: .leading)
+                        Text(String(format: "Kp %.1f", day.maxKp))
+                            .font(.firaCodeFixed(size: 11, weight: .bold))
+                            .foregroundStyle(GalacticPalette.kp(day.maxKp))
+                        Spacer(minLength: 0)
+                        Text(day.gScale)
+                            .font(.firaCodeFixed(size: 10, weight: .bold))
+                            .foregroundStyle(SolarTokens.mutedText.opacity(0.9))
+                    }
+                }
+            }
+            Spacer(minLength: 0)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private func statusFooter(_ m: SolarMetrics) -> some View {
+        HStack(spacing: 8) {
+            statusPill(label: "GEOMAG",   value: m.geomag,  color: solarGeomagColor(m.geomag))
+            statusPill(label: "HF DAY",   value: m.hfDay,   color: solarHFColor(m.hfDay))
+            statusPill(label: "HF NIGHT", value: m.hfNight, color: solarHFColor(m.hfNight))
+            Spacer(minLength: 0)
+        }
+    }
+
+    // MARK: - Row helpers (duplicated w/ SolarMediumView so each layout
+    // can size type independently; the sizes in .large are a hair
+    // bigger so the extra area is used.)
+
+    private func largeReadout(_ label: String, value: String, color: Color, size: CGFloat) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            Text(label)
+                .font(.firaCodeFixed(size: 11, weight: .semibold))
+                .foregroundStyle(SolarTokens.mutedText.opacity(0.7))
+                .frame(width: 32, alignment: .leading)
+            Text(value)
+                .font(.firaCodeFixed(size: size, weight: .bold))
+                .foregroundStyle(color)
+                .neonGlow(color, intensity: 5)
+                .minimumScaleFactor(0.6)
+                .lineLimit(1)
+        }
+    }
+
+    private func tableRow(_ label: String, _ value: String, color: Color) -> some View {
+        HStack(spacing: 0) {
+            Text(label)
+                .font(.firaCodeFixed(size: 9, weight: .semibold))
+                .foregroundStyle(SolarTokens.mutedText.opacity(0.65))
+                .frame(width: 56, alignment: .leading)
+            Text(value)
+                .font(.firaCodeFixed(size: 11, weight: .bold))
+                .foregroundStyle(color)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+        }
+    }
+
+    private func scaleChip(_ level: String) -> some View {
+        let digit = level.last.flatMap { Int(String($0)) } ?? 0
+        let color: Color = {
+            switch digit {
+            case 0:  return GalacticPalette.neonCyan
+            case 1:  return GalacticPalette.mint
+            case 2:  return GalacticPalette.peach
+            case 3:  return GalacticPalette.hotPink
+            default: return GalacticPalette.neonMagenta
+            }
+        }()
+        return Text(level)
+            .font(.firaCodeFixed(size: 10, weight: .bold))
+            .foregroundStyle(color)
+            .padding(.horizontal, 5)
+            .padding(.vertical, 1)
+            .background(Capsule().stroke(color.opacity(0.7), lineWidth: 0.6))
+    }
+
+    private func statusPill(label: String, value: String, color: Color) -> some View {
+        HStack(spacing: 3) {
+            Text(label)
+                .font(.firaCodeFixed(size: 8, weight: .semibold))
+                .foregroundStyle(SolarTokens.mutedText.opacity(0.6))
+            Text(value.uppercased())
+                .font(.firaCodeFixed(size: 9, weight: .bold))
+                .tracking(0.8)
+                .foregroundStyle(color)
+        }
+        .padding(.horizontal, 6)
+        .padding(.vertical, 2)
+        .background(Capsule().stroke(color.opacity(0.55), lineWidth: 0.5))
+    }
+}
+
 // MARK: - Metrics derivation
 
 struct SolarMetrics {
@@ -432,17 +809,24 @@ struct SolarMetrics {
 
 // MARK: - Helpers
 
-private func zuluTime(_ date: Date) -> String {
+fileprivate func solarZuluTime(_ date: Date) -> String {
     let f = DateFormatter()
     f.timeZone = TimeZone(identifier: "UTC")
     f.dateFormat = "HHmm'Z'"
     return f.string(from: date)
 }
 
-private func utcStamp(_ date: Date) -> String {
+fileprivate func solarUTCStamp(_ date: Date) -> String {
     let f = DateFormatter()
     f.timeZone = TimeZone(identifier: "UTC")
     f.dateFormat = "yyyy MMM dd HHmm 'UTC'"
+    return f.string(from: date).uppercased()
+}
+
+fileprivate func solarShortDate(_ date: Date) -> String {
+    let f = DateFormatter()
+    f.timeZone = TimeZone(identifier: "UTC")
+    f.dateFormat = "EEE d"
     return f.string(from: date).uppercased()
 }
 
