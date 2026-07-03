@@ -104,6 +104,19 @@ final class PanelKitTests: XCTestCase {
         XCTAssertEqual(names.count, 4, "Expected 4 distinct Solar sub-views, got \(names)")
     }
 
+    /// Same lock for Brief now that .tall and .large have bespoke
+    /// renderers instead of falling through to .small / .wide.
+    func testBriefHasFourDistinctSubviewTypes() {
+        let types: [Any.Type] = [
+            BriefSmallView.self,
+            BriefMediumView.self,
+            BriefTallView.self,
+            BriefLargeView.self,
+        ]
+        let names = Set(types.map { "\($0)" })
+        XCTAssertEqual(names.count, 4, "Expected 4 distinct Brief sub-views, got \(names)")
+    }
+
     // MARK: - PanelGrid packing
 
     func testPackingSingleSmallSitsAtOrigin() {
