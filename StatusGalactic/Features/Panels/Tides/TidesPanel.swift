@@ -19,10 +19,10 @@ struct TidesPanel: View {
 
     var body: some View {
         switch size {
-        case .small, .tall:
-            TidesSmallView(brief: brief, referenceDate: referenceDate)
-        case .wide, .large:
-            TidesMediumView(brief: brief, referenceDate: referenceDate)
+        case .small: TidesSmallView(brief: brief, referenceDate: referenceDate)
+        case .wide:  TidesMediumView(brief: brief, referenceDate: referenceDate)
+        case .tall:  TidesTallView(brief: brief, referenceDate: referenceDate)
+        case .large: TidesLargeView(brief: brief, referenceDate: referenceDate)
         }
     }
 }
@@ -181,6 +181,161 @@ struct TidesMediumView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
+}
+
+// MARK: - Tall (1×2)
+
+/// Portrait tides tile: header, then a full-width curve (24-hour window)
+/// on top and a stacked list of up to 5 upcoming events underneath. The
+/// extra vertical height lets the curve breathe and shows 3 more events
+/// than the small tile.
+struct TidesTallView: View {
+    let brief: Brief?
+    let referenceDate: Date
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            header
+            Divider().background(GalacticPalette.phosphorGreen.opacity(0.4))
+
+            if let tides = brief?.tides, !tides.events.isEmpty {
+                let visible = TidesHelpers.visibleWindow(in: tides, now: referenceDate, count: 8)
+                let upcoming = TidesHelpers.upcoming(in: tides, now: referenceDate, limit: 5)
+
+                TidesCurve(events: visible, now: referenceDate)
+                    .frame(height: 80)
+
+                Divider().background(GalacticPalette.neonCyan.opacity(0.25))
+
+                VStack(alignment: .leading, spacing: 4) {
+                    ForEach(upcoming) { ev in
+                        TideEventBlock(event: ev,
+                                       now: referenceDate,
+                                       timezone: brief?.timezone)
+                    }
+                }
+                Spacer(minLength: 0)
+            } else {
+                tidesEmptyBlock("No tide station nearby")
+            }
+        }
+        .padding(2)
+        .foregroundStyle(TidesPalette.mutedText)
+    }
+
+    private var header: some View {
+        HStack(spacing: 4) {
+            Image(systemName: "water.waves")
+                .font(.firaCodeFixed(size: 11, weight: .bold))
+                .foregroundStyle(GalacticPalette.electricBlue)
+                .neonGlow(GalacticPalette.electricBlue, intensity: 3)
+            Text("TIDES")
+                .font(.firaCodeFixed(size: 11, weight: .bold))
+                .tracking(2)
+                .foregroundStyle(GalacticPalette.phosphorGreen)
+                .neonGlow(GalacticPalette.phosphorGreen, intensity: 3)
+            Spacer()
+            if let tides = brief?.tides {
+                Text(tides.stationId)
+                    .font(.firaCodeFixed(size: 9))
+                    .foregroundStyle(GalacticPalette.phosphorGreen.opacity(0.75))
+                    .lineLimit(1)
+            }
+        }
+    }
+}
+
+// MARK: - Large (2×2)
+
+/// Full 2×2 tides dashboard: station name + distance header, wide curve
+/// (10-event window) spanning the top row, then a two-column event list
+/// showing up to 6 upcoming events so the extra area actually earns its
+/// keep.
+struct TidesLargeView: View {
+    let brief: Brief?
+    let referenceDate: Date
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            header
+            Divider().background(GalacticPalette.phosphorGreen.opacity(0.4))
+
+            if let tides = brief?.tides, !tides.events.isEmpty {
+                let visible = TidesHelpers.visibleWindow(in: tides, now: referenceDate, count: 10)
+                let upcoming = TidesHelpers.upcoming(in: tides, now: referenceDate, limit: 6)
+
+                TidesCurve(events: visible, now: referenceDate)
+                    .frame(height: 110)
+
+                Divider().background(GalacticPalette.neonCyan.opacity(0.25))
+
+                // Two-column event list so all 6 fit without over-flowing.
+                let cols = Array(repeating: GridItem(.flexible(), spacing: 12), count: 2)
+                LazyVGrid(columns: cols, alignment: .leading, spacing: 4) {
+                    ForEach(upcoming) { ev in
+                        TideEventBlock(event: ev,
+                                       now: referenceDate,
+                                       timezone: brief?.timezone)
+                    }
+                }
+                Spacer(minLength: 0)
+            } else {
+                tidesEmptyBlock("Move within ~200 km of a NOAA CO-OPS station to see predictions.")
+            }
+        }
+        .padding(4)
+        .foregroundStyle(TidesPalette.mutedText)
+    }
+
+    private var header: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "water.waves")
+                .font(.firaCodeFixed(size: 12, weight: .bold))
+                .foregroundStyle(GalacticPalette.electricBlue)
+                .neonGlow(GalacticPalette.electricBlue, intensity: 4)
+            Text("TIDES")
+                .font(.firaCodeFixed(size: 12, weight: .bold))
+                .tracking(2.5)
+                .foregroundStyle(GalacticPalette.phosphorGreen)
+                .neonGlow(GalacticPalette.phosphorGreen, intensity: 4)
+            if let tides = brief?.tides {
+                Text("·")
+                    .foregroundStyle(GalacticPalette.phosphorGreen.opacity(0.4))
+                Text(tides.stationName.uppercased())
+                    .font(.firaCodeFixed(size: 10, weight: .semibold))
+                    .foregroundStyle(GalacticPalette.neonCyan)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+            }
+            Spacer(minLength: 0)
+            if let tides = brief?.tides {
+                Text(TidesHelpers.distanceLabel(km: tides.distanceKm))
+                    .font(.firaCodeFixed(size: 9))
+                    .foregroundStyle(GalacticPalette.phosphorGreen.opacity(0.75))
+            }
+        }
+    }
+}
+
+/// File-scope empty state shared by TidesTallView and TidesLargeView so
+/// they present the same visual language when off-coast.
+fileprivate func tidesEmptyBlock(_ message: String) -> some View {
+    HStack(spacing: 12) {
+        Image(systemName: "water.waves.slash")
+            .font(.system(size: 32))
+            .foregroundStyle(TidesPalette.mutedText.opacity(0.5))
+        VStack(alignment: .leading, spacing: 2) {
+            Text("No tide station nearby")
+                .font(.firaCodeFixed(size: 12, weight: .bold))
+                .foregroundStyle(TidesPalette.mutedText)
+            Text(message)
+                .font(.firaCodeFixed(size: 9))
+                .foregroundStyle(TidesPalette.mutedText.opacity(0.7))
+                .lineLimit(3)
+        }
+        Spacer(minLength: 0)
+    }
+    .frame(maxWidth: .infinity, alignment: .leading)
 }
 
 // MARK: - Components

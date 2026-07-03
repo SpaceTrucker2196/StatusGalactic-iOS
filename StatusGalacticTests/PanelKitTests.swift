@@ -117,6 +117,18 @@ final class PanelKitTests: XCTestCase {
         XCTAssertEqual(names.count, 4, "Expected 4 distinct Brief sub-views, got \(names)")
     }
 
+    /// Same lock for Tides.
+    func testTidesHasFourDistinctSubviewTypes() {
+        let types: [Any.Type] = [
+            TidesSmallView.self,
+            TidesMediumView.self,
+            TidesTallView.self,
+            TidesLargeView.self,
+        ]
+        let names = Set(types.map { "\($0)" })
+        XCTAssertEqual(names.count, 4, "Expected 4 distinct Tides sub-views, got \(names)")
+    }
+
     // MARK: - PanelGrid packing
 
     func testPackingSingleSmallSitsAtOrigin() {
