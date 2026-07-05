@@ -1,33 +1,39 @@
-# StatusGalactic-iOS — Claude project instructions
+# StatusGalactic-iOS — agent instructions
 
-## Token / Cost Ledger (billing-grade)
+Spacetrucker Galactic: Swift/SwiftUI personal-almanac app (Earth,
+marine, and space weather; astronomy; Meshtastic mesh). Shipped on the
+App Store. On-device-only data architecture — keep it that way.
 
-The owner bills clients from `LEDGER.md` at this repo's root. Entries must be **exact, not estimated**.
+## Working rules
 
-### How to record a commit
+1. **Shipped production app.** Changes must build clean and pass the
+   unit suite before commit; no autonomous pushes to `main` — the human
+   reviews first. This overrides workspace-level autonomy conventions
+   in `AGENTS.md` for product code.
+2. Astronomy behavior keeps parity with the legacy `../weathergalactic`
+   backend; cross-check before changing calculations.
+3. `FEATURE_MATRIX.md` tracks the iOS ↔ Android feature matrix — update
+   it when a user-facing feature lands.
+4. User-supplied API keys (see `StatusGalactic/Features/Settings/
+   APIKeyHelp.swift`) stay on-device; never add telemetry or outbound
+   calls that carry them anywhere but the intended provider.
 
-After every substantive commit you author:
+## Build / test
 
 ```bash
-~/.claude/billing/ledger.py --append --summary "<short description>"
-git add LEDGER.md
-git commit -m "chore(ledger): $(git rev-parse --short HEAD~0)"
+xcodebuild test -project StatusGalactic.xcodeproj \
+  -scheme StatusGalactic \
+  -destination 'platform=iOS Simulator,name=iPhone 16' \
+  -skip-testing:StatusGalacticUITests
 ```
 
-The script:
+CI (`.github/workflows/ci.yml`) runs unit tests on push/PR to `main`.
 
-- Reads token usage from the JSONL transcripts under `~/.claude/projects/<encoded-cwd>/`.
-- Sums assistant turns in the window `(last ledger row's date, HEAD commit time]`, normalized to UTC.
-- Prices each turn against `~/.claude/billing/pricing.json` (per-model, per-tier, long-context aware, service-tier aware, server-tool aware).
-- **Aborts with exit code 3 if it encounters an unknown model or service tier.** A missing row is fine; a wrong row is not.
-- Exits 2 with no row if no usage was found in the window (e.g. a human-only commit).
+## Token / Cost Ledger
 
-Use `--dry-run` to preview without writing. Use `--commit <sha>` to ledger a specific commit rather than HEAD. See `~/.claude/billing/ledger.py --help` for all flags.
-
-### Rules
-
-- **Never bypass the script.** Do not hand-author rows, estimate tokens, or fabricate costs. If the script can't produce a row (unknown model, missing transcript, session ran from a different cwd), stop and surface the problem to the owner.
-- **Append-only.** Never rewrite, reorder, or delete past rows. Correct mistakes by adding a new row whose `summary` notes the correction.
-- **Separate commits.** The ledger update lands as its own `chore(ledger): <short-sha>` commit. Never amend the substantive commit.
-- **Keep pricing current.** If you notice Anthropic pricing has changed, update `~/.claude/billing/pricing.json` in its own commit before running the ledger again. Past rows correctly preserve historical pricing.
-- **Multi-machine work** isn't aggregated automatically — transcripts live on whichever machine ran the session. Surface this if relevant.
+The owner bills from `LEDGER.md` (exact, never estimated). After every
+substantive commit: run `~/.claude/billing/ledger.py --append --summary
+"<desc>"`, then commit `LEDGER.md` as its own `chore(ledger): <sha>`
+commit. Never hand-author, estimate, or rewrite rows (append-only); if
+the script can't produce a row, stop and surface it. See
+`ledger.py --help` for flags (`--dry-run`, `--commit <sha>`).

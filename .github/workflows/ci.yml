@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Build and run unit tests
+    runs-on: macos-latest
+    timeout-minutes: 40
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select simulator
+        id: sim
+        run: |
+          device=$(xcrun simctl list devices available | grep -E 'iPhone [0-9]+' | head -1 | sed -E 's/^ *([^(]+) \(.*/\1/' | sed 's/ *$//')
+          echo "Using simulator: $device"
+          echo "device=$device" >> "$GITHUB_OUTPUT"
+
+      - name: Build and test (unit tests only)
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project StatusGalactic.xcodeproj \
+            -scheme StatusGalactic \
+            -destination "platform=iOS Simulator,name=${{ steps.sim.outputs.device }}" \
+            -skip-testing:StatusGalacticUITests \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO | xcpretty
