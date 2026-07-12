@@ -2,16 +2,22 @@ import Foundation
 
 /// RepeaterBook export API client.
 ///
-/// Free, no auth, just User-Agent required. Returns ham repeaters near a
-/// city + US state. The API accepts state name OR FIPS code; we always send
-/// the FIPS code so we don't trip over name capitalization.
+/// As of 2026-03 the export API requires token auth: each user mints their own
+/// app-bound token (`rbuapp_...`) for the approved app, sent in the
+/// `X-RB-App-Token` header (RepeaterBook forbids shared tokens embedded in
+/// distributed apps). With no token we skip the fetch rather than hit a
+/// guaranteed 401. Returns ham repeaters near a city + US state; the API
+/// accepts state name OR FIPS code, and we always send the FIPS code so we
+/// don't trip over name capitalization.
 struct RepeaterBookClient {
     let session: URLSession
     let userAgent: String
+    let token: String
 
-    init(session: URLSession = .shared, userAgent: String) {
+    init(session: URLSession = .shared, userAgent: String, token: String = "") {
         self.session = session
         self.userAgent = userAgent
+        self.token = token
     }
 
     static let url = URL(string: "https://www.repeaterbook.com/api/export.php")!
@@ -42,6 +48,8 @@ struct RepeaterBookClient {
         stateAbbreviation: String,
         limit: Int = 15
     ) async throws -> [Repeater] {
+        let appToken = token.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !appToken.isEmpty else { return [] }
         guard let fipsCode = Self.fipsCode(for: stateAbbreviation) else {
             return []
         }
@@ -52,7 +60,11 @@ struct RepeaterBookClient {
         ]
         guard let url = components.url else { throw HTTPError.invalidURL }
 
-        let data = try await session.getData(from: url, userAgent: userAgent)
+        let data = try await session.getData(
+            from: url,
+            userAgent: userAgent,
+            headers: ["X-RB-App-Token": appToken]
+        )
         guard let payload = try JSONSerialization.jsonObject(with: data) as? [String: Any],
               let results = payload["results"] as? [[String: Any]]
         else {

@@ -43,6 +43,21 @@ struct APIKeyInfo: Identifiable {
         rateLimit: "1,000 requests/hour per key. DEMO_KEY caps around 30/hour."
     )
 
+    static let repeaterBook = APIKeyInfo(
+        id: "repeaterbook",
+        name: "RepeaterBook app token",
+        summary: "Powers the Repeaters card (nearby ham repeaters). As of 2026 RepeaterBook's export API requires a per-user, app-bound token; without one the card stays hidden.",
+        steps: [
+            "Log into repeaterbook.com (free account).",
+            "Open Account → API access and request access for Status Galactic.",
+            "Once approved, generate your app token (starts with rbuapp_).",
+            "Copy it into Settings → RepeaterBook."
+        ],
+        url: URL(string: "https://www.repeaterbook.com/api/token_request.php")!,
+        isFree: true,
+        rateLimit: "Per RepeaterBook's API terms. Token is stored only on this device."
+    )
+
     static let n2yo = APIKeyInfo(
         id: "n2yo.com",
         name: "n2yo.com API key",

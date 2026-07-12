@@ -9,6 +9,7 @@ import Foundation
 final class ClientConfig {
     static let aprsKeyKey = "io.river.statusgalactic.aprsAPIKey"
     static let nasaKeyKey = "io.river.statusgalactic.nasaAPIKey"
+    static let repeaterBookTokenKey = "io.river.statusgalactic.repeaterBookToken"
     static let n2yoKeyKey = "io.river.statusgalactic.n2yoAPIKey"
     static let myCallsignKey = "io.river.statusgalactic.myCallsign"
     static let marineZoneKey = "io.river.statusgalactic.defaultMarineZone"
@@ -26,6 +27,13 @@ final class ClientConfig {
 
     var nasaAPIKey: String {
         didSet { UserDefaults.standard.set(nasaAPIKey, forKey: Self.nasaKeyKey) }
+    }
+
+    /// RepeaterBook per-user app-bound token (`rbuapp_...`), sent as the
+    /// `X-RB-App-Token` header. RepeaterBook's export API requires it as of
+    /// 2026-03; each user mints their own for the approved app.
+    var repeaterBookToken: String {
+        didSet { UserDefaults.standard.set(repeaterBookToken, forKey: Self.repeaterBookTokenKey) }
     }
 
     var n2yoAPIKey: String {
@@ -78,6 +86,7 @@ final class ClientConfig {
         let defaults = UserDefaults.standard
         self.aprsAPIKey = defaults.string(forKey: Self.aprsKeyKey) ?? ""
         self.nasaAPIKey = defaults.string(forKey: Self.nasaKeyKey) ?? ""
+        self.repeaterBookToken = defaults.string(forKey: Self.repeaterBookTokenKey) ?? ""
         self.n2yoAPIKey = defaults.string(forKey: Self.n2yoKeyKey) ?? ""
         self.myCallsign = defaults.string(forKey: Self.myCallsignKey) ?? ""
         self.defaultMarineZone = defaults.string(forKey: Self.marineZoneKey) ?? ""

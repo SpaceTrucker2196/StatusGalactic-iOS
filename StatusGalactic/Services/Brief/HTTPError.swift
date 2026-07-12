@@ -29,11 +29,15 @@ extension URLSession {
     func getData(
         from url: URL,
         userAgent: String,
-        timeout: TimeInterval = 15
+        timeout: TimeInterval = 15,
+        headers: [String: String] = [:]
     ) async throws -> Data {
         var request = URLRequest(url: url, timeoutInterval: timeout)
         request.setValue(userAgent, forHTTPHeaderField: "User-Agent")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
+        for (field, value) in headers {
+            request.setValue(value, forHTTPHeaderField: field)
+        }
 
         let data: Data
         let response: URLResponse

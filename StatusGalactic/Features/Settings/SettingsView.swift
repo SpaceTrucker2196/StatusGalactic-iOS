@@ -62,6 +62,20 @@ struct SettingsView: View {
 
                 Section {
                     HStack {
+                        SecureField("RepeaterBook app token (rbuapp_…)", text: $config.repeaterBookToken)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                        APIKeyHelpButton(info: .repeaterBook)
+                    }
+                    Text("RepeaterBook now requires a per-user token. Request API access for Status Galactic, then paste your app token. Leave blank to hide the repeaters card.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } header: {
+                    Text("RepeaterBook")
+                }
+
+                Section {
+                    HStack {
                         SecureField("n2yo.com API key (optional)", text: $config.n2yoAPIKey)
                             .textInputAutocapitalization(.never)
                             .autocorrectionDisabled()
