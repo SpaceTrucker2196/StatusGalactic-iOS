@@ -28,6 +28,7 @@ Prerequisites:
 - iOS 17+ simulator or device
 - [XcodeGen](https://github.com/yonaskolb/XcodeGen): `brew install xcodegen`
 - An aprs.fi read API key (free, register at aprs.fi) **if you want callsign lookups**
+- A RepeaterBook app token (`rbuapp_…`) **if you want the nearby-repeaters card** — RepeaterBook's export API now requires a per-user token. Sign in at [repeaterbook.com](https://www.repeaterbook.com/api/token_request.php), request API access for the app, then paste your token into Settings → RepeaterBook. Leave blank to hide the card.
 - `protoc` + `protoc-gen-swift` (`brew install protobuf swift-protobuf`) **only if you want to regenerate the vendored Meshtastic protobuf bindings**. The generated `*.pb.swift` is committed, so a routine build does not need either tool.
 
 ```bash
@@ -75,6 +76,7 @@ open StatusGalactic.xcodeproj
 | Planetary positions | Local computation (mean orbital elements + equation of center) | n/a |
 | Upcoming launches | ll.thespacedevs.com | none |
 | Callsign location | api.aprs.fi | aprs.fi read API key |
+| Nearby repeaters | repeaterbook.com/api | RepeaterBook per-user token (`X-RB-App-Token`) |
 | Meshtastic mesh traffic / chat | A nearby Meshtastic node over Bluetooth LE | none (local pairing) |
 
 ### Astronomy accuracy
