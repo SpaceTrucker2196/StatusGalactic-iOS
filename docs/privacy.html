@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Spacetrucker Galactic — Privacy Policy</title>
+<style>
+  body { margin: 0 auto; max-width: 46rem; padding: 2rem 1.25rem 4rem; background: #12081f; color: #e8e0f5;
+         font: 16px/1.6 -apple-system, "Segoe UI", Roboto, sans-serif; }
+  h1 { color: #ff9e64; font-size: 1.6rem; } h2 { color: #ff6ec7; margin-top: 2rem; font-size: 1.2rem; }
+  h3 { color: #ff6ec7; font-size: 1.05rem; }
+  code { background: #241536; padding: .1em .35em; border-radius: 4px; font-size: .9em; }
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: .92em; }
+  th, td { border: 1px solid #3d2a5c; padding: .5em .6em; text-align: left; vertical-align: top; }
+  th { background: #241536; }
+  blockquote { border-left: 3px solid #ff6ec7; margin: 1rem 0; padding: .1rem 1rem; color: #b8a8d5; }
+  hr { border: 0; border-top: 1px solid #3d2a5c; margin: 2rem 0; }
+  a { color: #7cc7ff; }
+</style>
+</head>
+<body>
+<h1>Spacetrucker Galactic (iOS) — Privacy Policy</h1>
+<p><em>Effective date: 2026-06-18. Version 1.1 (v0.3 release — adds the Meshtastic tab).</em></p>
+<blockquote>
+<p>This is a plain-language privacy policy describing what Spacetrucker Galactic actually does with data. The factual statements below are accurate to the current release build and match the in-app and App Store privacy disclosures.</p>
+</blockquote>
+<hr>
+<h2>Summary in one sentence</h2>
+<p>Spacetrucker Galactic talks to public weather, space-weather, marine, launch, and APRS services on your behalf — it has no backend, no accounts, and no analytics, and nothing about you is ever sent to a Spacetrucker Galactic server because there isn&#x27;t one.</p>
+<hr>
+<h2>What we collect</h2>
+<p><strong>Nothing.</strong> Spacetrucker Galactic has no backend, no analytics, no crash reporters, and no advertising SDKs. The app developer (SpaceTrucker2196) operates no servers, no user database, and has no way to see what&#x27;s in your Spacetrucker Galactic install.</p>
+<p>The only third-party Swift package linked into the app is Apple&#x27;s Apache-2.0 <a href="https://github.com/apple/swift-protobuf"><code>swift-protobuf</code></a>, scoped to the Meshtastic tab so it can decode the wire format your Meshtastic node speaks. <code>swift-protobuf</code> is a pure-Swift serialisation library — it has no telemetry, no analytics, and never makes a network request of its own.</p>
+<h2>What the app sends out</h2>
+<p>Every outbound request goes to a single public service:</p>
+<table>
+<tr><th>Destination</th><th>What is sent</th><th>Why</th></tr>
+<tr><td><code>api.weather.gov</code></td><td>Your latitude and longitude (rounded to 4 decimals)</td><td>NWS forecast for your area</td></tr>
+<tr><td><code>tgftp.nws.noaa.gov</code></td><td>A marine zone ID (e.g. <code>GMZ033</code>), only if you set one</td><td>NWS marine bulletin</td></tr>
+<tr><td><code>services.swpc.noaa.gov</code></td><td>Nothing identifying — a generic GET</td><td>Space weather (Kp index, 10.7 cm flux)</td></tr>
+<tr><td><code>ll.thespacedevs.com</code></td><td>Nothing identifying — a generic GET</td><td>Upcoming launches list</td></tr>
+<tr><td><code>api.aprs.fi</code></td><td>A callsign you&#x27;ve added + the aprs.fi API key you entered in Settings</td><td>Ham radio position lookup</td></tr>
+</table>
+<p>Your User-Agent is included on every request (NWS requires one). The default identifies the app and version; you can change it in Settings.</p>
+<p><strong>Meshtastic tab — Bluetooth only, never the internet.</strong> When you use the Mesh tab, the app pairs with a nearby Meshtastic node over Bluetooth LE. The node is short-range hardware you own. Messages you send go from your iPhone to that node, and from there onto the mesh radio network — they never traverse the internet through Spacetrucker Galactic. Other apps on your phone do not see this Bluetooth connection.</p>
+<h2>What the app stores on your device</h2>
+<table>
+<tr><th>Data</th><th>Where</th><th>Purpose</th><th>When deleted</th></tr>
+<tr><td>Saved APRS callsigns (call, label, notes)</td><td><code>UserDefaults</code></td><td>Quick selection in the Callsigns tab</td><td>Remove from the Callsigns tab, or delete the app</td></tr>
+<tr><td>Your aprs.fi API key</td><td><code>UserDefaults</code> (SecureField on input)</td><td>Callsign position lookups</td><td>Clear it in Settings, or delete the app</td></tr>
+<tr><td>Default marine zone</td><td><code>UserDefaults</code></td><td>Convenience</td><td>Clear it in Settings</td></tr>
+<tr><td>User-Agent string</td><td><code>UserDefaults</code></td><td>Sent with HTTP requests</td><td>Reset in Settings</td></tr>
+<tr><td>Notification enable flags + next-fire times</td><td><code>UserDefaults</code></td><td>Schedule local reminders</td><td>Turn off in Settings, or delete the app</td></tr>
+<tr><td>Pending local notifications</td><td>iOS notification center (system-managed)</td><td>Fire golden-hour and astronomical-dusk alerts</td><td>Turn off in Settings; iOS clears the queue</td></tr>
+<tr><td>Meshtastic traffic + chat history</td><td>SwiftData store under the app&#x27;s <code>Library/Application Support/Meshtastic.store</code></td><td>Show recent mesh activity when you reopen the Mesh tab</td><td>Tap &quot;Clear history&quot; in the Mesh tab&#x27;s STATUS section, or delete the app</td></tr>
+</table>
+<p>All of the above is stored inside the app&#x27;s private container on this device (iOS sandbox; no other app can read it without jailbreaking). The Meshtastic store is pinned to the app&#x27;s own sandbox — <em>not</em> the App Group container that the widget reads from — so Mesh chat and traffic stay private to the main app.</p>
+<h2>What the app does not do</h2>
+<ul>
+<li><strong>No account.</strong> You don&#x27;t sign up. There&#x27;s no sign-in button.</li>
+<li><strong>No analytics.</strong> We don&#x27;t know how often you open the app or what tabs you use.</li>
+<li><strong>No crash reports.</strong> The app does not phone home when something goes wrong.</li>
+<li><strong>No advertising identifier reads.</strong> IDFA is never requested.</li>
+<li><strong>No tracking across other apps or websites.</strong> App Tracking Transparency permission is never requested because the app does no tracking.</li>
+<li><strong>No background location.</strong> Permission is &quot;when in use&quot; only, and the app reads one fix per refresh — never continuously.</li>
+<li><strong>No <code>authorizedAlways</code> location.</strong> Only when-in-use.</li>
+<li><strong>No Contacts, Calendar, Photos, Microphone, Camera, HealthKit, or Motion access.</strong></li>
+<li><strong>Bluetooth access is requested only when you open the Mesh tab.</strong> The app uses Bluetooth solely to talk to a Meshtastic node you&#x27;ve paired with. It does not scan for nearby Bluetooth devices for any other purpose, does not advertise, and does not contact Bluetooth beacons for location. If you never open the Mesh tab, the prompt is never shown.</li>
+<li><strong>No push notifications.</strong> Reminders use local notifications scheduled on-device.</li>
+<li><strong>No purchases.</strong> No StoreKit, no IAP.</li>
+<li><strong>No analytics or advertising SDKs.</strong> The single third-party Swift package linked into the app is Apple&#x27;s Apache-2.0 <code>swift-protobuf</code>, used to serialise the Meshtastic wire format. It performs no network requests of its own.</li>
+</ul>
+<h2>When data leaves the device</h2>
+<p>The only paths data takes off your device are user-initiated, and they go to public services rather than to us:</p>
+<p>1. <strong>Forecast requests.</strong> When you refresh, your latitude/longitude goes to NWS, your marine zone (if set) goes to the NOAA marine text bulletin server, and generic requests go to SWPC and The Space Devs. 2. <strong>Callsign lookups.</strong> When you tap a saved callsign, the callsign and your aprs.fi API key go to aprs.fi. 3. <strong>Meshtastic mesh radio.</strong> When you tap <strong>Send</strong> in the Mesh tab, the message goes over a short Bluetooth LE link to your paired Meshtastic node, which then transmits it on the mesh radio network. Spacetrucker Galactic is not in that radio path — it only hands the bytes to your node. 4. <strong>iCloud Backup.</strong> Apple&#x27;s standard device backup may include the app&#x27;s <code>UserDefaults</code> and SwiftData stores if you have iCloud Backup enabled in iOS Settings. That is the operating system doing this, not Spacetrucker Galactic — the app never uploads anything to iCloud directly.</p>
+<h2>Children</h2>
+<p>Spacetrucker Galactic is not directed at children. The expected user is an adult traveler, sailor, photographer, or ham operator. Age rating: <strong>4+</strong>, with no objectionable content, no user-generated content, and no in-app purchases.</p>
+<h2>Cookies, beacons, web tracking</h2>
+<p>The Spacetrucker Galactic iOS app does not embed a web view that loads remote content. Taps on links open in your default browser (Safari), and Spacetrucker Galactic sends no data with those URLs.</p>
+<h2>Changes to this policy</h2>
+<p>If what Spacetrucker Galactic does with data changes, this page will be updated and the version number above will be bumped. The App Store will require re-confirmation of the privacy disclosures for the next release.</p>
+<h2>Contact</h2>
+<p>This policy is hosted at <strong><a href="https://spacetrucker2196.github.io/StatusGalactic-iOS/privacy">spacetrucker2196.github.io/StatusGalactic-iOS/privacy</a></strong>.</p>
+<p>To ask a question about this policy or about how Spacetrucker Galactic handles data, email <strong><a href="mailto:support@river.io">support@river.io</a></strong>. We respond within a few business days.</p>
+<hr>
+<p><a href="./">← back to Spacetrucker Galactic</a></p>
+</body>
+</html>
